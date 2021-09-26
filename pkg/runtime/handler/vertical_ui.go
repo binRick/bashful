@@ -362,7 +362,7 @@ func (handler *VerticalUI) footer(status runtime.TaskStatus, message string) str
 
 	if handler.config.Options.ShowSummaryTimes {
 		duration := time.Since(handler.startTime)
-		durString = fmt.Sprintf(" Runtime[%s]", utils.FormatDuration(duration))
+		durString = fmt.Sprintf(" Runtime => [%s]", utils.FormatDuration(duration))
 
 		totalEta := time.Duration(handler.config.TotalEtaSeconds) * time.Second
 		remainingEta := time.Duration(totalEta.Seconds()-duration.Seconds()) * time.Second
