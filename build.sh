@@ -1,5 +1,7 @@
 #!/bin/bash
-set -ex
+set -e
+cd $(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+
 go build -o bashful .
 rsync bashful ~/.local/bin/bashful
 rsync bashful $(which bashful)
