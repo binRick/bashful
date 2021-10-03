@@ -341,6 +341,10 @@ func (handler *VerticalUI) OnEvent(task *runtime.Task, e runtime.TaskEvent) {
 	}
 }
 
+const DIMENSIONS_MIN_DURATION = time.Duration(100 * time.Millisecond)
+
+var last_dimensions_check_ts = time.Now()
+
 func (handler *VerticalUI) displayTask(task *runtime.Task) {
 
 	// todo: error handling
