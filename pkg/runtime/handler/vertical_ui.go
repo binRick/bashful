@@ -3,6 +3,13 @@ package handler
 import (
 	"bytes"
 	"fmt"
+	"io"
+	"strconv"
+	"strings"
+	"sync"
+	"text/template"
+	"time"
+
 	"github.com/google/uuid"
 	color "github.com/mgutz/ansi"
 	"github.com/tj/go-spin"
@@ -10,13 +17,7 @@ import (
 	"github.com/wagoodman/bashful/pkg/runtime"
 	"github.com/wagoodman/bashful/utils"
 	"github.com/wagoodman/jotframe"
-	"github.com/wayneashleyberry/terminal-dimensions"
-	"io"
-	"strconv"
-	"strings"
-	"sync"
-	"text/template"
-	"time"
+	terminaldimensions "github.com/wayneashleyberry/terminal-dimensions"
 )
 
 type VerticalUI struct {
@@ -367,6 +368,12 @@ func (handler *VerticalUI) footer(status runtime.TaskStatus, message string) str
 		totalEta := time.Duration(handler.config.TotalEtaSeconds) * time.Second
 		remainingEta := time.Duration(totalEta.Seconds()-duration.Seconds()) * time.Second
 		etaString = fmt.Sprintf(" ETA[%s]", utils.FormatDuration(remainingEta))
+		if strings.Contains(utils.FormatDuration(remainingEta), "Unknown") {
+			etaString = ``
+		}
+		if strings.Contains(utils.FormatDuration(remainingEta), "Overdue") {
+			etaString = ``
+		}
 	}
 
 	if len(handler.runtimeData.Completed) == handler.runtimeData.Total {
