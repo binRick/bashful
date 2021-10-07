@@ -36,7 +36,7 @@ import (
 	"github.com/lunixbochs/vtclean"
 	"github.com/wagoodman/bashful/pkg/config"
 	"github.com/wagoodman/bashful/utils"
-	"github.com/wayneashleyberry/terminal-dimensions"
+	terminaldimensions "github.com/wayneashleyberry/terminal-dimensions"
 )
 
 // todo: remove these global vars
@@ -180,6 +180,8 @@ func (task *Task) Execute(eventChan chan TaskEvent, waiter *sync.WaitGroup, envi
 		scanner.Split(variableSplitFunc)
 		for scanner.Scan() {
 			message := scanner.Text()
+			//msg := fmt.Sprintf(`resultChan %s> %s`, resultChan, message)
+			//fmt.Println(msg)
 			resultChan <- vtclean.Clean(message, false)
 		}
 	}
