@@ -8,6 +8,8 @@ config:
   show-task-times: true
 
   log-path: build.log
+  env:
+    __TEST1_GLOBAL: 12345
 
 x-reference-data:
   all-apps: &app-names
