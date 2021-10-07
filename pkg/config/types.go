@@ -21,7 +21,7 @@
 package config
 
 import (
-	"github.com/deckarep/golang-set"
+	mapset "github.com/deckarep/golang-set"
 )
 
 type stringArray []string
@@ -100,7 +100,8 @@ type Options struct {
 	MaxParallelCmds int `yaml:"max-parallel-commands"`
 
 	// ReplicaReplaceString is a char or short string that is replaced with values given by a tasks "for-each" configuration
-	ReplicaReplaceString string `yaml:"replica-replace-pattern"`
+	ReplicaReplaceString string            `yaml:"replica-replace-pattern"`
+	GlobalEnv            map[string]string `yaml:"env"`
 
 	// ShowSummaryErrors places the total number of errors in the summary footer
 	ShowSummaryErrors bool `yaml:"show-summary-errors"`
@@ -151,7 +152,8 @@ type TaskConfig struct {
 	EventDriven bool `yaml:"event-driven"`
 
 	// ForEach is a list of strings that will be used to make replicas if the current task (tailored Name/CmdString replacements are handled via the 'ReplicaReplaceString' option)
-	ForEach []string `yaml:"for-each"`
+	ForEach []string          `yaml:"for-each"`
+	Env     map[string]string `yaml:"env"`
 
 	// IgnoreFailure indicates when no errors should be registered (all task command non-zero return codes will be treated as a zero return code)
 	IgnoreFailure bool `yaml:"ignore-failure"`

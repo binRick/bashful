@@ -14,6 +14,7 @@ require (
 	github.com/howeyc/gopass v0.0.0-20170109162249-bf9dde6d0d2c
 	github.com/inconshreveable/mousetrap v1.0.0
 	github.com/k0kubun/go-ansi v0.0.0-20180517002512-3bf9e2903213
+	github.com/k0kubun/pp v3.0.1+incompatible
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/lunixbochs/vtclean v0.0.0-20180621232353-2d01aacdc34a
 	github.com/mattn/go-colorable v0.0.9

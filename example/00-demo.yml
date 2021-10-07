@@ -22,6 +22,20 @@ x-reference-data:
 
 tasks:
 
+  - name: test1
+    tags: t
+    cmd: example/dev.sh
+    ignore-failure: false
+    env:
+      __TEST1_AAA: 123
+      __TEST1_BBB: 456
+  - name: test2
+    tags: t
+    cmd: example/dev.sh
+    ignore-failure: false
+    env:
+      __TEST1_CCC: xxxxxxxxxxxxxxxxxx
+
   - name: Cloning Repos
     collapse-on-completion: true
     parallel-tasks:
