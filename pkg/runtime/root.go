@@ -21,11 +21,79 @@
 package runtime
 
 import (
-	"github.com/wagoodman/bashful/utils"
+	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
+
+	"github.com/shirou/gopsutil/process"
+	"github.com/wagoodman/bashful/utils"
 )
+
+func AppendIfMissing(slice []int64, i int64) []int64 {
+	for _, ele := range slice {
+		if ele == i {
+			return slice
+		}
+	}
+	return append(slice, i)
+}
+
+func GetProcessChildren(p int64) []int64 {
+	var child_pids []int64
+	tp, err := process.NewProcess(int32(p))
+	if err == nil {
+		children, err := tp.Children()
+		if err == nil {
+			for _, child_proc := range children {
+				child_pids = AppendIfMissing(child_pids, int64(child_proc.Pid))
+				for _, grandchild := range GetProcessChildren(int64(child_proc.Pid)) {
+					child_pids = AppendIfMissing(child_pids, int64(grandchild))
+				}
+			}
+		}
+	}
+	var _child_pids []int64
+	for _, pid := range child_pids {
+		e, err := process.PidExists(int32(pid))
+		if err == nil && e {
+			_child_pids = AppendIfMissing(_child_pids, int64(pid))
+		}
+	}
+
+	return _child_pids
+}
+
+func cleanup_procs() {
+	killed_pids := []int64{}
+	pids := GetProcessChildren(int64(syscall.Getpid()))
+	if len(pids) == 0 {
+		return
+	}
+	for {
+		for _, pid := range pids {
+			err := syscall.Kill(int(pid), syscall.SIGINT)
+			if err == nil {
+				killed_pids = append(killed_pids, pid)
+			}
+		}
+		for _, pid := range GetProcessChildren(int64(syscall.Getpid())) {
+			err := syscall.Kill(int(pid), syscall.SIGTERM)
+			if err == nil {
+				killed_pids = append(killed_pids, pid)
+			}
+		}
+
+		msg := fmt.Sprintf("\n\n[%d] Killed %d/%d procs: %d\n\n", syscall.Getpid(), len(killed_pids), len(pids), killed_pids)
+		fmt.Fprintf(os.Stderr, "%s", msg)
+		if len(GetProcessChildren(int64(syscall.Getpid()))) == 0 {
+			cleanup_procs()
+			return
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+}
 
 func Setup() {
 	sigChannel := make(chan os.Signal, 2)
@@ -33,8 +101,10 @@ func Setup() {
 	go func() {
 		for sig := range sigChannel {
 			if sig == syscall.SIGINT {
+				cleanup_procs()
 				utils.ExitWithErrorMessage(utils.Red("Keyboard Interrupt"))
 			} else if sig == syscall.SIGTERM {
+				cleanup_procs()
 				utils.Exit(0)
 			} else {
 				utils.ExitWithErrorMessage("Unknown Signal: " + sig.String())
