@@ -65,7 +65,12 @@ func GetProcessChildren(p int64) []int64 {
 	return _child_pids
 }
 
+const CLEANUP_PROCS = false
+
 func cleanup_procs() {
+	if !CLEANUP_PROCS {
+		return
+	}
 	killed_pids := []int64{}
 	pids := GetProcessChildren(int64(syscall.Getpid()))
 	if len(pids) == 0 {
