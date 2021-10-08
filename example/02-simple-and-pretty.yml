@@ -9,6 +9,12 @@ tasks:
     parallel-tasks:
       - name: Prepping data
         cmd: example/scripts/random-worker.sh 10
+        stdout-log: /tmp/BF/t1-stdout.log
+        stderr-log: /tmp/BF/t1-stderr.log
+      - name: stderr test
+        cmd: '>&2 date; echo OK; >&2 echo OK; date'
+        stdout-log: /tmp/BF/t2-stdout.log
+        stderr-log: /tmp/BF/t2-stderr.log
       - name: Compiling aux libraries
         cmd: example/scripts/compile-something.sh 2 
       - name: Compiling app (debug)

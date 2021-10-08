@@ -87,6 +87,7 @@ func cleanup_procs() {
 
 		msg := fmt.Sprintf("\n\n[%d] Killed %d/%d procs: %d\n\n", syscall.Getpid(), len(killed_pids), len(pids), killed_pids)
 		fmt.Fprintf(os.Stderr, "%s", msg)
+
 		if len(GetProcessChildren(int64(syscall.Getpid()))) == 0 {
 			cleanup_procs()
 			return

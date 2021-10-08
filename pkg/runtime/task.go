@@ -26,6 +26,7 @@ import (
 	"io"
 	"io/ioutil"
 	"math"
+	"os"
 	"os/exec"
 	"strings"
 	"sync"
@@ -116,6 +117,13 @@ func (task *Task) requiresSudoPassword() bool {
 
 	return false
 }
+func FileExists(filename string) bool {
+	info, err := os.Stat(filename)
+	if os.IsNotExist(err) {
+		return false
+	}
+	return !info.IsDir()
+}
 
 // estimateRuntime returns the ETA in seconds until command completion
 func (task *Task) estimateRuntime() float64 {
@@ -173,25 +181,53 @@ func (task *Task) Execute(eventChan chan TaskEvent, waiter *sync.WaitGroup, envi
 	stdoutPipe, _ := task.Command.Cmd.StdoutPipe()
 	stderrPipe, _ := task.Command.Cmd.StderrPipe()
 
-	readPipe := func(resultChan chan string, pipe io.ReadCloser) {
+	readPipe := func(resultChan chan string, pipe io.ReadCloser, _type string) {
 		defer close(resultChan)
-
 		scanner := bufio.NewScanner(pipe)
 		scanner.Split(variableSplitFunc)
 		for scanner.Scan() {
 			message := scanner.Text()
-			//msg := fmt.Sprintf(`resultChan %s> %s`, resultChan, message)
-			//fmt.Println(msg)
+			if _type == `stderr` {
+				if len(task.Config.StderrLogFile) > 0 {
+					if !FileExists(task.Config.StderrLogFile) {
+						_f, err := os.OpenFile(task.Config.StderrLogFile, os.O_CREATE, 0600)
+						if err == nil {
+							_f.Close()
+						}
+					}
+					f, err := os.OpenFile(task.Config.StderrLogFile, os.O_APPEND|os.O_WRONLY, 0644)
+					if err == nil {
+						_, _ = f.WriteString(string(message) + "\n")
+						f.Close()
+					}
+				}
+			}
+			if _type == `stdout` {
+				if len(task.Config.StdoutLogFile) > 0 {
+					if !FileExists(task.Config.StdoutLogFile) {
+						_f, err := os.OpenFile(task.Config.StdoutLogFile, os.O_CREATE, 0600)
+						if err == nil {
+							_f.Close()
+						}
+					}
+					f, err := os.OpenFile(task.Config.StdoutLogFile, os.O_APPEND|os.O_WRONLY, 0644)
+					if err == nil {
+						_, _ = f.WriteString(string(message) + "\n")
+						f.Close()
+					}
+				}
+			}
+
 			resultChan <- vtclean.Clean(message, false)
 		}
 	}
 
-	go readPipe(stdoutChan, stdoutPipe)
-	go readPipe(stderrChan, stderrPipe)
+	go readPipe(stdoutChan, stdoutPipe, `stdout`)
+	go readPipe(stderrChan, stderrPipe, `stderr`)
 
 	// copy env vars into proc
 	for k, v := range environment {
-		task.Command.Cmd.Env = append(task.Command.Cmd.Env, fmt.Sprintf("%s=%s", k, v))
+		task.Command.Cmd.Env = append(task.Command.Cmd.Env, fmt.Sprintf("%s='%s'", k, v))
 	}
 
 	task.Command.Cmd.Start()
