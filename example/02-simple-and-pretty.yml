@@ -2,6 +2,8 @@ config:
   # You can optionally log all output from each process
   # to the given file here
   log-path: build.log
+  env:
+    YYYYYYYYYYYYYYYY: aaaaaaaaa
 
 tasks:
 
@@ -12,8 +14,13 @@ tasks:
         cmd: example/scripts/random-worker.sh 10
         stdout-log: /tmp/BF/t1-stdout.log
         stderr-log: /tmp/BF/t1-stderr.log
+        env:
+          XXXXXXXX: aaaaaaaaa
       - name: stderr test
-        cmd: '>&2 date; echo OK; >&2 echo OK; date'
+        cmd: env | tee /tmp/BF1
+#">&2 date; echo OK; >&2 echo OK; date;env; | tee /tmp/BF1"
+        env:
+          A1: abc
         stdout-log: /tmp/BF/t2-stdout.log
         stderr-log: /tmp/BF/t2-stderr.log
       - name: Compiling aux libraries

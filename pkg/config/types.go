@@ -101,7 +101,7 @@ type Options struct {
 
 	// ReplicaReplaceString is a char or short string that is replaced with values given by a tasks "for-each" configuration
 	ReplicaReplaceString string            `yaml:"replica-replace-pattern"`
-	GlobalEnv            map[string]string `yaml:"env"`
+	Env                  map[string]string `yaml:"env"`
 
 	// ShowSummaryErrors places the total number of errors in the summary footer
 	ShowSummaryErrors bool `yaml:"show-summary-errors"`
