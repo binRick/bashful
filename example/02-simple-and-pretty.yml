@@ -6,6 +6,7 @@ config:
 tasks:
 
   - name: Compiling source
+    tags: t
     parallel-tasks:
       - name: Prepping data
         cmd: example/scripts/random-worker.sh 10
