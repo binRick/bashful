@@ -34,7 +34,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/k0kubun/pp"
 	"github.com/lunixbochs/vtclean"
 	"github.com/wagoodman/bashful/pkg/config"
 	"github.com/wagoodman/bashful/utils"
@@ -237,13 +236,9 @@ func (task *Task) Execute(eventChan chan TaskEvent, waiter *sync.WaitGroup, envi
 
 	}
 	if task.Config.Env != nil {
-		fmt.Fprintf(os.Stderr, "%s%s\n", "adding env........", task.Config.Env)
-		pp.Fprintf(os.Stderr, "%s%s\n", "adding env........", task)
 		for k, v := range task.Config.Env {
 			task.Command.Cmd.Env = append(task.Command.Cmd.Env, fmt.Sprintf("%s='%s'", k, v))
 		}
-	} else {
-		fmt.Fprintf(os.Stderr, "%s\n", "not adding env........")
 	}
 
 	task.Command.Cmd.Start()
