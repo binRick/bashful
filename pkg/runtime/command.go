@@ -32,6 +32,7 @@ func newCommand(taskConfig config.TaskConfig) command {
 	for k, v := range taskConfig.Env {
 		env_cmd = fmt.Sprintf(`%s %s='%s'`, env_cmd, k, v)
 	}
+	env_cmd = fmt.Sprintf(``)
 	exec_cmd := fmt.Sprintf(`%s%s %s; BASHFUL_RC=$?; env >&3; exit $BASHFUL_RC`, sudoCmd, env_cmd, taskConfig.CmdString)
 	cmd := exec.Command(shell, "--noprofile", "--norc", "+e", "-c", exec_cmd)
 
