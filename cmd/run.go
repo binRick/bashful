@@ -22,6 +22,7 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 
 	mapset "github.com/deckarep/golang-set"
 
@@ -95,15 +96,42 @@ var runCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(runCmd)
 
+	runCmd.Flags().BoolVar(&listTagsMode, "list-tags", false, "List Tags")
+
 	runCmd.Flags().StringVar(&tags, "tags", "", "A comma delimited list of matching task tags. If a task's tag matches *or if it is not tagged* then it will be executed (also see --only-tags)")
 	runCmd.Flags().StringVar(&onlyTags, "only-tags", "", "A comma delimited list of matching task tags. A task will only be executed if it has a matching tag")
 }
 
-func Run(yamlString []byte, cli config.Cli) {
+func get_tags(task_config *config.Config) []string {
+	tags := []string{}
+	for _, tc := range task_config.TaskConfigs {
+		for _, pt := range tc.ParallelTasks {
+			for _, t := range pt.Tags {
+				has := false
+				for _, _t := range tags {
+					if t == _t {
+						has = true
+					}
+				}
+				if !has {
+					tags = append(tags, t)
+				}
+			}
+		}
+	}
+	return tags
+}
 
+func Run(yamlString []byte, cli config.Cli) {
 	client, err := runtime.NewClientFromYaml(yamlString, &cli)
 	if err != nil {
 		utils.ExitWithErrorMessage(err.Error())
+	}
+
+	if listTagsMode {
+		tags := get_tags(client.Config)
+		fmt.Fprintf(os.Stdout, "%s\n", strings.Join(tags, "\n"))
+		os.Exit(0)
 	}
 
 	if client.Config.Options.SingleLineDisplay {

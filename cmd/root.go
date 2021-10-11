@@ -29,6 +29,7 @@ import (
 )
 
 var cachePath string
+var listTagsMode bool
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -40,6 +41,8 @@ var rootCmd = &cobra.Command{
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
+	//	fmt.Fprintf(os.Stderr, "listTagsMode: %v\n", listTagsMode)
+
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
@@ -49,6 +52,7 @@ func Execute() {
 func init() {
 	cobra.OnInitialize(initBashful)
 	rootCmd.PersistentFlags().StringVar(&cachePath, "cache-path", "", "The path where cached files will be stored. By default '$(pwd)/.bashful' is used")
+	//	rootCmd.PersistentFlags().BoolVar(&listTagsMode, "list-tags", false, "List Tags")
 }
 
 // initConfigDir ...todo
