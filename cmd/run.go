@@ -25,7 +25,6 @@ import (
 	"os"
 
 	mapset "github.com/deckarep/golang-set"
-	"github.com/k0kubun/pp"
 
 	"io/ioutil"
 	"math/rand"
@@ -191,8 +190,8 @@ func Run(yamlString []byte, cli config.Cli) {
 	}
 	if listTasksMode {
 		tags := get_tasks(client.Config)
-		fmt.Fprintf(os.Stdout, "TASKS: %s\n", strings.Join(tags, "\n"))
-		pp.Println(client.Config.TaskConfigs)
+		fmt.Fprintf(os.Stdout, "%s\n", strings.Join(tags, "\n"))
+		//pp.Println(client.Config.TaskConfigs)
 		os.Exit(0)
 	}
 
