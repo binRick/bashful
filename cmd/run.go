@@ -42,6 +42,7 @@ import (
 // todo: put these in a cli struct instance instead, then most logic can be in the cli struct
 var tags, onlyTags string
 var listTagsMode bool
+var devMode bool
 var listTasksMode bool
 
 // runCmd represents the run command
@@ -98,6 +99,7 @@ var runCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(runCmd)
 
+	runCmd.Flags().BoolVar(&devMode, "dev", false, "Dev Mode")
 	runCmd.Flags().BoolVar(&listTagsMode, "list-tags", false, "List Tags")
 	runCmd.Flags().BoolVar(&listTasksMode, "list-tasks", false, "List Tasks")
 
@@ -183,6 +185,11 @@ func Run(yamlString []byte, cli config.Cli) {
 		utils.ExitWithErrorMessage(err.Error())
 	}
 
+	if devMode {
+		fmt.Fprintf(os.Stdout, "%s\n", "dev mode")
+		d1()
+		os.Exit(0)
+	}
 	if listTagsMode {
 		tags := get_tags(client.Config)
 		fmt.Fprintf(os.Stdout, "%s\n", strings.Join(tags, "\n"))

@@ -1,0 +1,14 @@
+lssubsys -am
+
+mkdir -p /sys/fs/cgroup/t1
+
+mount -t cgroup -o pids,cpu,cpuacct,blkio,memory,net_cls,net_prio none /sys/fs/cgroup/t1
+
+echo 30 > /sys/fs/cgroup/t1/pids.max
+
+echo 115887 > /sys/fs/cgroup/t1/cgroup.procs
+
+
+
+
+
