@@ -25,6 +25,7 @@ import (
 	"os"
 
 	mapset "github.com/deckarep/golang-set"
+	"github.com/k0kubun/pp"
 
 	"io/ioutil"
 	"math/rand"
@@ -41,6 +42,8 @@ import (
 
 // todo: put these in a cli struct instance instead, then most logic can be in the cli struct
 var tags, onlyTags string
+var listTagsMode bool
+var listTasksMode bool
 
 // runCmd represents the run command
 var runCmd = &cobra.Command{
@@ -97,14 +100,67 @@ func init() {
 	rootCmd.AddCommand(runCmd)
 
 	runCmd.Flags().BoolVar(&listTagsMode, "list-tags", false, "List Tags")
+	runCmd.Flags().BoolVar(&listTasksMode, "list-tasks", false, "List Tasks")
 
 	runCmd.Flags().StringVar(&tags, "tags", "", "A comma delimited list of matching task tags. If a task's tag matches *or if it is not tagged* then it will be executed (also see --only-tags)")
 	runCmd.Flags().StringVar(&onlyTags, "only-tags", "", "A comma delimited list of matching task tags. A task will only be executed if it has a matching tag")
 }
 
+func get_tasks(task_config *config.Config) []string {
+	tasks := []string{}
+
+	for _, tc := range task_config.TaskConfigs {
+		parent_tags := []string{}
+		for _, parent_tag := range tc.Tags {
+			has := false
+			for _, _t := range parent_tags {
+				if parent_tag == _t {
+					has = true
+				}
+			}
+			if !has {
+				parent_tags = append(parent_tags, parent_tag)
+			}
+		}
+		for _, pt := range tc.ParallelTasks {
+			child_tags := parent_tags
+			for _, child_tag := range pt.Tags {
+				has := false
+				for _, _t := range child_tags {
+					if child_tag == _t {
+						has = true
+					}
+				}
+				if !has {
+					child_tags = append(child_tags, child_tag)
+				}
+			}
+
+			qty := ``
+			if len(pt.ForEach) > 0 {
+				qty = fmt.Sprintf(` (%d Times)`, len(pt.ForEach))
+			}
+			t := fmt.Sprintf(`[%s] %s%s> %s`, tc.Name, pt.Name, qty, strings.Join(child_tags, ","))
+			tasks = append(tasks, t)
+		}
+	}
+	return tasks
+}
+
 func get_tags(task_config *config.Config) []string {
 	tags := []string{}
 	for _, tc := range task_config.TaskConfigs {
+		for _, t := range tc.Tags {
+			has := false
+			for _, _t := range tags {
+				if t == _t {
+					has = true
+				}
+			}
+			if !has {
+				tags = append(tags, t)
+			}
+		}
 		for _, pt := range tc.ParallelTasks {
 			for _, t := range pt.Tags {
 				has := false
@@ -131,6 +187,12 @@ func Run(yamlString []byte, cli config.Cli) {
 	if listTagsMode {
 		tags := get_tags(client.Config)
 		fmt.Fprintf(os.Stdout, "%s\n", strings.Join(tags, "\n"))
+		os.Exit(0)
+	}
+	if listTasksMode {
+		tags := get_tasks(client.Config)
+		fmt.Fprintf(os.Stdout, "TASKS: %s\n", strings.Join(tags, "\n"))
+		pp.Println(client.Config.TaskConfigs)
 		os.Exit(0)
 	}
 
