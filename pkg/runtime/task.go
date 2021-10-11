@@ -225,10 +225,15 @@ func (task *Task) Execute(eventChan chan TaskEvent, waiter *sync.WaitGroup, envi
 	go readPipe(stdoutChan, stdoutPipe, `stdout`)
 	go readPipe(stderrChan, stderrPipe, `stderr`)
 
-	// copy env vars into proc
+	for _, env := range os.Environ() {
+		envPair := strings.SplitN(env, "=", 2)
+		k := envPair[0]
+		v := envPair[1]
+		task.Command.Cmd.Env = append(task.Command.Cmd.Env, fmt.Sprintf("%s=%s", k, v))
+	}
 	for k, v := range environment {
+		task.Command.Cmd.Env = append(task.Command.Cmd.Env, fmt.Sprintf("%s=%s", k, v))
 		if false {
-			task.Command.Cmd.Env = append(task.Command.Cmd.Env, fmt.Sprintf("%s=%s", k, v))
 		}
 	}
 	if task.Options.Env != nil {
@@ -247,6 +252,7 @@ func (task *Task) Execute(eventChan chan TaskEvent, waiter *sync.WaitGroup, envi
 		}
 	}
 
+	///fmt.Fprintf(os.Stderr, `%s`, task.Command.Cmd.Env)
 	task.Command.Cmd.Start()
 
 	for {

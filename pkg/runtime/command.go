@@ -26,15 +26,16 @@ func newCommand(taskConfig config.TaskConfig) command {
 	if taskConfig.Sudo {
 		sudoCmd = "sudo -S "
 	}
-	shell = `/bin/bash`
-	env_cmd := fmt.Sprintf(`env`)
+	shell = `bash`
+	env_cmd := fmt.Sprintf(`env __TEST1=BLAH123 `)
 	//	pp.Println(taskConfig)
 	for k, v := range taskConfig.Env {
 		env_cmd = fmt.Sprintf(`%s %s=%s`, env_cmd, k, v)
 	}
-	env_cmd = fmt.Sprintf(``)
-	exec_cmd := fmt.Sprintf(`%s%s %s; BASHFUL_RC=$?; env >&3; exit $BASHFUL_RC`, sudoCmd, env_cmd, taskConfig.CmdString)
+	//env_cmd = fmt.Sprintf(``)
+	exec_cmd := fmt.Sprintf(`%s %s %s; BASHFUL_RC=$?; env >&3; exit $BASHFUL_RC`, sudoCmd, env_cmd, taskConfig.CmdString)
 	cmd := exec.Command(shell, "--noprofile", "--norc", "+e", "-c", exec_cmd)
+	///cmd := exec.Command(shell, "-c", exec_cmd)
 
 	cmd.Stdin = strings.NewReader(string(sudoPassword) + "\n")
 

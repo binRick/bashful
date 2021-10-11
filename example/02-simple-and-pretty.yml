@@ -16,6 +16,12 @@ tasks:
         stderr-log: /tmp/BF/t1-stderr.log
         env:
           XXXXXXXX: aaaaaaaaa
+      - name: env test
+        stdout-log: /tmp/BF-env-stdout.log
+        stderr-log: /tmp/BF-env-stderr.log
+        cmd: env|tee /tmp/BF.env
+        env:
+          __TEST2: abc
       - name: stderr test
         cmd: env | tee /tmp/BF1
 #">&2 date; echo OK; >&2 echo OK; date;env; | tee /tmp/BF1"
