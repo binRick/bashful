@@ -10,13 +10,35 @@ tasks:
   - name: Compiling source
     tags: t
     parallel-tasks:
+      - name: env test
+        stdout-log: /tmp/BF-env-stdout.log
+        stderr-log: /tmp/BF-env-stderr.log
+        cmd: env|tee /tmp/BF.env
+        env:
+          __TEST2: abc
+
+  - name: disk io tests
+    tags: [d1, t, t1]
+    parallel-tasks:
+      - name: 100MB dd write test
+        cgroups-enabled: yes
+        cmd: dd if=/dev/zero of=/.o bs=1M count=100
+      - name: 1G dd write test
+        cgroups-enabled: yes
+        cmd: dd if=/dev/zero of=/.o bs=1G count=1
+
+  - name: Compiling source
+    tags: t1
+    parallel-tasks:
       - name: Prepping data
+        cgroups-enabled: yes
         cmd: example/scripts/random-worker.sh 10
-        stdout-log: /tmp/BF/t1-stdout.log
-        stderr-log: /tmp/BF/t1-stderr.log
+        stdout-log: /tmp/BF-t1-stdout.log
+        stderr-log: /tmp/BF-t1-stderr.log
         env:
           XXXXXXXX: aaaaaaaaa
       - name: env test
+        cgroups-enabled: yes
         stdout-log: /tmp/BF-env-stdout.log
         stderr-log: /tmp/BF-env-stderr.log
         cmd: env|tee /tmp/BF.env
@@ -24,14 +46,15 @@ tasks:
           __TEST2: abc
       - name: stderr test
         cmd: env | tee /tmp/BF1
-#">&2 date; echo OK; >&2 echo OK; date;env; | tee /tmp/BF1"
         env:
           A1: abc
         stdout-log: /tmp/BF/t2-stdout.log
         stderr-log: /tmp/BF/t2-stderr.log
       - name: Compiling aux libraries
+        cgroups-enabled: yes
         cmd: example/scripts/compile-something.sh 2 
       - name: Compiling app (debug)
+        cgroups-enabled: yes
         cmd: example/scripts/compile-something.sh 9
       - name: Compiling app (release)
         cmd: example/scripts/compile-something.sh 6

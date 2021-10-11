@@ -43,6 +43,7 @@ import (
 var tags, onlyTags string
 var listTagsMode bool
 var devMode bool
+var cgroupsMode bool
 var listTasksMode bool
 
 // runCmd represents the run command
@@ -99,6 +100,7 @@ var runCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(runCmd)
 
+	runCmd.Flags().BoolVar(&cgroupsMode, "cgroups", false, "Cgroups Mode")
 	runCmd.Flags().BoolVar(&devMode, "dev", false, "Dev Mode")
 	runCmd.Flags().BoolVar(&listTagsMode, "list-tags", false, "List Tags")
 	runCmd.Flags().BoolVar(&listTasksMode, "list-tasks", false, "List Tasks")
