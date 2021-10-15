@@ -11,6 +11,8 @@ import (
 	"text/template"
 	"time"
 
+	gopsutil_net "github.com/shirou/gopsutil/v3/net"
+
 	"github.com/dustin/go-humanize"
 	"github.com/google/uuid"
 	color "github.com/mgutz/ansi"
@@ -366,6 +368,9 @@ var cached_mem = mem.VirtualMemoryStat{}
 var cached_misc = load.MiscStat{}
 var cached_io = map[string]disk.IOCountersStat{}
 var cached_usage = disk.UsageStat{}
+var cached_conns = []gopsutil_net.ConnectionStat{}
+var cached_conn_stats = []gopsutil_net.ProtoCountersStat{}
+var cur_estab_qty int64 = 0
 
 func (handler *VerticalUI) displayTask(task *runtime.Task) {
 	now := time.Now()
@@ -392,11 +397,27 @@ func (handler *VerticalUI) displayTask(task *runtime.Task) {
 						_usage, err := disk.Usage("/")
 						if err == nil {
 							cached_usage = *_usage
-
+							_conns, err := gopsutil_net.Connections(`inet`)
+							if err == nil {
+								cached_conns = _conns
+								_conn_stats, err := gopsutil_net.ProtoCounters([]string{})
+								if err == nil {
+									cached_conn_stats = _conn_stats
+								}
+							}
 						}
 						//	pp.Println(cached_io)
 						//	pp.Println(cached_usage)
-						//	os.Exit(1)
+						//						pp.Println(cached_conn_stats)
+						for _, cs := range cached_conn_stats {
+							if cs.Protocol == `tcp` {
+								//								pp.Println(cs)
+								cur_estab_qty = cs.Stats["CurrEstab"]
+							}
+						}
+						//						pp.Println(cached_conns)
+						//	pp.Println(cached_usage)
+						//					os.Exit(1)
 					}
 
 				}
@@ -411,7 +432,6 @@ func (handler *VerticalUI) displayTask(task *runtime.Task) {
 			_mem, err := mem.VirtualMemory()
 			if err == nil {
 				//        misc, _ := load.Misc()
-				//conntrack_stats, _ := gopsutil_net.ProtoCounters([]string{})
 				/*                info.Procs,
 				                  misc.ProcsRunning,
 				                  misc.ProcsBlocked,
@@ -460,17 +480,22 @@ func (handler *VerticalUI) footer(status runtime.TaskStatus, message string) str
 		usage_str := fmt.Sprintf("/ %d% Used",
 			uint(cached_usage.UsedPercent),
 		)
-		procs_str := fmt.Sprintf("%d Procs %d Blocked %d Running %d Created\n",
+		procs_str := fmt.Sprintf("%d Procs %d Blocked %d Running %d Created",
 			cached_misc.ProcsTotal,
 			cached_misc.ProcsBlocked,
 			cached_misc.ProcsRunning,
 			cached_misc.ProcsCreated,
 		)
-		mem_str := fmt.Sprintf("%d Procs | Total: %s, Free:%s, UsedPercent:%f%%\n",
+		conns_str := fmt.Sprintf("%d Connections | %d Established TCP",
+			len(cached_conns),
+			cur_estab_qty,
+		)
+		mem_str := fmt.Sprintf("%d Procs | Total: %s, Free:%s, UsedPercent:%f%%",
 			cached_host_info.Procs,
 			humanize.Bytes(uint64(cached_mem.Total)), humanize.Bytes(uint64(cached_mem.Free)), cached_mem.UsedPercent,
 		)
-		durString = fmt.Sprintf("%s %s [%s] Hostname => [%s] Load => [%s] | Runtime => [%s]",
+		durString = fmt.Sprintf("%s %s %s [%s] Hostname => [%s] Load => [%s] | Runtime => [%s]",
+			conns_str,
 			usage_str,
 			procs_str,
 			mem_str, hn, Load, utils.FormatDuration(duration),
