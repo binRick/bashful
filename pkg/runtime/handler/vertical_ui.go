@@ -477,7 +477,7 @@ func (handler *VerticalUI) footer(status runtime.TaskStatus, message string) str
 		duration := time.Since(handler.startTime)
 		Load := fmt.Sprintf(`%d/%d/%d`, 1, 2, 3)
 		hn := fmt.Sprintf(`%s`, cached_server_hostname)
-		usage_str := fmt.Sprintf("/ %d% Used",
+		usage_str := fmt.Sprintf("/ %d%% Used",
 			uint(cached_usage.UsedPercent),
 		)
 		procs_str := fmt.Sprintf("%d Procs %d Blocked %d Running %d Created",
@@ -494,7 +494,7 @@ func (handler *VerticalUI) footer(status runtime.TaskStatus, message string) str
 			cached_host_info.Procs,
 			humanize.Bytes(uint64(cached_mem.Total)), humanize.Bytes(uint64(cached_mem.Free)), cached_mem.UsedPercent,
 		)
-		durString = fmt.Sprintf("%s %s %s [%s] Hostname => [%s] Load => [%s] | Runtime => [%s]",
+		durString = fmt.Sprintf("> %s %s %s %s [%s] [%s] | Runtime => [%s]",
 			conns_str,
 			usage_str,
 			procs_str,
