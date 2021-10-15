@@ -7,7 +7,6 @@ set +e
 extrace -Ql -o .e passh ./bf run $f $a
 
 
-exit
 if [[ -f .e ]]; then 
 echo -ne "forks: "; wc -l .e;  echo -ne "sttys: "; grep -c stty .e; 
 

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -12,6 +13,7 @@ import (
 
 	"github.com/google/uuid"
 	color "github.com/mgutz/ansi"
+	"github.com/shirou/gopsutil/mem"
 	"github.com/tj/go-spin"
 	"github.com/wagoodman/bashful/pkg/config"
 	"github.com/wagoodman/bashful/pkg/runtime"
@@ -350,7 +352,11 @@ func (handler *VerticalUI) OnEvent(task *runtime.Task, e runtime.TaskEvent) {
 const DIMENSIONS_MIN_DURATION = time.Duration(100 * time.Millisecond)
 
 var last_dimensions_check_ts int64 = 0
+var last_server_hostname_check int64 = 0
 var cached_terminalWidth uint = 0
+var cached_server_hostname string = ""
+var last_mem_check int64 = 0
+var cached_mem = mem.VirtualMemoryStat{}
 
 func (handler *VerticalUI) displayTask(task *runtime.Task) {
 
@@ -359,16 +365,39 @@ func (handler *VerticalUI) displayTask(task *runtime.Task) {
 		return
 	}
 
-	duration, err := time.ParseDuration("-100ms")
+	duration2, err := time.ParseDuration("-5000ms")
 	if err == nil {
-		then := time.Now().Add(duration)
+		then2 := time.Now().Add(duration2)
+		if last_mem_check < then2.UnixNano() {
+			_mem, err := mem.VirtualMemory()
+			if err == nil {
+				cached_mem = *_mem
+			}
+		}
+	}
+	duration1, err := time.ParseDuration("-5000ms")
+	if err == nil {
+		then1 := time.Now().Add(duration1)
+		if last_server_hostname_check < then1.UnixNano() {
+			_server_hostname, err := os.Hostname()
+			if err == nil {
+				cached_server_hostname = _server_hostname
+			}
+		}
+	}
+	duration, err := time.ParseDuration("-1000ms")
+	if err == nil {
+		now := time.Now()
+		then := now.Add(duration)
 		if last_dimensions_check_ts < then.UnixNano() {
 			_cached_terminalWidth, err := terminaldimensions.Width()
 			if err == nil {
 				cached_terminalWidth = _cached_terminalWidth
-				last_dimensions_check_ts = time.Now().UnixNano()
+				last_dimensions_check_ts = now.UnixNano()
 			}
 		}
+	}
+	if cached_terminalWidth > 0 {
 		displayData := handler.data[task.Id]
 		renderedLine := handler.renderTask(task, int(cached_terminalWidth))
 		io.WriteString(displayData.line, renderedLine)
@@ -378,12 +407,19 @@ func (handler *VerticalUI) displayTask(task *runtime.Task) {
 func (handler *VerticalUI) footer(status runtime.TaskStatus, message string) string {
 	var tpl bytes.Buffer
 	var durString, etaString, stepString, errorString string
+	/*
+	   v, _ := mem.VirtualMemory()
 
+	       // almost every return value is a struct
+	       fmt.Printf("Total: %v, Free:%v, UsedPercent:%f%%\n", v.Total, v.Free, v.UsedPercent)
+
+	*/
 	if handler.config.Options.ShowSummaryTimes {
 		duration := time.Since(handler.startTime)
 		Load := fmt.Sprintf(`%d/%d/%d`, 1, 2, 3)
-		hn := fmt.Sprintf(`%s`, `xxxxxxxx`)
-		durString = fmt.Sprintf(" Hostname => [%s] Load => [%s] | Runtime => [%s]", hn, Load, utils.FormatDuration(duration))
+		hn := fmt.Sprintf(`%s`, cached_server_hostname)
+		mem_str := fmt.Sprintf("Total: %v, Free:%v, UsedPercent:%f%%\n", cached_mem.Total, cached_mem.Free, cached_mem.UsedPercent)
+		durString = fmt.Sprintf(" [%s] Hostname => [%s] Load => [%s] | Runtime => [%s]", mem_str, hn, Load, utils.FormatDuration(duration))
 
 		totalEta := time.Duration(handler.config.TotalEtaSeconds) * time.Second
 		remainingEta := time.Duration(totalEta.Seconds()-duration.Seconds()) * time.Second
