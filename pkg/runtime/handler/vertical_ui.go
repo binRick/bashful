@@ -11,8 +11,12 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/dustin/go-humanize"
 	"github.com/google/uuid"
 	color "github.com/mgutz/ansi"
+	"github.com/shirou/gopsutil/disk"
+	"github.com/shirou/gopsutil/host"
+	"github.com/shirou/gopsutil/load"
 	"github.com/shirou/gopsutil/mem"
 	"github.com/tj/go-spin"
 	"github.com/wagoodman/bashful/pkg/config"
@@ -355,23 +359,65 @@ var last_dimensions_check_ts int64 = 0
 var last_server_hostname_check int64 = 0
 var cached_terminalWidth uint = 0
 var cached_server_hostname string = ""
+var last_host_info_check int64 = 0
+var cached_host_info = host.InfoStat{}
 var last_mem_check int64 = 0
 var cached_mem = mem.VirtualMemoryStat{}
+var cached_misc = load.MiscStat{}
+var cached_io = map[string]disk.IOCountersStat{}
+var cached_usage = disk.UsageStat{}
 
 func (handler *VerticalUI) displayTask(task *runtime.Task) {
+	now := time.Now()
 
 	// todo: error handling
 	if _, ok := handler.data[task.Id]; !ok {
 		return
 	}
 
-	duration2, err := time.ParseDuration("-5000ms")
+	duration3, err := time.ParseDuration("-100ms")
 	if err == nil {
-		then2 := time.Now().Add(duration2)
+		then3 := now.Add(duration3)
+		if last_mem_check < then3.UnixNano() {
+			_host_info, err := host.Info()
+			if err == nil {
+				cached_host_info = *_host_info
+				last_host_info_check = now.UnixNano()
+				_misc, err := load.Misc()
+				if err == nil {
+					cached_misc = *_misc
+					_io, err := disk.IOCounters()
+					if err == nil {
+						cached_io = _io
+						_usage, err := disk.Usage("/")
+						if err == nil {
+							cached_usage = *_usage
+
+						}
+						//	pp.Println(cached_io)
+						//	pp.Println(cached_usage)
+						//	os.Exit(1)
+					}
+
+				}
+			}
+		}
+	}
+
+	duration2, err := time.ParseDuration("-100ms")
+	if err == nil {
+		then2 := now.Add(duration2)
 		if last_mem_check < then2.UnixNano() {
 			_mem, err := mem.VirtualMemory()
 			if err == nil {
+				//        misc, _ := load.Misc()
+				//conntrack_stats, _ := gopsutil_net.ProtoCounters([]string{})
+				/*                info.Procs,
+				                  misc.ProcsRunning,
+				                  misc.ProcsBlocked,
+				                  misc.ProcsTotal,*/
 				cached_mem = *_mem
+				last_mem_check = now.UnixNano()
 			}
 		}
 	}
@@ -382,12 +428,12 @@ func (handler *VerticalUI) displayTask(task *runtime.Task) {
 			_server_hostname, err := os.Hostname()
 			if err == nil {
 				cached_server_hostname = _server_hostname
+				last_server_hostname_check = now.UnixNano()
 			}
 		}
 	}
 	duration, err := time.ParseDuration("-1000ms")
 	if err == nil {
-		now := time.Now()
 		then := now.Add(duration)
 		if last_dimensions_check_ts < then.UnixNano() {
 			_cached_terminalWidth, err := terminaldimensions.Width()
@@ -407,19 +453,28 @@ func (handler *VerticalUI) displayTask(task *runtime.Task) {
 func (handler *VerticalUI) footer(status runtime.TaskStatus, message string) string {
 	var tpl bytes.Buffer
 	var durString, etaString, stepString, errorString string
-	/*
-	   v, _ := mem.VirtualMemory()
-
-	       // almost every return value is a struct
-	       fmt.Printf("Total: %v, Free:%v, UsedPercent:%f%%\n", v.Total, v.Free, v.UsedPercent)
-
-	*/
 	if handler.config.Options.ShowSummaryTimes {
 		duration := time.Since(handler.startTime)
 		Load := fmt.Sprintf(`%d/%d/%d`, 1, 2, 3)
 		hn := fmt.Sprintf(`%s`, cached_server_hostname)
-		mem_str := fmt.Sprintf("Total: %v, Free:%v, UsedPercent:%f%%\n", cached_mem.Total, cached_mem.Free, cached_mem.UsedPercent)
-		durString = fmt.Sprintf(" [%s] Hostname => [%s] Load => [%s] | Runtime => [%s]", mem_str, hn, Load, utils.FormatDuration(duration))
+		usage_str := fmt.Sprintf("/ %d% Used",
+			uint(cached_usage.UsedPercent),
+		)
+		procs_str := fmt.Sprintf("%d Procs %d Blocked %d Running %d Created\n",
+			cached_misc.ProcsTotal,
+			cached_misc.ProcsBlocked,
+			cached_misc.ProcsRunning,
+			cached_misc.ProcsCreated,
+		)
+		mem_str := fmt.Sprintf("%d Procs | Total: %s, Free:%s, UsedPercent:%f%%\n",
+			cached_host_info.Procs,
+			humanize.Bytes(uint64(cached_mem.Total)), humanize.Bytes(uint64(cached_mem.Free)), cached_mem.UsedPercent,
+		)
+		durString = fmt.Sprintf("%s %s [%s] Hostname => [%s] Load => [%s] | Runtime => [%s]",
+			usage_str,
+			procs_str,
+			mem_str, hn, Load, utils.FormatDuration(duration),
+		)
 
 		totalEta := time.Duration(handler.config.TotalEtaSeconds) * time.Second
 		remainingEta := time.Duration(totalEta.Seconds()-duration.Seconds()) * time.Second
