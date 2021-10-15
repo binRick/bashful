@@ -349,7 +349,8 @@ func (handler *VerticalUI) OnEvent(task *runtime.Task, e runtime.TaskEvent) {
 
 const DIMENSIONS_MIN_DURATION = time.Duration(100 * time.Millisecond)
 
-var last_dimensions_check_ts = time.Now()
+var last_dimensions_check_ts int64 = 0
+var cached_terminalWidth uint = 0
 
 func (handler *VerticalUI) displayTask(task *runtime.Task) {
 
@@ -358,13 +359,20 @@ func (handler *VerticalUI) displayTask(task *runtime.Task) {
 		return
 	}
 
-	terminalWidth, _ := terminaldimensions.Width()
-
-	displayData := handler.data[task.Id]
-
-	renderedLine := handler.renderTask(task, int(terminalWidth))
-	io.WriteString(displayData.line, renderedLine)
-
+	duration, err := time.ParseDuration("-100ms")
+	if err == nil {
+		then := time.Now().Add(duration)
+		if last_dimensions_check_ts < then.UnixNano() {
+			_cached_terminalWidth, err := terminaldimensions.Width()
+			if err == nil {
+				cached_terminalWidth = _cached_terminalWidth
+				last_dimensions_check_ts = time.Now().UnixNano()
+			}
+		}
+		displayData := handler.data[task.Id]
+		renderedLine := handler.renderTask(task, int(cached_terminalWidth))
+		io.WriteString(displayData.line, renderedLine)
+	}
 }
 
 func (handler *VerticalUI) footer(status runtime.TaskStatus, message string) string {
