@@ -396,7 +396,6 @@ func (handler *VerticalUI) displayTask(task *runtime.Task) {
 					cached_misc = *_misc
 					if created_at_start == 0 {
 						created_at_start = int64(cached_misc.ProcsCreated)
-
 					}
 					created_since_started = int64(cached_misc.ProcsCreated) - created_at_start
 					_io, err := disk.IOCounters()
@@ -479,11 +478,10 @@ func (handler *VerticalUI) footer(status runtime.TaskStatus, message string) str
 		usage_str := fmt.Sprintf("/ %d%% Used",
 			uint(cached_usage.UsedPercent),
 		)
-		procs_str := fmt.Sprintf("%d Procs %d Blocked %d Running %d Created, %d Created",
+		procs_str := fmt.Sprintf("%d Procs %d Blocked %d Running %d Created",
 			cached_misc.ProcsTotal,
 			cached_misc.ProcsBlocked,
 			cached_misc.ProcsRunning,
-			cached_misc.ProcsCreated,
 			created_since_started,
 		)
 		net_str := fmt.Sprintf("%d Interfaces",
