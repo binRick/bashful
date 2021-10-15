@@ -2,6 +2,7 @@ config:
   # You can optionally log all output from each process
   # to the given file here
   log-path: build.log
+  stats-cmd: python3 /root/dool/dool --vmstat --no-color --noheaders --io
   env:
     YYYYYYYYYYYYYYYY: aaaaaaaaa
 
@@ -22,9 +23,17 @@ tasks:
     parallel-tasks:
       - name: 100MB dd write test
         cgroups-enabled: yes
+        cgroup-limits:
+          pids:
+            max: 10
         cmd: dd if=/dev/zero of=/.o bs=1M count=100
       - name: 1G dd write test
         cgroups-enabled: yes
+        cgroup-limits:
+          pids:
+            max: 100
+          memory:
+            max: 1000000000
         cmd: dd if=/dev/zero of=/.o bs=1G count=1
 
   - name: Compiling source

@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/k0kubun/pp"
 	"github.com/wagoodman/bashful/pkg/config"
 	"github.com/wagoodman/bashful/utils"
 )
@@ -36,8 +37,21 @@ func newCommand(taskConfig config.TaskConfig) command {
 	limit_cmds := fmt.Sprintf(`echo %d > /sys/fs/cgroup/%s/pids.max`, pids_max, cmd_uuid.String())
 	mem_limit_megabytes := 1000
 	mem_limit_bytes := mem_limit_megabytes * 1000000
+
 	limit_cmds = fmt.Sprintf(`%s; echo %d > /sys/fs/cgroup/%s/memory.max`, limit_cmds, mem_limit_bytes, cmd_uuid.String())
 	limit_cmds = fmt.Sprintf(`%s; echo $$ > /sys/fs/cgroup/%s/cgroup.procs`, limit_cmds, cmd_uuid.String())
+	for k, v := range taskConfig.CgroupLimits {
+		if false {
+			pp.Println(k, v)
+		}
+		for _k, _v := range v {
+			vf := fmt.Sprintf(`echo %d > /sys/fs/cgroup/%s/%s.%s`, _v, cmd_uuid.String(), k, _k)
+			if false {
+				pp.Println(_k, _v, vf, v)
+			}
+			limit_cmds = fmt.Sprintf(`%s; %s`, limit_cmds, vf)
+		}
+	}
 	prefix_cmd := fmt.Sprintf(`{ date; echo %s; mkdir -p /sys/fs/cgroup/%s; %s; %s; } | tee -a /tmp/prefix-started.log`,
 		cmd_uuid.String(),
 		cmd_uuid.String(),

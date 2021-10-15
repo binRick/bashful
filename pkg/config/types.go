@@ -94,7 +94,8 @@ type Options struct {
 	IgnoreFailure bool `yaml:"ignore-failure"`
 
 	// LogPath is simply the filepath to write all main log entries
-	LogPath string `yaml:"log-path"`
+	LogPath      string `yaml:"log-path"`
+	StatsCommand string `yaml:"stats-cmd"`
 
 	// MaxParallelCmds indicates the most number of parallel commands that should be run at any one time
 	MaxParallelCmds int `yaml:"max-parallel-commands"`
@@ -136,7 +137,8 @@ type Options struct {
 
 // TaskConfig represents a task definition and all metadata (Note: this is not the task runtime object)
 type TaskConfig struct {
-	CgroupsEnabled bool `yaml:"cgroups-enabled"`
+	CgroupsEnabled bool                      `yaml:"cgroups-enabled"`
+	CgroupLimits   map[string]map[string]int `yaml:"cgroup-limits"`
 	// Name is the display name of the task (if not provided, then CmdString is used)
 	Name string `yaml:"name"`
 

@@ -240,6 +240,12 @@ func (handler *VerticalUI) doRegister(task *runtime.Task) {
 	if handler.frame != nil {
 		handler.frame.Close()
 	}
+
+	defer func() {
+		if err := recover(); err != nil {
+			fmt.Println("panic occurred:", err)
+		}
+	}()
 	handler.frame = jotframe.NewFixedFrame(0, hasHeader, handler.config.Options.ShowSummaryFooter, false)
 	if !isFirst && handler.config.Options.ShowSummaryFooter {
 		handler.frame.Move(-1)
@@ -367,7 +373,9 @@ func (handler *VerticalUI) footer(status runtime.TaskStatus, message string) str
 
 	if handler.config.Options.ShowSummaryTimes {
 		duration := time.Since(handler.startTime)
-		durString = fmt.Sprintf(" Runtime => [%s]", utils.FormatDuration(duration))
+		Load := fmt.Sprintf(`%d/%d/%d`, 1, 2, 3)
+		hn := fmt.Sprintf(`%s`, `xxxxxxxx`)
+		durString = fmt.Sprintf(" Hostname => [%s] Load => [%s] | Runtime => [%s]", hn, Load, utils.FormatDuration(duration))
 
 		totalEta := time.Duration(handler.config.TotalEtaSeconds) * time.Second
 		remainingEta := time.Duration(totalEta.Seconds()-duration.Seconds()) * time.Second
