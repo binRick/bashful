@@ -45,6 +45,7 @@ type VerticalUI struct {
 	startTime   time.Time
 	runtimeData *runtime.TaskStatistics
 	frame       *jotframe.FixedFrame
+	Cgroups     map[uint]cgroups.Cgroup
 }
 
 // display represents all non-Config items that control how the task line should be printed to the screen
@@ -121,6 +122,7 @@ func NewVerticalUI(cfg *config.Config) *VerticalUI {
 		ticker:    time.NewTicker(updateInterval),
 		startTime: time.Now(),
 		config:    cfg,
+		Cgroups:   map[uint]cgroups.Cgroup{},
 	}
 
 	go handler.spinnerHandler()
@@ -395,6 +397,15 @@ var cached_io_sums = map[string]int64{
 	`write_bytes`: 0,
 }
 var first_run = true
+var cmd_cg cgroups.Cgroup
+var cg_limit1 = &specs.LinuxResources{
+	BlockIO: &specs.LinuxBlockIO{},
+	CPU:     &specs.LinuxCPU{},
+	Memory:  &specs.LinuxMemory{},
+	Pids: &specs.LinuxPids{
+		Limit: 1000,
+	},
+}
 
 func (handler *VerticalUI) displayTask(task *runtime.Task) {
 	now := time.Now()
@@ -514,30 +525,47 @@ func (handler *VerticalUI) displayTask(task *runtime.Task) {
 }
 
 func get_bar() {
-	resources := &specs.LinuxResources{}
-	//control, err := cgroups.New(cgroups.Systemd, cgroups.Slice("system.slice", "runc-test"), resources)
-	control, err := cgroups.New(cgroups.V1, cgroups.StaticPath("/test"), &specs.LinuxResources{})
-	if err == nil {
-		if control.Add(cgroups.Process{Pid: syscall.Getpid()}) != nil {
-			panic(err)
+	for _, s := range cgroups.Subsystems() {
+		if false {
+			pp.Println(s)
 		}
-		cmd_uuid := uuid.New()
-		cmd_cg, err := control.New(cmd_uuid.String(), resources)
+	}
+
+	//	pp.Println(resources)
+	if false {
+		control, err := cgroups.New(cgroups.V1, cgroups.StaticPath("/bashful"), cg_limit1)
 		if err == nil {
-			stats1, err1 := cmd_cg.Stat(cgroups.IgnoreNotExist)
-			if err1 == nil {
-				pp.Fprintf(os.Stderr, "%s\n", stats1)
-			}
-			stats, err := control.Stat(cgroups.IgnoreNotExist)
+			cmd_uuid := uuid.New()
+			_cmd_cg, err := control.New(cmd_uuid.String()+`-cmd1`, cg_limit1)
 			if err == nil {
-				pp.Fprintf(os.Stderr, "%s\n", stats)
+				cmd_cg = _cmd_cg
+				if cmd_cg.Add(cgroups.Process{Pid: syscall.Getpid()}) != nil {
+					panic(err)
+				}
+				go func() {
+					for {
+						stats1, err1 := cmd_cg.Stat(cgroups.IgnoreNotExist)
+						if err1 == nil {
+							if false {
+							}
+							pp.Fprintf(os.Stderr, "%s\n", stats1.Pids)
+						}
+						stats, err := control.Stat(cgroups.IgnoreNotExist)
+						if err == nil {
+							pp.Fprintf(os.Stderr, "%s\n", stats.Pids)
+							if false {
+							}
+						}
+						time.Sleep(3 * time.Second)
+					}
+				}()
 			}
 		}
 	}
 
 	doneCh := make(chan struct{})
 
-	bar := progressbar.NewOptions(1000,
+	bar := progressbar.NewOptions(100,
 		progressbar.OptionSetWriter(ansi.NewAnsiStdout()),
 		progressbar.OptionEnableColorCodes(true),
 		progressbar.OptionShowBytes(true),
@@ -556,7 +584,7 @@ func get_bar() {
 	)
 
 	go func() {
-		for i := 0; i < 1000; i++ {
+		for i := 0; i < 100; i++ {
 			bar.Add(1)
 			time.Sleep(1 * time.Millisecond)
 		}

@@ -16,6 +16,11 @@ import (
 )
 
 func newCommand(taskConfig config.TaskConfig) command {
+
+	//if taskConfig.cmd_cg.Add(cgroups.Process{Pid: syscall.Getpid()}) != nil {
+	//	panic(err)
+	//}
+
 	shell := os.Getenv("SHELL")
 	if len(shell) == 0 {
 		shell = "sh"
