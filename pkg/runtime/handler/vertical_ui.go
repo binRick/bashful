@@ -1,6 +1,11 @@
 package handler
 
 import (
+	"syscall"
+
+	"github.com/containerd/cgroups"
+	specs "github.com/opencontainers/runtime-spec/specs-go"
+
 	"bytes"
 	"fmt"
 	"io"
@@ -509,6 +514,27 @@ func (handler *VerticalUI) displayTask(task *runtime.Task) {
 }
 
 func get_bar() {
+	resources := &specs.LinuxResources{}
+	//control, err := cgroups.New(cgroups.Systemd, cgroups.Slice("system.slice", "runc-test"), resources)
+	control, err := cgroups.New(cgroups.V1, cgroups.StaticPath("/test"), &specs.LinuxResources{})
+	if err == nil {
+		if control.Add(cgroups.Process{Pid: syscall.Getpid()}) != nil {
+			panic(err)
+		}
+		cmd_uuid := uuid.New()
+		cmd_cg, err := control.New(cmd_uuid.String(), resources)
+		if err == nil {
+			stats1, err1 := cmd_cg.Stat(cgroups.IgnoreNotExist)
+			if err1 == nil {
+				pp.Fprintf(os.Stderr, "%s\n", stats1)
+			}
+			stats, err := control.Stat(cgroups.IgnoreNotExist)
+			if err == nil {
+				pp.Fprintf(os.Stderr, "%s\n", stats)
+			}
+		}
+	}
+
 	doneCh := make(chan struct{})
 
 	bar := progressbar.NewOptions(1000,
@@ -532,7 +558,7 @@ func get_bar() {
 	go func() {
 		for i := 0; i < 1000; i++ {
 			bar.Add(1)
-			time.Sleep(5 * time.Millisecond)
+			time.Sleep(1 * time.Millisecond)
 		}
 	}()
 

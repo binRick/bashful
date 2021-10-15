@@ -81,10 +81,10 @@ func newCommand(taskConfig config.TaskConfig) command {
 	exec_cmd := fmt.Sprintf(`{ %s; }; %s %s %s; export BASHFUL_RC=$?; { %s; }; export -n BASHFUL_RC; env >&3; exit $BASHFUL_RC`,
 		prefix_cmd,
 		sudoCmd,
-
 		env_cmd, taskConfig.CmdString,
 		suffix_cmd,
 	)
+	taskConfig.CgroupsEnabled = false
 	if !taskConfig.CgroupsEnabled {
 		exec_cmd = fmt.Sprintf(`%s %s %s; BASHFUL_RC=$?; env >&3; exit $BASHFUL_RC;`,
 			sudoCmd,
