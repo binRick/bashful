@@ -370,6 +370,7 @@ var cached_io = map[string]disk.IOCountersStat{}
 var cached_usage = disk.UsageStat{}
 var cached_conns = []gopsutil_net.ConnectionStat{}
 var cached_conn_stats = []gopsutil_net.ProtoCountersStat{}
+var cached_ints = gopsutil_net.InterfaceStatList{}
 var cur_estab_qty int64 = 0
 
 func (handler *VerticalUI) displayTask(task *runtime.Task) {
@@ -404,22 +405,18 @@ func (handler *VerticalUI) displayTask(task *runtime.Task) {
 								if err == nil {
 									cached_conn_stats = _conn_stats
 								}
+								for _, cs := range cached_conn_stats {
+									if cs.Protocol == `tcp` {
+										cur_estab_qty = cs.Stats["CurrEstab"]
+									}
+								}
+								_ints, err := gopsutil_net.Interfaces()
+								if err == nil {
+									cached_ints = _ints
+								}
 							}
 						}
-						//	pp.Println(cached_io)
-						//	pp.Println(cached_usage)
-						//						pp.Println(cached_conn_stats)
-						for _, cs := range cached_conn_stats {
-							if cs.Protocol == `tcp` {
-								//								pp.Println(cs)
-								cur_estab_qty = cs.Stats["CurrEstab"]
-							}
-						}
-						//						pp.Println(cached_conns)
-						//	pp.Println(cached_usage)
-						//					os.Exit(1)
 					}
-
 				}
 			}
 		}
@@ -431,11 +428,6 @@ func (handler *VerticalUI) displayTask(task *runtime.Task) {
 		if last_mem_check < then2.UnixNano() {
 			_mem, err := mem.VirtualMemory()
 			if err == nil {
-				//        misc, _ := load.Misc()
-				/*                info.Procs,
-				                  misc.ProcsRunning,
-				                  misc.ProcsBlocked,
-				                  misc.ProcsTotal,*/
 				cached_mem = *_mem
 				last_mem_check = now.UnixNano()
 			}
@@ -486,6 +478,9 @@ func (handler *VerticalUI) footer(status runtime.TaskStatus, message string) str
 			cached_misc.ProcsRunning,
 			cached_misc.ProcsCreated,
 		)
+		net_str := fmt.Sprintf("%d Interfaces",
+			len(cached_ints),
+		)
 		conns_str := fmt.Sprintf("%d Connections | %d Established TCP",
 			len(cached_conns),
 			cur_estab_qty,
@@ -494,7 +489,8 @@ func (handler *VerticalUI) footer(status runtime.TaskStatus, message string) str
 			cached_host_info.Procs,
 			humanize.Bytes(uint64(cached_mem.Total)), humanize.Bytes(uint64(cached_mem.Free)), cached_mem.UsedPercent,
 		)
-		durString = fmt.Sprintf("> %s %s %s %s [%s] [%s] | Runtime => [%s]",
+		durString = fmt.Sprintf("> %s %s %s %s %s [%s] [%s] | Runtime => [%s]",
+			net_str,
 			conns_str,
 			usage_str,
 			procs_str,
