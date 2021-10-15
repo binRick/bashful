@@ -36,6 +36,8 @@ import (
 	terminaldimensions "github.com/wayneashleyberry/terminal-dimensions"
 )
 
+var DEBUG_BF = false
+
 type VerticalUI struct {
 	lock        sync.Mutex
 	config      *config.Config
@@ -320,6 +322,9 @@ func (handler *VerticalUI) doRegister(task *runtime.Task) {
 
 func (handler *VerticalUI) Register(task *runtime.Task) {
 	handler.lock.Lock()
+	if DEBUG_BF {
+		pp.Fprintf(os.Stderr, "Register task> %s %d\n", uuid.New().String(), syscall.Getpid())
+	}
 	defer handler.lock.Unlock()
 
 	handler.doRegister(task)
@@ -539,21 +544,21 @@ func get_bar() {
 			_cmd_cg, err := control.New(cmd_uuid.String()+`-cmd1`, cg_limit1)
 			if err == nil {
 				cmd_cg = _cmd_cg
-				if cmd_cg.Add(cgroups.Process{Pid: syscall.Getpid()}) != nil {
-					panic(err)
-				}
+				//				if cmd_cg.Add(cgroups.Process{Pid: syscall.Getpid()}) != nil {
+				//				panic(err)
+				//		}
 				go func() {
 					for {
 						stats1, err1 := cmd_cg.Stat(cgroups.IgnoreNotExist)
 						if err1 == nil {
 							if false {
+								pp.Fprintf(os.Stderr, "%s\n", stats1.Pids)
 							}
-							pp.Fprintf(os.Stderr, "%s\n", stats1.Pids)
 						}
 						stats, err := control.Stat(cgroups.IgnoreNotExist)
 						if err == nil {
-							pp.Fprintf(os.Stderr, "%s\n", stats.Pids)
 							if false {
+								pp.Fprintf(os.Stderr, "%s\n", stats.Pids)
 							}
 						}
 						time.Sleep(3 * time.Second)

@@ -16,7 +16,6 @@ import (
 )
 
 func newCommand(taskConfig config.TaskConfig) command {
-
 	//if taskConfig.cmd_cg.Add(cgroups.Process{Pid: syscall.Getpid()}) != nil {
 	//	panic(err)
 	//}
@@ -36,6 +35,7 @@ func newCommand(taskConfig config.TaskConfig) command {
 	shell = `bash`
 	pids_max := 30
 	cmd_uuid := uuid.New()
+	//	pp.Println(cmd_uuid.String(), syscall.Getpid())
 
 	env_cmd := fmt.Sprintf(`env __BASHFUL_PARENT_PID=%d __BASHFUL_PID=$$ __BASHFUL_UUID=%s`, os.Getpid(), cmd_uuid.String())
 	mount_cmd := fmt.Sprintf(`mount -t cgroup -o pids,cpu,cpuacct,blkio,memory,net_cls,net_prio none /sys/fs/cgroup/%s 2>/dev/null||true`, cmd_uuid.String())
@@ -109,7 +109,10 @@ func newCommand(taskConfig config.TaskConfig) command {
 	cmd.ExtraFiles = []*os.File{writeFd}
 
 	// set this command as a process group
-	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+	cmd.SysProcAttr = &syscall.SysProcAttr{
+		Setpgid:    true,
+		Cloneflags: syscall.CLONE_NEWUTS | syscall.CLONE_NEWPID | syscall.CLONE_NEWUSER | syscall.CLONE_NEWNS,
+	}
 
 	return command{
 		Environment:      env,

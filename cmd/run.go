@@ -27,6 +27,7 @@ import (
 
 	"github.com/containerd/cgroups"
 	mapset "github.com/deckarep/golang-set"
+	guuid "github.com/gofrs/uuid"
 	"github.com/google/uuid"
 	"github.com/k0kubun/pp"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
@@ -52,6 +53,17 @@ var devMode bool
 var cgroupsMode bool
 var listTasksMode bool
 
+var parent_cgroup cgroups.Cgroup
+var PARENT_CGROUP_NAME = `bashful`
+
+func init() {
+	_parent_cgroup, err := cgroups.New(cgroups.V1, cgroups.StaticPath(fmt.Sprintf("/%s", PARENT_CGROUP_NAME)), cg_limit1)
+	if err != nil {
+		panic(err)
+	}
+	parent_cgroup = _parent_cgroup
+}
+
 // runCmd represents the run command
 var runCmd = &cobra.Command{
 	Use:   "run",
@@ -63,9 +75,21 @@ var runCmd = &cobra.Command{
 		if tags != "" && onlyTags != "" {
 			utils.ExitWithErrorMessage("Options 'tags' and 'only-tags' are mutually exclusive.")
 		}
-
+		parent_cg_uuid := guuid.Must(guuid.NewV4())
+		parent_cg, err := cgroups.New(cgroups.V1, cgroups.StaticPath(fmt.Sprintf("/%s/%s", PARENT_CGROUP_NAME, parent_cg_uuid)), cg_limit1)
+		if err != nil {
+			panic(err)
+		}
 		cli := config.Cli{
 			YamlPath: args[0],
+			BashfulCgroup: config.BashfulCgroup{
+				ParentUUID:      parent_cg_uuid,
+				ParentResources: cg_limit1,
+				TaskCgroups:     map[string]cgroups.Cgroup{},
+				CommandCgroups:  map[string]cgroups.Cgroup{},
+				ParentCgroup:    parent_cg,
+				CgroupIDs:       []string{},
+			},
 		}
 
 		if len(args) > 1 {
@@ -204,7 +228,13 @@ var cg_limit1 = &specs.LinuxResources{
 	},
 }
 
+var found_pids = []int32{}
+var DEBUG_BF = false
+
 func Run(yamlString []byte, cli config.Cli) {
+	if DEBUG_BF {
+		pp.Fprintf(os.Stderr, "RUN> %s %d\n", uuid.New().String(), syscall.Getpid())
+	}
 	client, err := runtime.NewClientFromYaml(yamlString, &cli)
 	if err != nil {
 		utils.ExitWithErrorMessage(err.Error())
@@ -223,7 +253,6 @@ func Run(yamlString []byte, cli config.Cli) {
 	if listTasksMode {
 		tags := get_tasks(client.Config)
 		fmt.Fprintf(os.Stdout, "%s\n", strings.Join(tags, "\n"))
-		//pp.Println(client.Config.TaskConfigs)
 		os.Exit(0)
 	}
 
@@ -233,50 +262,69 @@ func Run(yamlString []byte, cli config.Cli) {
 		client.AddEventHandler(handler.NewVerticalUI(client.Config))
 	}
 	client.AddEventHandler(handler.NewTaskLogger(client.Config))
-
-	control, err := cgroups.New(cgroups.V1, cgroups.StaticPath("/bashful-parent"), cg_limit1)
-	if err == nil {
-		if control.Add(cgroups.Process{Pid: syscall.Getpid()}) != nil {
-			panic(err)
-		}
-		cmd_uuid := uuid.New()
-		cmd_cg, err := control.New(cmd_uuid.String()+`-pidX`, cg_limit1)
-		if err != nil {
-			panic(err)
-
-		}
+	//	_bashful_control, err := cgroups.New(cgroups.V1, cgroups.StaticPath("/bashful"), cg_limit1)
+	//	if err == nil {
+	//		cli.CgroupController = _bashful_control
+	//cmd_uuid := uuid.New()
+	if false {
+		//		if cli.BashfulCgroup.ParentCgroup.Add(cgroups.Process{Pid: syscall.Getpid()}) != nil {
+		//		panic(err)
+		//}
 		go func() {
 			for {
 				pids, err := process.Pids()
 				if err == nil {
 					for _, pid := range pids {
+						has := false
+						for _, p := range found_pids {
+							if p == pid {
+								has = true
+							}
+						}
+						if !has {
+							found_pids = append(found_pids, pid)
+							//						if cli.BashfulCgroup.ParentCgroup.Add(cgroups.Process{Pid: int(pid)}) != nil {
+							//						panic(err)
+							//				}
+						}
 						if false {
-							pp.Println(`pid>`, pid)
 						}
-						if cmd_cg.Add(cgroups.Process{Pid: int(pid)}) != nil {
-							//					panic(err)
+						fmt.Fprintf(os.Stderr, "ADDING pid> %s to %d PIDs\n", pid, len(found_pids))
+						//						if cli.BashfulCgroup.ParentCgroup.Add(cgroups.Process{Pid: int(pid)}) != nil {
+						//						//					panic(err)
+						//				}
+					}
+				}
+				/*
+					stats1, err1 := cli.CgroupController.Stat()
+					//stats1, err1 := control.Stat(cgroups.IgnoreNotExist)
+					if err1 == nil {
+						if false {
+							pp.Fprintf(os.Stderr, "%s\n", stats1)
 						}
 					}
-				}
-				stats1, err1 := control.Stat()
-				//stats1, err1 := control.Stat(cgroups.IgnoreNotExist)
-				if err1 == nil {
-					if false {
+					stats, err := cli.CgroupController.Stat()
+					//stats, err := control.Stat(cgroups.IgnoreNotExist)
+					if err == nil {
+						if false {
+							pp.Fprintf(os.Stderr, "%s\n", stats)
+						}
 					}
-					pp.Fprintf(os.Stderr, "%s\n", stats1)
-				}
-				stats, err := control.Stat()
-				//stats, err := control.Stat(cgroups.IgnoreNotExist)
-				if err == nil {
-					pp.Fprintf(os.Stderr, "%s\n", stats)
-					if false {
-					}
-				}
+				*/
 				time.Sleep(3 * time.Second)
 			}
 		}()
 	}
+	if false {
+		/*
+			cmd_cg, err := cli.CgroupController.New(cmd_uuid.String()+`-pidX`, cg_limit1)
+			if err != nil {
+				panic(err)
 
+			}
+		*/
+		//	}
+	}
 	rand.Seed(time.Now().UnixNano())
 
 	tagInfo := ""

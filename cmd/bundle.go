@@ -22,12 +22,14 @@ package cmd
 
 import (
 	"fmt"
+	"io/ioutil"
+	"path/filepath"
+
+	guuid "github.com/gofrs/uuid"
 	"github.com/spf13/cobra"
 	"github.com/wagoodman/bashful/pkg/config"
 	"github.com/wagoodman/bashful/pkg/runtime"
 	"github.com/wagoodman/bashful/utils"
-	"io/ioutil"
-	"path/filepath"
 )
 
 // bundleCmd represents the bundle command
@@ -39,7 +41,8 @@ var bundleCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 
 		cli := config.Cli{
-			YamlPath: args[0],
+			YamlPath:             args[0],
+			CgroupControllerUUID: guuid.Must(guuid.NewV4()),
 		}
 
 		bundlePath := filepath.Base(cli.YamlPath[0:len(cli.YamlPath)-len(filepath.Ext(cli.YamlPath))]) + ".bundle"

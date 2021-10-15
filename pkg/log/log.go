@@ -134,7 +134,12 @@ func mainLogger(logPath string) {
 			if ok {
 				file.Close()
 
-				out, err := exec.Command("bash", "-c", "cat "+logCmd.File+" >> "+logPath).CombinedOutput()
+				cmd := fmt.Sprintf("[[ -f '%s' ]] && { command cat '%s' >> %s; } || { >&2 echo Unable to concat logs; }",
+					logCmd.File,
+					logCmd.File,
+					logPath,
+				)
+				out, err := exec.Command("bash", "--noprofile", "--norc", "-c", cmd).CombinedOutput()
 
 				if err != nil {
 					fmt.Printf("%s\n", out)

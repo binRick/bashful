@@ -21,7 +21,10 @@
 package config
 
 import (
+	"github.com/containerd/cgroups"
 	mapset "github.com/deckarep/golang-set"
+	"github.com/gofrs/uuid"
+	"github.com/opencontainers/runtime-spec/specs-go"
 )
 
 type stringArray []string
@@ -51,6 +54,14 @@ type Config struct {
 	// TotalEtaSeconds is the calculated ETA given the tree of tasks to execute
 	TotalEtaSeconds float64
 }
+type BashfulCgroup struct {
+	ParentUUID      uuid.UUID
+	ParentCgroup    cgroups.Cgroup
+	CommandCgroups  map[string]cgroups.Cgroup
+	TaskCgroups     map[string]cgroups.Cgroup
+	CgroupIDs       []string
+	ParentResources *specs.LinuxResources
+}
 
 // Cli is the exhaustive set of all command line options available on bashful
 type Cli struct {
@@ -59,6 +70,9 @@ type Cli struct {
 	RunTagSet              mapset.Set
 	ExecuteOnlyMatchedTags bool
 	Args                   []string
+	CgroupController       cgroups.Cgroup
+	CgroupControllerUUID   uuid.UUID
+	BashfulCgroup          BashfulCgroup
 }
 
 // Options is the set of values to be applied to all tasks or affect general behavior

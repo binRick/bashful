@@ -34,6 +34,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/k0kubun/pp"
 	"github.com/lunixbochs/vtclean"
 	"github.com/wagoodman/bashful/pkg/config"
 	"github.com/wagoodman/bashful/utils"
@@ -72,12 +73,19 @@ func NewTask(taskConfig config.TaskConfig, runtimeOptions *config.Options) *Task
 		subTask := NewTask(*subTaskConfig, runtimeOptions)
 		task.Children = append(task.Children, subTask)
 	}
+	if DEBUG_BF {
+		pp.Fprintf(os.Stderr, "NEW TASK>  % %d children\n", syscall.Getpid(), len(task.Children))
+	}
 
 	return &task
 }
 
 // UpdateExec reinstantiates the planned command to run based on the given path to an executable
 func (task *Task) UpdateExec(execpath string) {
+	if DEBUG_BF {
+		pp.Fprintf(os.Stderr, "UpdateExec>> %s\n", execpath)
+	}
+
 	if task.Config.CmdString == "" {
 		task.Config.CmdString = task.Options.ExecReplaceString
 	}
@@ -94,6 +102,10 @@ func (task *Task) UpdateExec(execpath string) {
 
 // Kill will stop any running command (including child Tasks) with a -9 signal
 func (task *Task) Kill() {
+	exec_uuid := uuid.New()
+	if DEBUG_BF {
+		pp.Fprintf(os.Stderr, "KILL> %s %d\n", exec_uuid.String(), syscall.Getpid())
+	}
 	if task.Config.CmdString != "" && task.Started && !task.Completed {
 		syscall.Kill(-task.Command.Cmd.Process.Pid, syscall.SIGKILL)
 	}
@@ -171,9 +183,14 @@ func (task *Task) estimateRuntime() float64 {
 func (task *Task) Execute(eventChan chan TaskEvent, waiter *sync.WaitGroup, environment map[string]string) {
 
 	task.Command.StartTime = time.Now()
+	//exec_uuid := uuid.New()
 
 	eventChan <- TaskEvent{Task: task, Status: StatusRunning, ReturnCode: -1}
 	waiter.Add(1)
+	if DEBUG_BF {
+		pp.Fprintf(os.Stderr, "Execute Task> %d | %s %s\n\n", syscall.Getpid(), task.Command.Cmd.Path, strings.Join(task.Command.Cmd.Args, ` `))
+		pp.Println(task)
+	}
 	defer waiter.Done()
 
 	stdoutChan := make(chan string, 1000)
@@ -252,8 +269,13 @@ func (task *Task) Execute(eventChan chan TaskEvent, waiter *sync.WaitGroup, envi
 		}
 	}
 
-	///fmt.Fprintf(os.Stderr, `%s`, task.Command.Cmd.Env)
 	task.Command.Cmd.Start()
+	if DEBUG_BF {
+		fmt.Fprintf(os.Stderr, "Started PID> %s\n", pp.Sprintf(`%s`, task.Config))
+	}
+	//  if cli.BashfulCgroup.ParentCgroup.Add(cgroups.Process{Pid: task.Command.Cmd.Process.Pid}) != nil {
+	//	fmt.Fprintf(os.Stderr, "Started PID> %d\n", task.Command.Cmd.Process.Pid)
+	//}
 
 	for {
 		select {

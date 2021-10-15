@@ -22,12 +22,18 @@ package runtime
 
 import (
 	"fmt"
+	"os"
+	"syscall"
+	"time"
+
+	"github.com/google/uuid"
+	"github.com/k0kubun/pp"
 	"github.com/wagoodman/bashful/pkg/config"
 	"github.com/wagoodman/bashful/pkg/log"
 	"github.com/wagoodman/bashful/utils"
-	"os"
-	"time"
 )
+
+var DEBUG_BF = false
 
 func newExecutorStats() *TaskStatistics {
 	return &TaskStatistics{
@@ -84,6 +90,9 @@ func (executor *Executor) estimateRuntime() {
 		}
 
 		for _, subTask := range task.Children {
+			if DEBUG_BF {
+				pp.Fprintf(os.Stderr, "Subtask> %s %d\n", uuid.New().String(), syscall.Getpid())
+			}
 			if subTask.Config.CmdString != "" || subTask.Config.URL != "" {
 				executor.Statistics.Total++
 				if eta, ok := executor.cmdEtaCache[subTask.Config.CmdString]; ok {
@@ -178,6 +187,10 @@ func (executor *Executor) execute(task *Task) error {
 func (executor *Executor) run() error {
 	for _, task := range executor.Tasks {
 		// todo: execute should return error and be checked here
+		if DEBUG_BF {
+			pp.Fprintf(os.Stderr, "EXECUTOR RUN> %s %d\n", uuid.New().String(), syscall.Getpid())
+		}
+
 		executor.execute(task)
 
 		if exitSignaled {

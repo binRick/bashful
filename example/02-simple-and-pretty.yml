@@ -37,7 +37,7 @@ tasks:
         cmd: dd if=/dev/zero of=/.o bs=100M count=1
 
   - name: Compiling source
-    tags: t1
+    tags: t
     parallel-tasks:
       - name: Prepping data
         cgroups-enabled: yes
