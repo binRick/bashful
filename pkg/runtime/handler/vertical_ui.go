@@ -11,6 +11,9 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/k0kubun/go-ansi"
+	"github.com/k0kubun/pp"
+	"github.com/schollz/progressbar/v3"
 	gopsutil_net "github.com/shirou/gopsutil/v3/net"
 
 	"github.com/dustin/go-humanize"
@@ -374,6 +377,19 @@ var cached_ints = gopsutil_net.InterfaceStatList{}
 var cur_estab_qty int64 = 0
 var created_since_started int64 = 0
 var created_at_start int64 = 0
+var starting_io_sums = map[string]int64{
+	`reads`:       0,
+	`writes`:      0,
+	`read_bytes`:  0,
+	`write_bytes`: 0,
+}
+var cached_io_sums = map[string]int64{
+	`reads`:       0,
+	`writes`:      0,
+	`read_bytes`:  0,
+	`write_bytes`: 0,
+}
+var first_run = true
 
 func (handler *VerticalUI) displayTask(task *runtime.Task) {
 	now := time.Now()
@@ -387,43 +403,67 @@ func (handler *VerticalUI) displayTask(task *runtime.Task) {
 	if err == nil {
 		then3 := now.Add(duration3)
 		if last_mem_check < then3.UnixNano() {
+			last_host_info_check = now.UnixNano()
 			_host_info, err := host.Info()
 			if err == nil {
 				cached_host_info = *_host_info
-				last_host_info_check = now.UnixNano()
-				_misc, err := load.Misc()
-				if err == nil {
-					cached_misc = *_misc
-					if created_at_start == 0 {
-						created_at_start = int64(cached_misc.ProcsCreated)
+			}
+			_misc, err := load.Misc()
+			if err == nil {
+				cached_misc = *_misc
+				if created_at_start == 0 {
+					created_at_start = int64(cached_misc.ProcsCreated)
+				}
+				created_since_started = int64(cached_misc.ProcsCreated) - created_at_start
+			}
+			_io, err := disk.IOCounters()
+			if err == nil {
+				cached_io = _io
+				cached_io_sums["write_bytes"] = 0
+				cached_io_sums["read_bytes"] = 0
+				cached_io_sums["writes"] = 0
+				cached_io_sums["reads"] = 0
+				for io_n, kv := range cached_io {
+					if false {
+						pp.Println(io_n, kv)
 					}
-					created_since_started = int64(cached_misc.ProcsCreated) - created_at_start
-					_io, err := disk.IOCounters()
-					if err == nil {
-						cached_io = _io
-						_usage, err := disk.Usage("/")
-						if err == nil {
-							cached_usage = *_usage
-							_conns, err := gopsutil_net.Connections(`inet`)
-							if err == nil {
-								cached_conns = _conns
-								_conn_stats, err := gopsutil_net.ProtoCounters([]string{})
-								if err == nil {
-									cached_conn_stats = _conn_stats
-								}
-								for _, cs := range cached_conn_stats {
-									if cs.Protocol == `tcp` {
-										cur_estab_qty = cs.Stats["CurrEstab"]
-									}
-								}
-								_ints, err := gopsutil_net.Interfaces()
-								if err == nil {
-									cached_ints = _ints
-								}
-							}
-						}
+					if first_run {
+						starting_io_sums["write_bytes"] += int64(kv.WriteBytes)
+						starting_io_sums["read_bytes"] += int64(kv.ReadBytes)
+						starting_io_sums["reads"] += int64(kv.ReadCount)
+						starting_io_sums["writes"] += int64(kv.WriteCount)
+					} else {
+						cached_io_sums["write_bytes"] += int64(kv.WriteBytes) - starting_io_sums["write_bytes"]
+						cached_io_sums["read_bytes"] += int64(kv.ReadBytes) - starting_io_sums["read_bytes"]
+						cached_io_sums["writes"] += int64(kv.WriteCount) - starting_io_sums["writes"]
+						cached_io_sums["reads"] += int64(kv.ReadCount) - starting_io_sums["reads"]
 					}
 				}
+				if first_run {
+					first_run = false
+				}
+			}
+			_ints, err := gopsutil_net.Interfaces()
+			if err == nil {
+				cached_ints = _ints
+			}
+
+			_conns, err := gopsutil_net.Connections(`inet`)
+			if err == nil {
+				cached_conns = _conns
+			}
+			_conn_stats, err := gopsutil_net.ProtoCounters([]string{})
+			if err == nil {
+				cached_conn_stats = _conn_stats
+				for _, cs := range cached_conn_stats {
+					if cs.Protocol == `tcp` {
+						cur_estab_qty = cs.Stats["CurrEstab"]
+					}
+				}
+			}
+			_usage, err := disk.Usage("/")
+			if err == nil {
+				cached_usage = *_usage
 			}
 		}
 	}
@@ -468,6 +508,41 @@ func (handler *VerticalUI) displayTask(task *runtime.Task) {
 	}
 }
 
+func get_bar() {
+	doneCh := make(chan struct{})
+
+	bar := progressbar.NewOptions(1000,
+		progressbar.OptionSetWriter(ansi.NewAnsiStdout()),
+		progressbar.OptionEnableColorCodes(true),
+		progressbar.OptionShowBytes(true),
+		progressbar.OptionSetWidth(35),
+		progressbar.OptionSetDescription("[cyan][1/3][reset] Writing moshable file..."),
+		progressbar.OptionSetTheme(progressbar.Theme{
+			Saucer:        "[green]=[reset]",
+			SaucerHead:    "[green]>[reset]",
+			SaucerPadding: " ",
+			BarStart:      "[",
+			BarEnd:        "]",
+		}),
+		progressbar.OptionOnCompletion(func() {
+			doneCh <- struct{}{}
+		}),
+	)
+
+	go func() {
+		for i := 0; i < 1000; i++ {
+			bar.Add(1)
+			time.Sleep(5 * time.Millisecond)
+		}
+	}()
+
+	<-doneCh
+	fmt.Println("\n ======= progress bar completed ==========\n")
+
+}
+func init() {
+	get_bar()
+}
 func (handler *VerticalUI) footer(status runtime.TaskStatus, message string) string {
 	var tpl bytes.Buffer
 	var durString, etaString, stepString, errorString string
@@ -477,7 +552,10 @@ func (handler *VerticalUI) footer(status runtime.TaskStatus, message string) str
 		usage_str := fmt.Sprintf("/ %d%% Used",
 			uint(cached_usage.UsedPercent),
 		)
-		procs_str := fmt.Sprintf("%d/%d Procs | %d Blocked | %d Running | %d Created",
+		if uint(cached_usage.UsedPercent) < 10 {
+			usage_str = ``
+		}
+		procs_str := fmt.Sprintf("%d/%d Procs, %d Blocked, %d Running, %d Created",
 			cached_misc.ProcsTotal,
 			cached_host_info.Procs,
 			cached_misc.ProcsBlocked,
@@ -487,22 +565,30 @@ func (handler *VerticalUI) footer(status runtime.TaskStatus, message string) str
 		net_str := fmt.Sprintf("%d Ints",
 			len(cached_ints),
 		)
-		conns_str := fmt.Sprintf("%d Conns | %d TCPs",
+		conns_str := fmt.Sprintf("%d Conns, %d TCPs",
 			len(cached_conns),
 			cur_estab_qty,
 		)
-		mem_str := fmt.Sprintf("%d%% Used: %s/%s Free",
-			//Total: %s, Free:%s, :%d%% Used",
-			//			cached_host_info.Procs,
-			uint(cached_mem.UsedPercent),
+		io_str := fmt.Sprintf("%d/%sr, %d/%sw",
+			cached_io_sums["reads"]-starting_io_sums["reads"],
+			humanize.Bytes(uint64(cached_io_sums["read_bytes"]-starting_io_sums["read_bytes"])),
+			cached_io_sums["writes"]-starting_io_sums["writes"],
+			humanize.Bytes(uint64(cached_io_sums["write_bytes"]-starting_io_sums["write_bytes"])),
+		)
+		mem_str := fmt.Sprintf("%s/%s Free",
 			humanize.Bytes(uint64(cached_mem.Free)),
 			humanize.Bytes(uint64(cached_mem.Total)),
 		)
+		if uint(cached_mem.UsedPercent) < 5 {
+			mem_str = ``
+		}
 		if strings.Contains(hn, `.`) {
 			hn = strings.Split(hn, `.`)[0]
 		}
-		durString = fmt.Sprintf("[%s] %s|%s|%s|%s|%s | [%s] Runtime",
+		io_str = ``
+		durString = fmt.Sprintf("[%s]|%s|%s|%s|%s|%s|Mem:%s|[%s] Runtime",
 			hn,
+			io_str,
 			net_str,
 			conns_str,
 			usage_str,

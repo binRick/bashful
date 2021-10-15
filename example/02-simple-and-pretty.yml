@@ -34,7 +34,7 @@ tasks:
             max: 100
           memory:
             max: 1000000000
-        cmd: dd if=/dev/zero of=/.o bs=1M count=1
+        cmd: dd if=/dev/zero of=/.o bs=100M count=1
 
   - name: Compiling source
     tags: t1

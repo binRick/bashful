@@ -9,6 +9,9 @@ $(TARGETS):
 run:
 	go run main.go run example/00-demo.yml
 
+build:
+	./compile.sh
+
 examples: clean build
 	./dist/bashful run example/00-demo.yml
 	./dist/bashful run example/01-simple.yml
