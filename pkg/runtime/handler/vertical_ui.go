@@ -473,34 +473,42 @@ func (handler *VerticalUI) footer(status runtime.TaskStatus, message string) str
 	var durString, etaString, stepString, errorString string
 	if handler.config.Options.ShowSummaryTimes {
 		duration := time.Since(handler.startTime)
-		Load := fmt.Sprintf(`%d/%d/%d`, 1, 2, 3)
 		hn := fmt.Sprintf(`%s`, cached_server_hostname)
 		usage_str := fmt.Sprintf("/ %d%% Used",
 			uint(cached_usage.UsedPercent),
 		)
-		procs_str := fmt.Sprintf("%d Procs %d Blocked %d Running %d Created",
+		procs_str := fmt.Sprintf("%d/%d Procs | %d Blocked | %d Running | %d Created",
 			cached_misc.ProcsTotal,
+			cached_host_info.Procs,
 			cached_misc.ProcsBlocked,
 			cached_misc.ProcsRunning,
 			created_since_started,
 		)
-		net_str := fmt.Sprintf("%d Interfaces",
+		net_str := fmt.Sprintf("%d Ints",
 			len(cached_ints),
 		)
-		conns_str := fmt.Sprintf("%d Connections | %d Established TCP",
+		conns_str := fmt.Sprintf("%d Conns | %d TCPs",
 			len(cached_conns),
 			cur_estab_qty,
 		)
-		mem_str := fmt.Sprintf("%d Procs | Total: %s, Free:%s, UsedPercent:%f%%",
-			cached_host_info.Procs,
-			humanize.Bytes(uint64(cached_mem.Total)), humanize.Bytes(uint64(cached_mem.Free)), cached_mem.UsedPercent,
+		mem_str := fmt.Sprintf("%d%% Used: %s/%s Free",
+			//Total: %s, Free:%s, :%d%% Used",
+			//			cached_host_info.Procs,
+			uint(cached_mem.UsedPercent),
+			humanize.Bytes(uint64(cached_mem.Free)),
+			humanize.Bytes(uint64(cached_mem.Total)),
 		)
-		durString = fmt.Sprintf("> %s %s %s %s %s [%s] [%s] | Runtime => [%s]",
+		if strings.Contains(hn, `.`) {
+			hn = strings.Split(hn, `.`)[0]
+		}
+		durString = fmt.Sprintf("[%s] %s|%s|%s|%s|%s | [%s] Runtime",
+			hn,
 			net_str,
 			conns_str,
 			usage_str,
 			procs_str,
-			mem_str, hn, Load, utils.FormatDuration(duration),
+			mem_str,
+			utils.FormatDuration(duration),
 		)
 
 		totalEta := time.Duration(handler.config.TotalEtaSeconds) * time.Second
