@@ -110,8 +110,10 @@ func newCommand(taskConfig config.TaskConfig) command {
 
 	// set this command as a process group
 	cmd.SysProcAttr = &syscall.SysProcAttr{
-		Setpgid:    true,
-		Cloneflags: syscall.CLONE_NEWUTS | syscall.CLONE_NEWPID | syscall.CLONE_NEWUSER | syscall.CLONE_NEWNS,
+		Setpgid: true,
+		//Cloneflags: syscall.CLONE_NEWPID,
+		//		Cloneflags: syscall.CLONE_NEWUTS | syscall.CLONE_NEWPID | syscall.CLONE_NEWNS,
+		// | syscall.CLONE_NEWUSER
 	}
 
 	return command{

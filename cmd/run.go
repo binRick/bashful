@@ -59,9 +59,11 @@ var PARENT_CGROUP_NAME = `bashful`
 func init() {
 	_parent_cgroup, err := cgroups.New(cgroups.V1, cgroups.StaticPath(fmt.Sprintf("/%s", PARENT_CGROUP_NAME)), cg_limit1)
 	if err != nil {
-		panic(err)
+		cgroupsMode = false
+		fmt.Fprintf(os.Stderr, "%s", err)
+	} else {
+		parent_cgroup = _parent_cgroup
 	}
-	parent_cgroup = _parent_cgroup
 }
 
 // runCmd represents the run command
@@ -78,7 +80,7 @@ var runCmd = &cobra.Command{
 		parent_cg_uuid := guuid.Must(guuid.NewV4())
 		parent_cg, err := cgroups.New(cgroups.V1, cgroups.StaticPath(fmt.Sprintf("/%s/%s", PARENT_CGROUP_NAME, parent_cg_uuid)), cg_limit1)
 		if err != nil {
-			panic(err)
+			fmt.Fprintf(os.Stderr, "%s", err)
 		}
 		cli := config.Cli{
 			YamlPath: args[0],
