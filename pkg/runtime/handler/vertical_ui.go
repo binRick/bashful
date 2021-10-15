@@ -372,6 +372,8 @@ var cached_conns = []gopsutil_net.ConnectionStat{}
 var cached_conn_stats = []gopsutil_net.ProtoCountersStat{}
 var cached_ints = gopsutil_net.InterfaceStatList{}
 var cur_estab_qty int64 = 0
+var created_since_started int64 = 0
+var created_at_start int64 = 0
 
 func (handler *VerticalUI) displayTask(task *runtime.Task) {
 	now := time.Now()
@@ -392,6 +394,11 @@ func (handler *VerticalUI) displayTask(task *runtime.Task) {
 				_misc, err := load.Misc()
 				if err == nil {
 					cached_misc = *_misc
+					if created_at_start == 0 {
+						created_at_start = int64(cached_misc.ProcsCreated)
+
+					}
+					created_since_started = int64(cached_misc.ProcsCreated) - created_at_start
 					_io, err := disk.IOCounters()
 					if err == nil {
 						cached_io = _io
@@ -472,11 +479,12 @@ func (handler *VerticalUI) footer(status runtime.TaskStatus, message string) str
 		usage_str := fmt.Sprintf("/ %d%% Used",
 			uint(cached_usage.UsedPercent),
 		)
-		procs_str := fmt.Sprintf("%d Procs %d Blocked %d Running %d Created",
+		procs_str := fmt.Sprintf("%d Procs %d Blocked %d Running %d Created, %d Created",
 			cached_misc.ProcsTotal,
 			cached_misc.ProcsBlocked,
 			cached_misc.ProcsRunning,
 			cached_misc.ProcsCreated,
+			created_since_started,
 		)
 		net_str := fmt.Sprintf("%d Interfaces",
 			len(cached_ints),
