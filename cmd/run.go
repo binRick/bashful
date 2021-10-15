@@ -189,7 +189,7 @@ func Run(yamlString []byte, cli config.Cli) {
 
 	if devMode {
 		fmt.Fprintf(os.Stdout, "%s\n", "dev mode")
-		d1()
+		//d1()
 		os.Exit(0)
 	}
 	if listTagsMode {
