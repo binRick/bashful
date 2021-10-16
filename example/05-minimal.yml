@@ -6,7 +6,22 @@ config:
 
 tasks:
   - name: Prepping data
-    tags: t
+    tags: t01
+    parallel-tasks:
+      - name: t011
+        cmd: example/scripts/random-worker.sh 1
+      - name: t012
+        cmd: example/scripts/random-worker.sh 1
+
+  - name: Prepping data
+    tags: t02
+    cmd: example/scripts/random-worker.sh <replace>
+    for-each:
+      - 1
+      - 2
+
+  - name: Prepping data
+    tags: t1
     cmd: example/scripts/random-worker.sh 1
   - name: Prepping data
     tags: t
