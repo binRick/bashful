@@ -2,7 +2,6 @@
 set -e
 cd $(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
-set -x
-go build -o bashful .
-rsync bashful bf
-rsync bashful dist/.
+go build -o bf .
+rsync bf bashful
+[[ -d dist ]] && rsync bashful dist/.
