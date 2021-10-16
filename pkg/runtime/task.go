@@ -57,7 +57,6 @@ const (
 
 var DEBUG_CG = true
 
-
 var swap_max int64 = 512 * 1000 * 1000
 var mem_max int64 = 256 * 1000 * 1000
 var proc_max int64 = 100
@@ -137,13 +136,13 @@ func NewTask(taskConfig config.TaskConfig, runtimeOptions *config.Options) *Task
 	}
 
 	if DEBUG_CG {
-if false {
-		pp.Println(stats)
-		fmt.Printf("[NEWTASK] <PARENT>  %s %d Procs| %d Parent Controllers: %s\n", PARENT_CGROUP_PATH, len(p_procs), len(parent_controllers), parent_controllers)
+		if false {
+			pp.Println(stats)
+			fmt.Printf("[NEWTASK] <PARENT>  %s %d Procs| %d Parent Controllers: %s\n", PARENT_CGROUP_PATH, len(p_procs), len(parent_controllers), parent_controllers)
 
-		pp.Fprintf(os.Stderr, "\n\nNEW TASK %s>  %s %s children\n\n", strings.Split(task.Id.String(), `-`)[0], syscall.Getpid(), len(task.Children))
+			pp.Fprintf(os.Stderr, "\n\nNEW TASK %s>  %s %s children\n\n", strings.Split(task.Id.String(), `-`)[0], syscall.Getpid(), len(task.Children))
+		}
 	}
-}
 	return &task
 }
 
@@ -255,8 +254,8 @@ func (task *Task) Execute(eventChan chan TaskEvent, waiter *sync.WaitGroup, envi
 	eventChan <- TaskEvent{Task: task, Status: StatusRunning, ReturnCode: -1}
 	waiter.Add(1)
 	if DEBUG_BF {
-//		pp.Fprintf(os.Stderr, "Execute Task> %d | %s %s\n\n", syscall.Getpid(), task.Command.Cmd.Path, strings.Join(task.Command.Cmd.Args, ` `))
-	//	pp.Println(task)
+		//		pp.Fprintf(os.Stderr, "Execute Task> %d | %s %s\n\n", syscall.Getpid(), task.Command.Cmd.Path, strings.Join(task.Command.Cmd.Args, ` `))
+		//	pp.Println(task)
 	}
 	defer waiter.Done()
 
@@ -350,8 +349,8 @@ func (task *Task) Execute(eventChan chan TaskEvent, waiter *sync.WaitGroup, envi
 		if err != nil {
 			panic(err)
 		}
-		cmd_lim := 60
-		cmd_str := fmt.Sprintf(`%s %s`, task.Command.Cmd.Path, strings.Join(task.Command.Cmd.Args, ` `))
+		cmd_lim := 10099
+		cmd_str := task.Config.CmdString
 		if len(cmd_str) > cmd_lim {
 			cmd_str = fmt.Sprintf(`%s...`, cmd_str[0:cmd_lim-1])
 		}
@@ -365,9 +364,9 @@ func (task *Task) Execute(eventChan chan TaskEvent, waiter *sync.WaitGroup, envi
 >> CG Now %s Has %d Procs: %d
 ############################################
 `,
-task.Command.StartTime,
+				task.Command.StartTime,
 				strings.Split(task.Id.String(), `-`)[0], cmd_start_dur,
-task.Started,
+				task.Started,
 				cmd_str,
 				task.Command.Cmd.Process.Pid, task.CGPath, add_proc_dur,
 				task.CGPath, len(cg_procs), cg_procs,

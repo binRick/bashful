@@ -23,10 +23,10 @@ package runtime
 import (
 	"fmt"
 	"os"
+	"strings"
 	"syscall"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/k0kubun/pp"
 	"github.com/wagoodman/bashful/pkg/config"
 	"github.com/wagoodman/bashful/pkg/log"
@@ -91,7 +91,7 @@ func (executor *Executor) estimateRuntime() {
 
 		for _, subTask := range task.Children {
 			if DEBUG_BF {
-				pp.Fprintf(os.Stderr, "Subtask> %s %d\n", uuid.New().String(), syscall.Getpid())
+				pp.Fprintf(os.Stderr, "Subtask> %s %d\n", strings.Split(task.Id.String(), `-`)[0], syscall.Getpid())
 			}
 			if subTask.Config.CmdString != "" || subTask.Config.URL != "" {
 				executor.Statistics.Total++

@@ -1,10 +1,23 @@
 config:
+  log-path: .5.log
   collapse-on-completion: true
   show-summary-footer: false
-  show-task-output: false
-  bullet-char:
+  show-task-output: true
 
 tasks:
+  - name: env tests
+    tags: t00
+    parallel-tasks:
+      - name: 1 env|grep ^__
+        env:
+          __XXXXXXXXXXXX: BBBBBBBBBBBBBBBBBB
+        cmd: env|grep ^__
+      - name: 2 env|grep ^__
+        env:
+          __XXXXXXXXXXXX: AAAAAAAAAAAAAAAAAAA
+        cmd: env|grep ^__
+      - name: 3 env|grep ^__
+        cmd: env|grep ^__
   - name: Prepping data
     tags: t01
     parallel-tasks:
