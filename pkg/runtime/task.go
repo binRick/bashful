@@ -34,8 +34,8 @@ import (
 	"time"
 
 	"github.com/containerd/cgroups"
+	v2 "github.com/containerd/cgroups/v2"
 	"github.com/google/uuid"
-	"github.com/jpillora/overseer"
 	"github.com/k0kubun/pp"
 	"github.com/lunixbochs/vtclean"
 	"github.com/wagoodman/bashful/pkg/config"
@@ -55,6 +55,8 @@ const (
 	StatusSuccess
 	StatusError
 )
+
+var DEBUG_CG = false
 
 func startNewProcess(path string, args []string, env map[string]string, task *Task) error {
 
@@ -110,8 +112,56 @@ func NewTask(taskConfig config.TaskConfig, runtimeOptions *config.Options) *Task
 		subTask := NewTask(*subTaskConfig, runtimeOptions)
 		task.Children = append(task.Children, subTask)
 	}
-	if DEBUG_BF {
-		pp.Fprintf(os.Stderr, "NEW TASK>  % %d children\n", syscall.Getpid(), len(task.Children))
+
+	BASE_CG_PATH := os.Getenv(`CGROUPS_BASE_CG_PATH`)
+	PARENT_CGROUP_PATH := os.Getenv(`PARENT_CGROUP_PATH`)
+	BASHFUL_CGROUP_PATH := os.Getenv(`BASHFUL_CGROUP_PATH`)
+
+	_bfcg, err := v2.LoadManager(BASE_CG_PATH, BASHFUL_CGROUP_PATH)
+	if err != nil {
+		panic(err)
+	}
+	bfcg := _bfcg
+	if false {
+		fmt.Println(bfcg)
+	}
+
+	_parent_cgroup, err := v2.LoadManager(BASE_CG_PATH, PARENT_CGROUP_PATH)
+	if err != nil {
+		panic(err)
+	}
+	parent_cgroup := _parent_cgroup
+
+	parent_controllers, err := parent_cgroup.Controllers()
+	if err != nil {
+		panic(err)
+	}
+	task_uuid := strings.Split(task.Id.String(), `-`)[0]
+	TASK_CG_PATH := fmt.Sprintf(`%s/%s`, PARENT_CGROUP_PATH, task_uuid)
+	_task_cg, err := v2.NewManager(BASE_CG_PATH, TASK_CG_PATH, &v2.Resources{})
+	if err != nil {
+		panic(err)
+	}
+	task.CG = _task_cg
+
+	if err := task.CG.ToggleControllers(parent_controllers, v2.Enable); err != nil {
+		panic(err)
+	}
+
+	stats, err := parent_cgroup.Stat()
+	if err != nil {
+		panic(err)
+	}
+	p_procs, err := parent_cgroup.Procs(true)
+	if err != nil {
+		panic(err)
+	}
+
+	if DEBUG_CG {
+		pp.Println(stats)
+		fmt.Printf("[NEWTASK] <PARENT>  %s %d Procs| %d Parent Controllers: %s\n", PARENT_CGROUP_PATH, len(p_procs), len(parent_controllers), parent_controllers)
+
+		pp.Fprintf(os.Stderr, "\n\nNEW TASK %s>  %s %s children\n\n", strings.Split(task.Id.String(), `-`)[0], syscall.Getpid(), len(task.Children))
 	}
 
 	return &task
@@ -306,25 +356,30 @@ func (task *Task) Execute(eventChan chan TaskEvent, waiter *sync.WaitGroup, envi
 		}
 	}
 	/*
-		fds := []uintptr{
-			readPipe.Fd(),
-			stdoutPipe.Fd(),
-			stderrPipe.Fd(),
+			fds := []uintptr{
+				readPipe.Fd(),
+				stdoutPipe.Fd(),
+				stderrPipe.Fd(),
+			}
+		err := startNewProcess(task.Command.Cmd.Path, task.Command.Cmd.Args, task.Config.Env, task)
+
+		if false {
+			var prog = func(state overseer.State) {
+
+			}
+
+			overseer.Run(overseer.Config{
+				Program: prog,
+				Address: ":5001",
+				Debug:   true, //display log of overseer actions
+			})
 		}
 	*/
-	err := startNewProcess(task.Command.Cmd.Path, task.Command.Cmd.Args, task.Config.Env, task)
-
-	if false {
-		var prog = func(state overseer.State) {
-
-		}
-
-		overseer.Run(overseer.Config{
-			Program: prog,
-			Address: ":5001",
-			Debug:   true, //display log of overseer actions
-		})
-	}
+	fmt.Fprintf(os.Stderr, "Starting> %s\n", pp.Sprintf(`%s`, task.Id.String()))
+	s := time.Now()
+	task.Command.Cmd.Start()
+	fmt.Fprintf(os.Stderr, "Started PID %d> %s in %s\n", task.Command.Cmd.Process.Pid, task.Id.String(), time.Since(s))
+	pp.Fprintf(os.Stderr, "%s\n", task.Command.Cmd.Process.Pid)
 
 	if DEBUG_BF {
 		fmt.Fprintf(os.Stderr, "Started PID> %s\n", pp.Sprintf(`%s`, task.Config))

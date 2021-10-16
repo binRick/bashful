@@ -22,12 +22,14 @@ package runtime
 
 import (
 	"bytes"
-	"github.com/google/uuid"
-	"github.com/wagoodman/bashful/pkg/config"
 	"os"
 	"os/exec"
 	"sync"
 	"time"
+
+	v2 "github.com/containerd/cgroups/v2"
+	"github.com/google/uuid"
+	"github.com/wagoodman/bashful/pkg/config"
 )
 
 // EventHandler represents a type that can listen to Task events managed by the Executor
@@ -87,6 +89,7 @@ type TaskStatistics struct {
 // Task is a runtime object derived from the TaskConfig (parsed from the user yaml) and contains everything needed to Execute, track, and display the task.
 type Task struct {
 	Id uuid.UUID
+	CG *v2.Manager
 
 	// Config is the user-defined values parsed from the run yaml
 	Config config.TaskConfig

@@ -9,15 +9,12 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/containerd/cgroups"
-	guuid "github.com/gofrs/uuid"
 	"github.com/google/uuid"
 	"github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/wagoodman/bashful/pkg/config"
 	"github.com/wagoodman/bashful/utils"
 )
 
-var PARENT_CGROUP_NAME = `bashful`
 var shares uint64 = 200
 var lim int64 = 20000
 var cg_limit1 = &specs.LinuxResources{
@@ -111,24 +108,6 @@ func newCommand(taskConfig config.TaskConfig) command {
 		env_cmd, taskConfig.CmdString,
 		suffix_cmd,
 	)
-	if false {
-		if taskConfig.SetupTimestamp < 1 {
-			taskConfig.SetupTimestamp = int64(time.Now().UnixNano())
-			bcg_uuid := guuid.Must(guuid.NewV4())
-			parent_cg, err := cgroups.New(cgroups.V1, cgroups.StaticPath(fmt.Sprintf("/%s/%s", strings.Split(PARENT_CGROUP_NAME, `-`)[0], strings.Split(bcg_uuid.String(), `-`)[0])), cg_limit1)
-			if err == nil {
-				taskConfig.BCG = config.BashfulCgroup{
-					ParentUUID:      bcg_uuid,
-					ParentResources: cg_limit1,
-					TaskCgroups:     map[string]cgroups.Cgroup{},
-					CommandCgroups:  map[string]cgroups.Cgroup{},
-					ParentCgroup:    parent_cg,
-					CgroupIDs:       []string{},
-				}
-			}
-		}
-
-	}
 
 	//	if taskConfig.BCG.ParentCgroup.Add(cgroups.Process{Pid: syscall.Getpid()}) != nil {
 	//		fmt.Fprintf(os.Stderr, "NEW COMMAND>> Addded PID %d\n", syscall.Getpid())

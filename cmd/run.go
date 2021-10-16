@@ -25,8 +25,11 @@ import (
 	"os"
 	"syscall"
 
+	v2 "github.com/containerd/cgroups/v2"
+
 	"github.com/containerd/cgroups"
 	mapset "github.com/deckarep/golang-set"
+	"github.com/google/gops/agent"
 	"github.com/google/uuid"
 	"github.com/k0kubun/pp"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
@@ -53,37 +56,111 @@ var devMode bool
 var cgroupsMode bool
 var listTasksMode bool
 
-var parent_cgroup cgroups.Cgroup
-var PARENT_CGROUP_NAME = `bashful`
-var PARENT_CGROUP_UUID = guuid.Must(guuid.NewV4())
-var PARENT_CGROUP_PATH = fmt.Sprintf(`/%s`, PARENT_CGROUP_NAME)
-var GOPS_ENABLED = false
+const BASE_CG_PATH = `/sys/fs/cgroup`
 
-func init() {
-	/*
-		if GOPS_ENABLED {
-			go func() {
-				for {
-					if err := agent.Listen(agent.Options{
-						ShutdownCleanup: true, // automatically closes on os.Interrupt
-					}); err != nil {
-						fmt.Errorf(`gops err> %s`, err)
-					}
-					time.Sleep(time.Hour)
+var DEBUG_CG = false
+var CGROUPS_MODE = get_cg_mode()
+var parent_cgroup, bfcg *v2.Manager
+var BASHFUL_CGROUP_NAME = `bashful`
+var PARENT_CGROUP_UUID = strings.Split(guuid.Must(guuid.NewV4()).String(), `-`)[0]
+var BASHFUL_CGROUP_PATH = fmt.Sprintf(`/%s`, BASHFUL_CGROUP_NAME)
+var PARENT_CGROUP_PATH = fmt.Sprintf(`%s/%s`, BASHFUL_CGROUP_PATH, PARENT_CGROUP_UUID)
+var GOPS_ENABLED = false
+var CG_VER = 0
+
+func gops_init() {
+	if GOPS_ENABLED {
+		go func() {
+			for {
+				if err := agent.Listen(agent.Options{
+					ShutdownCleanup: true, // automatically closes on os.Interrupt
+				}); err != nil {
+					fmt.Errorf(`gops err> %s`, err)
 				}
-			}()
-		}
-	*/
+				time.Sleep(time.Hour)
+			}
+		}()
+	}
+}
+
+func get_cg_mode() string {
+	cg_mode := cgroups.Mode()
+	switch cg_mode {
+	case cgroups.Legacy:
+		CG_VER = 1
+		return "legacy"
+	case cgroups.Hybrid:
+		return fmt.Sprintf("hybrid")
+	case cgroups.Unified:
+		CG_VER = 2
+		return fmt.Sprintf("unified")
+	case cgroups.Unavailable:
+		return fmt.Sprintf("cgroups unavailable")
+	}
+	return ``
+}
+
+func cg_init() {
+
 	os.Setenv(`PARENT_CGROUP_PID`, fmt.Sprintf("%d", syscall.Getpid()))
-	os.Setenv(`PARENT_CGROUP_UUID`, PARENT_CGROUP_UUID.String())
-	os.Setenv(`PARENT_CGROUP_NAME`, PARENT_CGROUP_NAME)
+	os.Setenv(`CGROUPS_MODE`, CGROUPS_MODE)
+	os.Setenv(`PARENT_CGROUP_UUID`, PARENT_CGROUP_UUID)
 	os.Setenv(`PARENT_CGROUP_PATH`, PARENT_CGROUP_PATH)
-	_parent_cgroup, err := cgroups.New(cgroups.V1, cgroups.StaticPath(fmt.Sprintf("%s", PARENT_CGROUP_PATH)), cg_limit1)
-	if err != nil {
-		cgroupsMode = false
-		fmt.Fprintf(os.Stderr, "%s", err)
-	} else {
+	os.Setenv(`CGROUPS_BASE_CG_PATH`, BASE_CG_PATH)
+	os.Setenv(`BASHFUL_CGROUP_PATH`, BASHFUL_CGROUP_PATH)
+
+	if CG_VER == 2 {
+		_bfcg, err := v2.LoadManager(BASE_CG_PATH, BASHFUL_CGROUP_PATH)
+		if err != nil {
+			_, err := v2.NewManager(BASE_CG_PATH, BASHFUL_CGROUP_PATH, &v2.Resources{})
+			if err != nil {
+				panic(err)
+			}
+			_bfcg, err := v2.LoadManager(BASE_CG_PATH, BASHFUL_CGROUP_PATH)
+			if err != nil {
+				panic(err)
+			}
+			bfcg = _bfcg
+		} else {
+			bfcg = _bfcg
+		}
+
+		root_controllers, err := bfcg.RootControllers()
+		if err != nil {
+			panic(err)
+		}
+
+		_parent_cgroup, err := v2.NewManager(BASE_CG_PATH, PARENT_CGROUP_PATH, &v2.Resources{})
+		if err != nil {
+			panic(err)
+		}
 		parent_cgroup = _parent_cgroup
+		if err := parent_cgroup.ToggleControllers(root_controllers, v2.Enable); err != nil {
+			panic(err)
+		}
+		parent_controllers, err := parent_cgroup.Controllers()
+		if err != nil {
+			panic(err)
+		}
+		stats, err := parent_cgroup.Stat()
+		if err != nil {
+			panic(err)
+		}
+
+		_, err = bfcg.Procs(true)
+		if err != nil {
+			panic(err)
+		}
+
+		p_procs, err := parent_cgroup.Procs(true)
+		if err != nil {
+			panic(err)
+		}
+		if DEBUG_CG {
+			pp.Println(stats)
+			fmt.Printf("<ROOT>    %s  %d Root Controllers: %s\n", len(root_controllers), root_controllers)
+			fmt.Printf("<PARENT>  %s %d Procs| %d Parent Controllers: %s\n", PARENT_CGROUP_PATH, len(p_procs), len(parent_controllers), parent_controllers)
+		}
 	}
 }
 
@@ -158,6 +235,7 @@ var runCmd = &cobra.Command{
 }
 
 func init() {
+	gops_init()
 	rootCmd.AddCommand(runCmd)
 
 	runCmd.Flags().BoolVar(&cgroupsMode, "cgroups", false, "Cgroups Mode")
@@ -167,6 +245,7 @@ func init() {
 
 	runCmd.Flags().StringVar(&tags, "tags", "", "A comma delimited list of matching task tags. If a task's tag matches *or if it is not tagged* then it will be executed (also see --only-tags)")
 	runCmd.Flags().StringVar(&onlyTags, "only-tags", "", "A comma delimited list of matching task tags. A task will only be executed if it has a matching tag")
+	cg_init()
 }
 
 func get_tasks(task_config *config.Config) []string {
@@ -292,14 +371,8 @@ func Run(yamlString []byte, cli config.Cli) {
 		client.AddEventHandler(handler.NewVerticalUI(client.Config))
 	}
 	client.AddEventHandler(handler.NewTaskLogger(client.Config))
-	//	_bashful_control, err := cgroups.New(cgroups.V1, cgroups.StaticPath("/bashful"), cg_limit1)
-	//	if err == nil {
-	//		cli.CgroupController = _bashful_control
-	//cmd_uuid := uuid.New()
+
 	if false {
-		//		if cli.BashfulCgroup.ParentCgroup.Add(cgroups.Process{Pid: syscall.Getpid()}) != nil {
-		//		panic(err)
-		//}
 		go func() {
 			for {
 				pids, err := process.Pids()
@@ -325,35 +398,9 @@ func Run(yamlString []byte, cli config.Cli) {
 						//				}
 					}
 				}
-				/*
-					stats1, err1 := cli.CgroupController.Stat()
-					//stats1, err1 := control.Stat(cgroups.IgnoreNotExist)
-					if err1 == nil {
-						if false {
-							pp.Fprintf(os.Stderr, "%s\n", stats1)
-						}
-					}
-					stats, err := cli.CgroupController.Stat()
-					//stats, err := control.Stat(cgroups.IgnoreNotExist)
-					if err == nil {
-						if false {
-							pp.Fprintf(os.Stderr, "%s\n", stats)
-						}
-					}
-				*/
 				time.Sleep(3 * time.Second)
 			}
 		}()
-	}
-	if false {
-		/*
-			cmd_cg, err := cli.CgroupController.New(cmd_uuid.String()+`-pidX`, cg_limit1)
-			if err != nil {
-				panic(err)
-
-			}
-		*/
-		//	}
 	}
 	rand.Seed(time.Now().UnixNano())
 
@@ -364,7 +411,7 @@ func Run(yamlString []byte, cli config.Cli) {
 		} else {
 			tagInfo = " non-tagged and matching tags: "
 		}
-		tagInfo += strings.Join(cli.RunTags, ", ")
+		tagInfo += strings.Join(cli.RunTags, ",")
 	}
 
 	fmt.Println(utils.Bold("Running " + tagInfo))

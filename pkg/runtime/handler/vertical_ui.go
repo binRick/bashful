@@ -16,7 +16,6 @@ import (
 	"text/template"
 	"time"
 
-	guuid "github.com/gofrs/uuid"
 	"github.com/k0kubun/go-ansi"
 	"github.com/k0kubun/pp"
 	"github.com/schollz/progressbar/v3"
@@ -139,24 +138,22 @@ func (handler *VerticalUI) AddRuntimeData(data *runtime.TaskStatistics) {
 
 func load_env(task *runtime.Task) {
 
-	PARENT_CGROUP_NAME := os.Getenv(`PARENT_CGROUP_NAME`)
 	PARENT_CGROUP_PID := os.Getenv(`PARENT_CGROUP_PID`)
-	PARENT_CGROUP_UUID, err := guuid.FromString(os.Getenv(`PARENT_CGROUP_UUID`))
-	if err != nil {
-		panic(err)
-	}
+	PARENT_CGROUP_UUID := os.Getenv(`PARENT_CGROUP_UUID`)
 	PARENT_CGROUP_PATH := os.Getenv(`PARENT_CGROUP_PATH`)
-	fmt.Fprintf(os.Stderr, "NEW TASK>> tags=%s children_qty=%d envs=%d parallel_tasks_qty=%d cmd=%s task=%s path=%s name=%s uuid=%s pid=%d parent_pid=%s task_config_parent_uuid=%s args=\"%s\"\n",
-		strings.Join(task.Config.Tags, `,`),
-		len(task.Children),
-		len(task.Config.Env),
-		len(task.Config.ParallelTasks),
-		task.Command.Cmd.Path,
-		task.Id.String(),
-		PARENT_CGROUP_PATH, PARENT_CGROUP_NAME, PARENT_CGROUP_UUID.String(), syscall.Getpid(), PARENT_CGROUP_PID,
-		task.Config.BCG.ParentUUID.String(),
-		strings.Join(task.Command.Cmd.Args, ` `),
-	)
+	if DEBUG_BF {
+		fmt.Fprintf(os.Stderr, "NEW TASK>> tags=%s children_qty=%d envs=%d parallel_tasks_qty=%d cmd=%s task=%s path=%s uuid=%s pid=%d parent_pid=%s task_config_parent_uuid=%s args=\"%s\"\n",
+			strings.Join(task.Config.Tags, `,`),
+			len(task.Children),
+			len(task.Config.Env),
+			len(task.Config.ParallelTasks),
+			task.Command.Cmd.Path,
+			task.Id,
+			PARENT_CGROUP_PATH, PARENT_CGROUP_UUID, syscall.Getpid(), PARENT_CGROUP_PID,
+			task.Config.BCG.ParentUUID.String(),
+			strings.Join(task.Command.Cmd.Args, ` `),
+		)
+	}
 }
 
 func (handler *VerticalUI) spinnerHandler() {

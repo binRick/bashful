@@ -9,6 +9,7 @@ require (
 	github.com/deckarep/golang-set v1.7.1
 	github.com/dustin/go-humanize v1.0.0
 	github.com/gofrs/uuid v4.0.0+incompatible // indirect
+	github.com/google/gops v0.3.21 // indirect
 	github.com/google/uuid v1.3.0
 	github.com/gosuri/uilive v0.0.0-20170323041506-ac356e6e42cd // indirect
 	github.com/gosuri/uiprogress v0.0.0-20170224063937-d0567a9d84a1
