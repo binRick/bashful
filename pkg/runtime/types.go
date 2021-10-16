@@ -144,6 +144,7 @@ type command struct {
 
 	// EnvReadFile is an extra pipe given to the child shell process for exfiltrating env vars back up to bashful (to provide as input for future Tasks)
 	EnvReadFile *os.File
+	PidReadFile *os.File
 
 	// Environment is a list of env vars from the exited child process
 	Environment map[string]string

@@ -28,6 +28,7 @@ import (
 	"math"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 	"sync"
 	"syscall"
@@ -337,12 +338,22 @@ func (task *Task) Execute(eventChan chan TaskEvent, waiter *sync.WaitGroup, envi
 
 	s := time.Now()
 	task.Command.Cmd.Start()
+	cmd_start_dur := time.Since(s)
+
 	go func() {
-		cmd_start_dur := time.Since(s)
+
+		task.Command.Cmd.ExtraFiles[1].Close()
+		_forked_pid, err := ioutil.ReadAll(task.Command.PidReadFile)
+		utils.CheckError(err, "Could not pid fd from child shell")
+		forked_pid, err := strconv.ParseInt(strings.Trim(fmt.Sprintf(`%s`, _forked_pid), "\n"), 10, 0)
+		utils.CheckError(err, "Could not parse pid from child shell")
 		s = time.Now()
-		err := task.CG.AddProc(uint64(task.Command.Cmd.Process.Pid))
-		if err != nil {
-			panic(err)
+
+		if false {
+			perr := task.CG.AddProc(uint64(task.Command.Cmd.Process.Pid))
+			if perr != nil {
+				panic(perr)
+			}
 		}
 		add_proc_dur := time.Since(s)
 		cg_procs, err := task.CG.Procs(true)
@@ -357,17 +368,22 @@ func (task *Task) Execute(eventChan chan TaskEvent, waiter *sync.WaitGroup, envi
 		if DEBUG_CG {
 			fmt.Fprintf(os.Stderr, `############################################
 %s
->> Started Task %s in %s
->> Started? %v
->> %s 
->> Added PID %d to %s in %s
->> CG Now %s Has %d Procs: %d
+>> Started Task %s in           %s
+>> Started?                     %v
+>> Forked PID:                  %v
+>> Configured Command:          %s 
+>> Exec Path:                   %s
+>> Exec Command:                %s
+>> Added PID %d to %s in        %s
+>> CG Now %s Has %d Procs:      %d
 ############################################
 `,
 				task.Command.StartTime,
 				strings.Split(task.Id.String(), `-`)[0], cmd_start_dur,
 				task.Started,
+				forked_pid,
 				cmd_str,
+				task.Command.Cmd.Path, strings.Join(task.Command.Cmd.Args, ` `),
 				task.Command.Cmd.Process.Pid, task.CGPath, add_proc_dur,
 				task.CGPath, len(cg_procs), cg_procs,
 			)

@@ -23,7 +23,6 @@ package runtime
 import (
 	"fmt"
 	"os"
-	"strings"
 	"syscall"
 	"time"
 
@@ -91,7 +90,7 @@ func (executor *Executor) estimateRuntime() {
 
 		for _, subTask := range task.Children {
 			if DEBUG_BF {
-				pp.Fprintf(os.Stderr, "Subtask> %s %d\n", strings.Split(task.Id.String(), `-`)[0], syscall.Getpid())
+				//				pp.Fprintf(os.Stderr, "Subtask> %s %d\n", strings.Split(task.Id.String(), `-`)[0], syscall.Getpid())
 			}
 			if subTask.Config.CmdString != "" || subTask.Config.URL != "" {
 				executor.Statistics.Total++
