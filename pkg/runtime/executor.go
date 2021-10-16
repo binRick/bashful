@@ -33,7 +33,7 @@ import (
 	"github.com/wagoodman/bashful/utils"
 )
 
-var DEBUG_BF = false
+var DEBUG_BF = true
 
 func newExecutorStats() *TaskStatistics {
 	return &TaskStatistics{

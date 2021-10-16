@@ -33,7 +33,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/containerd/cgroups"
 	v2 "github.com/containerd/cgroups/v2"
 	"github.com/google/uuid"
 	"github.com/k0kubun/pp"
@@ -56,42 +55,8 @@ const (
 	StatusError
 )
 
-var DEBUG_CG = false
+var DEBUG_CG = true
 
-func startNewProcess(path string, args []string, env map[string]string, task *Task) error {
-
-	//	env = append(env, fmt.Sprintf(`BASHFUL_CGROUP_STARTED=%s`, fmt.Sprintf(`%d`, int64(time.Now().UnixNano()))))
-	//env = append(env, fmt.Sprintf(`BASHFUL_CGROUP_UUID=%s`, fmt.Sprintf(`%s`, uuid.New().String())))
-	BASHFUL_CGROUP_PATH := fmt.Sprintf(`%s/%s`, strings.Split(task.Config.BCG.ParentUUID.String(), `-`)[0], strings.Split(uuid.New().String(), `-`)[0])
-	//	env = append(env, fmt.Sprintf(`BASHFUL_CGROUP_PATH=%s`, BASHFUL_CGROUP_PATH))
-	//pp.Println(`env:`, task.Command.Cmd.Env)
-
-	parent_cg, err := cgroups.New(cgroups.V1, cgroups.StaticPath(BASHFUL_CGROUP_PATH), cg_limit1)
-	if err != nil {
-		return err
-	}
-	if false {
-		fmt.Println(parent_cg)
-	}
-	execSpec := &syscall.ProcAttr{
-		Env: task.Command.Cmd.Env,
-		//Files: []uintptr{task.Command.Cmd.Stdout.Fd()},
-		//		Files: []uintptr{task.Command.Cmd.StdinPipe.Fd(), task.Command.Cmd.StdoutPipe.Fd(), task.Command.Cmd.StderrPipe.Fd()},
-	}
-	if false {
-		fork, err := syscall.ForkExec(task.Command.Cmd.Path, task.Command.Cmd.Args, execSpec)
-		if err != nil {
-			return fmt.Errorf("failed to forkexec: %v", err)
-		}
-
-		fmt.Fprintf(os.Stderr, "start new process success, pid %d.", fork)
-	} else {
-		//pp.Println(task.BCG.ParentUUID.String())
-		task.Command.Cmd.Start()
-	}
-
-	return nil
-}
 
 var swap_max int64 = 512 * 1000 * 1000
 var mem_max int64 = 256 * 1000 * 1000
@@ -172,12 +137,13 @@ func NewTask(taskConfig config.TaskConfig, runtimeOptions *config.Options) *Task
 	}
 
 	if DEBUG_CG {
+if false {
 		pp.Println(stats)
 		fmt.Printf("[NEWTASK] <PARENT>  %s %d Procs| %d Parent Controllers: %s\n", PARENT_CGROUP_PATH, len(p_procs), len(parent_controllers), parent_controllers)
 
 		pp.Fprintf(os.Stderr, "\n\nNEW TASK %s>  %s %s children\n\n", strings.Split(task.Id.String(), `-`)[0], syscall.Getpid(), len(task.Children))
 	}
-
+}
 	return &task
 }
 
@@ -289,8 +255,8 @@ func (task *Task) Execute(eventChan chan TaskEvent, waiter *sync.WaitGroup, envi
 	eventChan <- TaskEvent{Task: task, Status: StatusRunning, ReturnCode: -1}
 	waiter.Add(1)
 	if DEBUG_BF {
-		pp.Fprintf(os.Stderr, "Execute Task> %d | %s %s\n\n", syscall.Getpid(), task.Command.Cmd.Path, strings.Join(task.Command.Cmd.Args, ` `))
-		pp.Println(task)
+//		pp.Fprintf(os.Stderr, "Execute Task> %d | %s %s\n\n", syscall.Getpid(), task.Command.Cmd.Path, strings.Join(task.Command.Cmd.Args, ` `))
+	//	pp.Println(task)
 	}
 	defer waiter.Done()
 
@@ -390,14 +356,18 @@ func (task *Task) Execute(eventChan chan TaskEvent, waiter *sync.WaitGroup, envi
 			cmd_str = fmt.Sprintf(`%s...`, cmd_str[0:cmd_lim-1])
 		}
 		if DEBUG_CG {
-			fmt.Fprintf(os.Stderr, `
-Started Task %s in %s
->>%s 
->>Added PID %d to %s in %s
->>CG Now %s Has %d Procs: %d
+			fmt.Fprintf(os.Stderr, `############################################
+%s
+>> Started Task %s in %s
+>> Started? %v
+>> %s 
+>> Added PID %d to %s in %s
+>> CG Now %s Has %d Procs: %d
+############################################
 `,
-				strings.Split(task.Id.String(), `-`)[0],
-				cmd_start_dur,
+task.Command.StartTime,
+				strings.Split(task.Id.String(), `-`)[0], cmd_start_dur,
+task.Started,
 				cmd_str,
 				task.Command.Cmd.Process.Pid, task.CGPath, add_proc_dur,
 				task.CGPath, len(cg_procs), cg_procs,

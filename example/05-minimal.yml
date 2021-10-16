@@ -6,15 +6,20 @@ config:
 
 tasks:
   - name: Prepping data
+    tags: t
     cmd: example/scripts/random-worker.sh 1
   - name: Prepping data
+    tags: t
     cmd: example/scripts/random-worker.sh 1
   - name: Prepping data
+    tags: t
     cmd: example/scripts/random-worker.sh 1
   - name: Prepping data
+    tags: t
     cmd: example/scripts/random-worker.sh 1
 
   - name: Compiling source
+    tags: t
     parallel-tasks:
       - name: Compiling aux libraries
         cmd: example/scripts/compile-something.sh 2
