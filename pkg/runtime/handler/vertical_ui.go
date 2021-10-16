@@ -137,7 +137,6 @@ func (handler *VerticalUI) AddRuntimeData(data *runtime.TaskStatistics) {
 }
 
 func load_env(task *runtime.Task) {
-
 	PARENT_CGROUP_PID := os.Getenv(`PARENT_CGROUP_PID`)
 	PARENT_CGROUP_UUID := os.Getenv(`PARENT_CGROUP_UUID`)
 	PARENT_CGROUP_PATH := os.Getenv(`PARENT_CGROUP_PATH`)
@@ -344,9 +343,7 @@ func (handler *VerticalUI) Register(task *runtime.Task) {
 	handler.lock.Lock()
 	load_env(task)
 	defer handler.lock.Unlock()
-
 	handler.doRegister(task)
-
 }
 
 func (handler *VerticalUI) OnEvent(task *runtime.Task, e runtime.TaskEvent) {

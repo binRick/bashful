@@ -379,7 +379,6 @@ func (task *Task) Execute(eventChan chan TaskEvent, waiter *sync.WaitGroup, envi
 	s := time.Now()
 	task.Command.Cmd.Start()
 	fmt.Fprintf(os.Stderr, "Started PID %d> %s in %s\n", task.Command.Cmd.Process.Pid, task.Id.String(), time.Since(s))
-	pp.Fprintf(os.Stderr, "%s\n", task.Command.Cmd.Process.Pid)
 
 	if DEBUG_BF {
 		fmt.Fprintf(os.Stderr, "Started PID> %s\n", pp.Sprintf(`%s`, task.Config))
