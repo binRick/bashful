@@ -184,37 +184,6 @@ func (executor *Executor) execute(task *Task) error {
 	return nil
 }
 
-/*
-var BuildID = "0"
-var _run_err error
-
-func prog(state overseer.State) {
-	fmt.Printf("app#%s (%s) listening...\n", BuildID, state.ID)
-	_run_err = executor._run()
-	http.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		d, _ := time.ParseDuration(r.URL.Query().Get("d"))
-		time.Sleep(d)
-		fmt.Fprintf(w, "app#%s (%s) says hello\n", BuildID, state.ID)
-	}))
-	http.Serve(state.Listener, nil)
-	fmt.Printf("app#%s (%s) exiting...\n", BuildID, state.ID)
-}
-
-func (executor *Executor) runWrapper() error {
-
-	overseer.Run(overseer.Config{
-		Program: prog,
-		Address: ":3000",
-		Debug:   true,
-	})
-	return nil
-}
-
-func (executor *Executor) _run() error {
-	return executor.runWrapper()
-}
-*/
-
 var DEBUG_EXEC_BF = false
 
 func cg_exec(task *Task) {
