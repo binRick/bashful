@@ -88,8 +88,9 @@ type TaskStatistics struct {
 
 // Task is a runtime object derived from the TaskConfig (parsed from the user yaml) and contains everything needed to Execute, track, and display the task.
 type Task struct {
-	Id uuid.UUID
-	CG *v2.Manager
+	Id     uuid.UUID
+	CG     *v2.Manager
+	CGPath string
 
 	// Config is the user-defined values parsed from the run yaml
 	Config config.TaskConfig

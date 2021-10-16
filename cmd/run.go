@@ -68,6 +68,19 @@ var PARENT_CGROUP_PATH = fmt.Sprintf(`%s/%s`, BASHFUL_CGROUP_PATH, PARENT_CGROUP
 var GOPS_ENABLED = false
 var CG_VER = 0
 
+var swap_max int64 = 768 * 1000 * 1000
+var mem_max int64 = 512 * 1000 * 1000
+var proc_max int64 = 200
+var BashfulResources = v2.Resources{
+	Pids: &v2.Pids{
+		Max: proc_max,
+	},
+	Memory: &v2.Memory{
+		Max:  &mem_max,
+		Swap: &swap_max,
+	},
+}
+
 func gops_init() {
 	if GOPS_ENABLED {
 		go func() {
@@ -130,7 +143,7 @@ func cg_init() {
 			panic(err)
 		}
 
-		_parent_cgroup, err := v2.NewManager(BASE_CG_PATH, PARENT_CGROUP_PATH, &v2.Resources{})
+		_parent_cgroup, err := v2.NewManager(BASE_CG_PATH, PARENT_CGROUP_PATH, &BashfulResources)
 		if err != nil {
 			panic(err)
 		}
@@ -176,17 +189,6 @@ var runCmd = &cobra.Command{
 			utils.ExitWithErrorMessage("Options 'tags' and 'only-tags' are mutually exclusive.")
 		}
 		parent_cg_uuid := guuid.Must(guuid.NewV4())
-		child_cg_path := fmt.Sprintf("%s/%s", strings.Split(parent_cg_uuid.String(), `-`)[0], strings.Split(parent_cg_uuid.String(), `-`)[0])
-		if false {
-			parent_cg, err := cgroups.New(cgroups.V1, cgroups.StaticPath(fmt.Sprintf("%s", child_cg_path)), cg_limit1)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "CGROUPS ERR:%s>>  %s\n", child_cg_path, err)
-			} else {
-				if parent_cg.Add(cgroups.Process{Pid: syscall.Getpid()}) != nil {
-					fmt.Fprintf(os.Stderr, "New Cobra Command:%s>> Addded PID %s|\n", child_cg_path, syscall.Getpid())
-				}
-			}
-		}
 		cli := config.Cli{
 			YamlPath: args[0],
 			BashfulCgroup: config.BashfulCgroup{

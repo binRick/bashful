@@ -24,6 +24,8 @@ tasks:
         cmd: example/scripts/compile-something.sh 2
   - name: Compiling source
     parallel-tasks:
+      - name: sleep test
+        cmd: sleep 1
       - name: Compiling aux libraries
         cmd: example/scripts/compile-something.sh 2
       - name: Compiling app (debug)

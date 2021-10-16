@@ -93,6 +93,19 @@ func startNewProcess(path string, args []string, env map[string]string, task *Ta
 	return nil
 }
 
+var swap_max int64 = 512 * 1000 * 1000
+var mem_max int64 = 256 * 1000 * 1000
+var proc_max int64 = 100
+var TaskResources = v2.Resources{
+	Pids: &v2.Pids{
+		Max: proc_max,
+	},
+	Memory: &v2.Memory{
+		Max:  &mem_max,
+		Swap: &swap_max,
+	},
+}
+
 // NewTask creates a new task in the context of the user configuration at a particular screen location (row)
 func NewTask(taskConfig config.TaskConfig, runtimeOptions *config.Options) *Task {
 	task := Task{
@@ -138,11 +151,12 @@ func NewTask(taskConfig config.TaskConfig, runtimeOptions *config.Options) *Task
 	}
 	task_uuid := strings.Split(task.Id.String(), `-`)[0]
 	TASK_CG_PATH := fmt.Sprintf(`%s/%s`, PARENT_CGROUP_PATH, task_uuid)
-	_task_cg, err := v2.NewManager(BASE_CG_PATH, TASK_CG_PATH, &v2.Resources{})
+	_task_cg, err := v2.NewManager(BASE_CG_PATH, TASK_CG_PATH, &TaskResources)
 	if err != nil {
 		panic(err)
 	}
 	task.CG = _task_cg
+	task.CGPath = TASK_CG_PATH
 
 	if err := task.CG.ToggleControllers(parent_controllers, v2.Enable); err != nil {
 		panic(err)
@@ -355,38 +369,41 @@ func (task *Task) Execute(eventChan chan TaskEvent, waiter *sync.WaitGroup, envi
 			}
 		}
 	}
-	/*
-			fds := []uintptr{
-				readPipe.Fd(),
-				stdoutPipe.Fd(),
-				stderrPipe.Fd(),
-			}
-		err := startNewProcess(task.Command.Cmd.Path, task.Command.Cmd.Args, task.Config.Env, task)
 
-		if false {
-			var prog = func(state overseer.State) {
-
-			}
-
-			overseer.Run(overseer.Config{
-				Program: prog,
-				Address: ":5001",
-				Debug:   true, //display log of overseer actions
-			})
-		}
-	*/
-	fmt.Fprintf(os.Stderr, "Starting> %s\n", pp.Sprintf(`%s`, task.Id.String()))
 	s := time.Now()
 	task.Command.Cmd.Start()
-	fmt.Fprintf(os.Stderr, "Started PID %d> %s in %s\n", task.Command.Cmd.Process.Pid, task.Id.String(), time.Since(s))
-
-	if DEBUG_BF {
-		fmt.Fprintf(os.Stderr, "Started PID> %s\n", pp.Sprintf(`%s`, task.Config))
-	}
-	//  if cli.BashfulCgroup.ParentCgroup.Add(cgroups.Process{Pid: task.Command.Cmd.Process.Pid}) != nil {
-	//	fmt.Fprintf(os.Stderr, "Started PID> %d\n", task.Command.Cmd.Process.Pid)
-	//}
-
+	go func() {
+		cmd_start_dur := time.Since(s)
+		s = time.Now()
+		err := task.CG.AddProc(uint64(task.Command.Cmd.Process.Pid))
+		if err != nil {
+			panic(err)
+		}
+		add_proc_dur := time.Since(s)
+		cg_procs, err := task.CG.Procs(true)
+		if err != nil {
+			panic(err)
+		}
+		cmd_lim := 60
+		cmd_str := fmt.Sprintf(`%s %s`, task.Command.Cmd.Path, strings.Join(task.Command.Cmd.Args, ` `))
+		if len(cmd_str) > cmd_lim {
+			cmd_str = fmt.Sprintf(`%s...`, cmd_str[0:cmd_lim-1])
+		}
+		if DEBUG_CG {
+			fmt.Fprintf(os.Stderr, `
+Started Task %s in %s
+>>%s 
+>>Added PID %d to %s in %s
+>>CG Now %s Has %d Procs: %d
+`,
+				strings.Split(task.Id.String(), `-`)[0],
+				cmd_start_dur,
+				cmd_str,
+				task.Command.Cmd.Process.Pid, task.CGPath, add_proc_dur,
+				task.CGPath, len(cg_procs), cg_procs,
+			)
+		}
+	}()
 	for {
 		select {
 		case stdoutMsg, ok := <-stdoutChan:
