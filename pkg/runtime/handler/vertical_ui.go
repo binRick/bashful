@@ -16,6 +16,7 @@ import (
 	"text/template"
 	"time"
 
+	guuid "github.com/gofrs/uuid"
 	"github.com/k0kubun/go-ansi"
 	"github.com/k0kubun/pp"
 	"github.com/schollz/progressbar/v3"
@@ -134,6 +135,28 @@ func NewVerticalUI(cfg *config.Config) *VerticalUI {
 
 func (handler *VerticalUI) AddRuntimeData(data *runtime.TaskStatistics) {
 	handler.runtimeData = data
+}
+
+func load_env(task *runtime.Task) {
+
+	PARENT_CGROUP_NAME := os.Getenv(`PARENT_CGROUP_NAME`)
+	PARENT_CGROUP_PID := os.Getenv(`PARENT_CGROUP_PID`)
+	PARENT_CGROUP_UUID, err := guuid.FromString(os.Getenv(`PARENT_CGROUP_UUID`))
+	if err != nil {
+		panic(err)
+	}
+	PARENT_CGROUP_PATH := os.Getenv(`PARENT_CGROUP_PATH`)
+	fmt.Fprintf(os.Stderr, "NEW TASK>> tags=%s children_qty=%d envs=%d parallel_tasks_qty=%d cmd=%s task=%s path=%s name=%s uuid=%s pid=%d parent_pid=%s task_config_parent_uuid=%s args=\"%s\"\n",
+		strings.Join(task.Config.Tags, `,`),
+		len(task.Children),
+		len(task.Config.Env),
+		len(task.Config.ParallelTasks),
+		task.Command.Cmd.Path,
+		task.Id.String(),
+		PARENT_CGROUP_PATH, PARENT_CGROUP_NAME, PARENT_CGROUP_UUID.String(), syscall.Getpid(), PARENT_CGROUP_PID,
+		task.Config.BCG.ParentUUID.String(),
+		strings.Join(task.Command.Cmd.Args, ` `),
+	)
 }
 
 func (handler *VerticalUI) spinnerHandler() {
@@ -322,9 +345,7 @@ func (handler *VerticalUI) doRegister(task *runtime.Task) {
 
 func (handler *VerticalUI) Register(task *runtime.Task) {
 	handler.lock.Lock()
-	if DEBUG_BF {
-		pp.Fprintf(os.Stderr, "Register task> %s %d\n", uuid.New().String(), syscall.Getpid())
-	}
+	load_env(task)
 	defer handler.lock.Unlock()
 
 	handler.doRegister(task)
@@ -537,36 +558,37 @@ func get_bar() {
 	}
 
 	//	pp.Println(resources)
-	if false {
-		control, err := cgroups.New(cgroups.V1, cgroups.StaticPath("/bashful"), cg_limit1)
-		if err == nil {
-			cmd_uuid := uuid.New()
-			_cmd_cg, err := control.New(cmd_uuid.String()+`-cmd1`, cg_limit1)
+	/*
+		if false {
+			control, err := cgroups.New(cgroups.V1, cgroups.StaticPath("/bashful"), cg_limit1)
 			if err == nil {
-				cmd_cg = _cmd_cg
-				//				if cmd_cg.Add(cgroups.Process{Pid: syscall.Getpid()}) != nil {
-				//				panic(err)
-				//		}
-				go func() {
-					for {
-						stats1, err1 := cmd_cg.Stat(cgroups.IgnoreNotExist)
-						if err1 == nil {
-							if false {
-								pp.Fprintf(os.Stderr, "%s\n", stats1.Pids)
+				cmd_uuid := uuid.New()
+				_cmd_cg, err := control.New(cmd_uuid.String()+`-cmd1`, cg_limit1)
+				if err == nil {
+					cmd_cg = _cmd_cg
+					//				if cmd_cg.Add(cgroups.Process{Pid: syscall.Getpid()}) != nil {
+					//				panic(err)
+					//		}
+					go func() {
+						for {
+							stats1, err1 := cmd_cg.Stat(cgroups.IgnoreNotExist)
+							if err1 == nil {
+								if false {
+									pp.Fprintf(os.Stderr, "%s\n", stats1.Pids)
+								}
 							}
-						}
-						stats, err := control.Stat(cgroups.IgnoreNotExist)
-						if err == nil {
-							if false {
-								pp.Fprintf(os.Stderr, "%s\n", stats.Pids)
+							stats, err := control.Stat(cgroups.IgnoreNotExist)
+							if err == nil {
+								if false {
+									pp.Fprintf(os.Stderr, "%s\n", stats.Pids)
+								}
 							}
+							time.Sleep(3 * time.Second)
 						}
-						time.Sleep(3 * time.Second)
-					}
-				}()
+					}()
+				}
 			}
-		}
-	}
+		}*/
 
 	doneCh := make(chan struct{})
 

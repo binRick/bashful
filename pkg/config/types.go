@@ -61,6 +61,7 @@ type BashfulCgroup struct {
 	TaskCgroups     map[string]cgroups.Cgroup
 	CgroupIDs       []string
 	ParentResources *specs.LinuxResources
+	SetupTimestamp  int64
 }
 
 // Cli is the exhaustive set of all command line options available on bashful
@@ -151,8 +152,10 @@ type Options struct {
 
 // TaskConfig represents a task definition and all metadata (Note: this is not the task runtime object)
 type TaskConfig struct {
-	CgroupsEnabled bool                      `yaml:"cgroups-enabled"`
-	CgroupLimits   map[string]map[string]int `yaml:"cgroup-limits"`
+	BCG            BashfulCgroup
+	SetupTimestamp int64
+	CgroupsEnabled bool `yaml:"cgroups-enabled"`
+	//CgroupLimits   map[string]map[string]int `yaml:"cgroup-limits"`
 	// Name is the display name of the task (if not provided, then CmdString is used)
 	Name string `yaml:"name"`
 

@@ -14,6 +14,7 @@ require (
 	github.com/gosuri/uiprogress v0.0.0-20170224063937-d0567a9d84a1
 	github.com/howeyc/gopass v0.0.0-20170109162249-bf9dde6d0d2c
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
+	github.com/jpillora/overseer v1.1.6 // indirect
 	github.com/k0kubun/colorstring v0.0.0-20150214042306-9440f1994b88 // indirect
 	github.com/k0kubun/go-ansi v0.0.0-20180517002512-3bf9e2903213
 	github.com/k0kubun/pp v3.0.1+incompatible

@@ -33,7 +33,9 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/containerd/cgroups"
 	"github.com/google/uuid"
+	"github.com/jpillora/overseer"
 	"github.com/k0kubun/pp"
 	"github.com/lunixbochs/vtclean"
 	"github.com/wagoodman/bashful/pkg/config"
@@ -53,6 +55,41 @@ const (
 	StatusSuccess
 	StatusError
 )
+
+func startNewProcess(path string, args []string, env map[string]string, task *Task) error {
+
+	//	env = append(env, fmt.Sprintf(`BASHFUL_CGROUP_STARTED=%s`, fmt.Sprintf(`%d`, int64(time.Now().UnixNano()))))
+	//env = append(env, fmt.Sprintf(`BASHFUL_CGROUP_UUID=%s`, fmt.Sprintf(`%s`, uuid.New().String())))
+	BASHFUL_CGROUP_PATH := fmt.Sprintf(`%s/%s`, strings.Split(task.Config.BCG.ParentUUID.String(), `-`)[0], strings.Split(uuid.New().String(), `-`)[0])
+	//	env = append(env, fmt.Sprintf(`BASHFUL_CGROUP_PATH=%s`, BASHFUL_CGROUP_PATH))
+	//pp.Println(`env:`, task.Command.Cmd.Env)
+
+	parent_cg, err := cgroups.New(cgroups.V1, cgroups.StaticPath(BASHFUL_CGROUP_PATH), cg_limit1)
+	if err != nil {
+		return err
+	}
+	if false {
+		fmt.Println(parent_cg)
+	}
+	execSpec := &syscall.ProcAttr{
+		Env: task.Command.Cmd.Env,
+		//Files: []uintptr{task.Command.Cmd.Stdout.Fd()},
+		//		Files: []uintptr{task.Command.Cmd.StdinPipe.Fd(), task.Command.Cmd.StdoutPipe.Fd(), task.Command.Cmd.StderrPipe.Fd()},
+	}
+	if false {
+		fork, err := syscall.ForkExec(task.Command.Cmd.Path, task.Command.Cmd.Args, execSpec)
+		if err != nil {
+			return fmt.Errorf("failed to forkexec: %v", err)
+		}
+
+		fmt.Fprintf(os.Stderr, "start new process success, pid %d.", fork)
+	} else {
+		//pp.Println(task.BCG.ParentUUID.String())
+		task.Command.Cmd.Start()
+	}
+
+	return nil
+}
 
 // NewTask creates a new task in the context of the user configuration at a particular screen location (row)
 func NewTask(taskConfig config.TaskConfig, runtimeOptions *config.Options) *Task {
@@ -268,8 +305,27 @@ func (task *Task) Execute(eventChan chan TaskEvent, waiter *sync.WaitGroup, envi
 			}
 		}
 	}
+	/*
+		fds := []uintptr{
+			readPipe.Fd(),
+			stdoutPipe.Fd(),
+			stderrPipe.Fd(),
+		}
+	*/
+	err := startNewProcess(task.Command.Cmd.Path, task.Command.Cmd.Args, task.Config.Env, task)
 
-	task.Command.Cmd.Start()
+	if false {
+		var prog = func(state overseer.State) {
+
+		}
+
+		overseer.Run(overseer.Config{
+			Program: prog,
+			Address: ":5001",
+			Debug:   true, //display log of overseer actions
+		})
+	}
+
 	if DEBUG_BF {
 		fmt.Fprintf(os.Stderr, "Started PID> %s\n", pp.Sprintf(`%s`, task.Config))
 	}

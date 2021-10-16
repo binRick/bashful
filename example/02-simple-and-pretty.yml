@@ -2,7 +2,7 @@ config:
   # You can optionally log all output from each process
   # to the given file here
   log-path: build.log
-  stats-cmd: python3 /root/dool/dool --vmstat --no-color --noheaders --io
+#  stats-cmd: python3 /root/dool/dool --vmstat --no-color --noheaders --io
   env:
     YYYYYYYYYYYYYYYY: aaaaaaaaa
 

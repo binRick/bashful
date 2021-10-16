@@ -27,7 +27,6 @@ import (
 
 	"github.com/containerd/cgroups"
 	mapset "github.com/deckarep/golang-set"
-	guuid "github.com/gofrs/uuid"
 	"github.com/google/uuid"
 	"github.com/k0kubun/pp"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
@@ -38,6 +37,7 @@ import (
 	"strings"
 	"time"
 
+	guuid "github.com/gofrs/uuid"
 	"github.com/spf13/cobra"
 	"github.com/wagoodman/bashful/pkg/config"
 	"github.com/wagoodman/bashful/pkg/log"
@@ -55,9 +55,30 @@ var listTasksMode bool
 
 var parent_cgroup cgroups.Cgroup
 var PARENT_CGROUP_NAME = `bashful`
+var PARENT_CGROUP_UUID = guuid.Must(guuid.NewV4())
+var PARENT_CGROUP_PATH = fmt.Sprintf(`/%s`, PARENT_CGROUP_NAME)
+var GOPS_ENABLED = false
 
 func init() {
-	_parent_cgroup, err := cgroups.New(cgroups.V1, cgroups.StaticPath(fmt.Sprintf("/%s", PARENT_CGROUP_NAME)), cg_limit1)
+	/*
+		if GOPS_ENABLED {
+			go func() {
+				for {
+					if err := agent.Listen(agent.Options{
+						ShutdownCleanup: true, // automatically closes on os.Interrupt
+					}); err != nil {
+						fmt.Errorf(`gops err> %s`, err)
+					}
+					time.Sleep(time.Hour)
+				}
+			}()
+		}
+	*/
+	os.Setenv(`PARENT_CGROUP_PID`, fmt.Sprintf("%d", syscall.Getpid()))
+	os.Setenv(`PARENT_CGROUP_UUID`, PARENT_CGROUP_UUID.String())
+	os.Setenv(`PARENT_CGROUP_NAME`, PARENT_CGROUP_NAME)
+	os.Setenv(`PARENT_CGROUP_PATH`, PARENT_CGROUP_PATH)
+	_parent_cgroup, err := cgroups.New(cgroups.V1, cgroups.StaticPath(fmt.Sprintf("%s", PARENT_CGROUP_PATH)), cg_limit1)
 	if err != nil {
 		cgroupsMode = false
 		fmt.Fprintf(os.Stderr, "%s", err)
@@ -78,9 +99,16 @@ var runCmd = &cobra.Command{
 			utils.ExitWithErrorMessage("Options 'tags' and 'only-tags' are mutually exclusive.")
 		}
 		parent_cg_uuid := guuid.Must(guuid.NewV4())
-		parent_cg, err := cgroups.New(cgroups.V1, cgroups.StaticPath(fmt.Sprintf("/%s/%s", PARENT_CGROUP_NAME, parent_cg_uuid)), cg_limit1)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "%s", err)
+		child_cg_path := fmt.Sprintf("%s/%s", strings.Split(parent_cg_uuid.String(), `-`)[0], strings.Split(parent_cg_uuid.String(), `-`)[0])
+		if false {
+			parent_cg, err := cgroups.New(cgroups.V1, cgroups.StaticPath(fmt.Sprintf("%s", child_cg_path)), cg_limit1)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "CGROUPS ERR:%s>>  %s\n", child_cg_path, err)
+			} else {
+				if parent_cg.Add(cgroups.Process{Pid: syscall.Getpid()}) != nil {
+					fmt.Fprintf(os.Stderr, "New Cobra Command:%s>> Addded PID %s|\n", child_cg_path, syscall.Getpid())
+				}
+			}
 		}
 		cli := config.Cli{
 			YamlPath: args[0],
@@ -89,8 +117,8 @@ var runCmd = &cobra.Command{
 				ParentResources: cg_limit1,
 				TaskCgroups:     map[string]cgroups.Cgroup{},
 				CommandCgroups:  map[string]cgroups.Cgroup{},
-				ParentCgroup:    parent_cg,
-				CgroupIDs:       []string{},
+				//ParentCgroup:    parent_cg,
+				CgroupIDs: []string{},
 			},
 		}
 
