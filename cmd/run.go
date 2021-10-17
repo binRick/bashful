@@ -425,6 +425,8 @@ func Run(yamlString []byte, cli config.Cli) {
 
 	log.LogToMain("Exiting", "")
 
+	remove_parent_cgroup()
+
 	if failedTasksErr != nil {
 		utils.Exit(1)
 	}
