@@ -68,9 +68,9 @@ var PARENT_CGROUP_PATH = fmt.Sprintf(`%s/%s`, BASHFUL_CGROUP_PATH, PARENT_CGROUP
 var GOPS_ENABLED = false
 var CG_VER = 0
 
-var swap_max int64 = 768 * 1000 * 1000
-var mem_max int64 = 512 * 1000 * 1000
-var proc_max int64 = 200
+var swap_max int64 = 2048 * 1000 * 1000
+var mem_max int64 = 1024 * 1000 * 1000
+var proc_max int64 = 500
 var BashfulResources = v2.Resources{
 	Pids: &v2.Pids{
 		Max: proc_max,
@@ -152,28 +152,30 @@ func cg_init() {
 		if err := parent_cgroup.ToggleControllers(root_controllers, v2.Enable); err != nil {
 			panic(err)
 		}
-		parent_controllers, err := parent_cgroup.Controllers()
-		if err != nil {
-			panic(err)
-		}
-		stats, err := parent_cgroup.Stat()
-		if err != nil {
-			panic(err)
-		}
+		if false {
+			parent_controllers, err := parent_cgroup.Controllers()
+			if err != nil {
+				panic(err)
+			}
+			stats, err := parent_cgroup.Stat()
+			if err != nil {
+				panic(err)
+			}
 
-		_, err = bfcg.Procs(true)
-		if err != nil {
-			panic(err)
-		}
+			_, err = bfcg.Procs(true)
+			if err != nil {
+				panic(err)
+			}
 
-		p_procs, err := parent_cgroup.Procs(true)
-		if err != nil {
-			panic(err)
-		}
-		if DEBUG_CG {
-			pp.Println(stats)
-			fmt.Printf("<ROOT>    %s  %d Root Controllers: %s\n", len(root_controllers), root_controllers)
-			fmt.Printf("<PARENT>  %s %d Procs| %d Parent Controllers: %s\n", PARENT_CGROUP_PATH, len(p_procs), len(parent_controllers), parent_controllers)
+			p_procs, err := parent_cgroup.Procs(true)
+			if err != nil {
+				panic(err)
+			}
+			if DEBUG_CG {
+				pp.Println(stats)
+				fmt.Printf("<ROOT>    %s  %d Root Controllers: %s\n", len(root_controllers), root_controllers)
+				fmt.Printf("<PARENT>  %s %d Procs| %d Parent Controllers: %s\n", PARENT_CGROUP_PATH, len(p_procs), len(parent_controllers), parent_controllers)
+			}
 		}
 	}
 }

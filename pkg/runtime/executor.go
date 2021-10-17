@@ -206,7 +206,9 @@ func cg_exec(task *Task) {
 func (executor *Executor) run() error {
 	for _, task := range executor.Tasks {
 		// todo: execute should return error and be checked here
-		cg_exec(task)
+		if false {
+			cg_exec(task)
+		}
 
 		executor.execute(task)
 

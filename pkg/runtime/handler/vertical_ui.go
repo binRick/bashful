@@ -545,44 +545,46 @@ func (handler *VerticalUI) displayTask(task *runtime.Task) {
 }
 
 func get_bar() {
-	for _, s := range cgroups.Subsystems() {
-		if false {
-			pp.Println(s)
-		}
-	}
-
-	//	pp.Println(resources)
 	/*
-		if false {
-			control, err := cgroups.New(cgroups.V1, cgroups.StaticPath("/bashful"), cg_limit1)
-			if err == nil {
-				cmd_uuid := uuid.New()
-				_cmd_cg, err := control.New(cmd_uuid.String()+`-cmd1`, cg_limit1)
-				if err == nil {
-					cmd_cg = _cmd_cg
-					//				if cmd_cg.Add(cgroups.Process{Pid: syscall.Getpid()}) != nil {
-					//				panic(err)
-					//		}
-					go func() {
-						for {
-							stats1, err1 := cmd_cg.Stat(cgroups.IgnoreNotExist)
-							if err1 == nil {
-								if false {
-									pp.Fprintf(os.Stderr, "%s\n", stats1.Pids)
-								}
-							}
-							stats, err := control.Stat(cgroups.IgnoreNotExist)
-							if err == nil {
-								if false {
-									pp.Fprintf(os.Stderr, "%s\n", stats.Pids)
-								}
-							}
-							time.Sleep(3 * time.Second)
-						}
-					}()
+		if false{
+			for _, s := range cgroups.Subsystems() {
+				if false {
+					pp.Println(s)
 				}
 			}
-		}*/
+		}
+
+			//	pp.Println(resources)
+				if false {
+					control, err := cgroups.New(cgroups.V1, cgroups.StaticPath("/bashful"), cg_limit1)
+					if err == nil {
+						cmd_uuid := uuid.New()
+						_cmd_cg, err := control.New(cmd_uuid.String()+`-cmd1`, cg_limit1)
+						if err == nil {
+							cmd_cg = _cmd_cg
+							//				if cmd_cg.Add(cgroups.Process{Pid: syscall.Getpid()}) != nil {
+							//				panic(err)
+							//		}
+							go func() {
+								for {
+									stats1, err1 := cmd_cg.Stat(cgroups.IgnoreNotExist)
+									if err1 == nil {
+										if false {
+											pp.Fprintf(os.Stderr, "%s\n", stats1.Pids)
+										}
+									}
+									stats, err := control.Stat(cgroups.IgnoreNotExist)
+									if err == nil {
+										if false {
+											pp.Fprintf(os.Stderr, "%s\n", stats.Pids)
+										}
+									}
+									time.Sleep(3 * time.Second)
+								}
+							}()
+						}
+					}
+				}*/
 
 	doneCh := make(chan struct{})
 

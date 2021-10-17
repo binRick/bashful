@@ -58,9 +58,9 @@ var DEBUG_CG = false
 var DEBUG_CG_TASK = true
 var DEBUG_CG_END = true
 
-var swap_max int64 = 512 * 1000 * 1000
-var mem_max int64 = 256 * 1000 * 1000
-var proc_max int64 = 100
+var swap_max int64 = 1024 * 1000 * 1000
+var mem_max int64 = 512 * 1000 * 1000
+var proc_max int64 = 200
 var TaskResources = v2.Resources{
 	Pids: &v2.Pids{
 		Max: proc_max,
@@ -105,29 +105,30 @@ func NewTask(taskConfig config.TaskConfig, runtimeOptions *config.Options) *Task
 		}
 	}
 
-	_parent_cgroup, err := v2.LoadManager(BASE_CG_PATH, PARENT_CGROUP_PATH)
-	if err != nil {
-		panic(err)
-	}
-	parent_cgroup := _parent_cgroup
+	if false {
+		_parent_cgroup, err := v2.LoadManager(BASE_CG_PATH, PARENT_CGROUP_PATH)
+		if err != nil {
+			panic(err)
+		}
+		parent_cgroup := _parent_cgroup
 
-	parent_controllers, err := parent_cgroup.Controllers()
-	if err != nil {
-		panic(err)
-	}
-	task_uuid := strings.Split(task.Id.String(), `-`)[0]
-	TASK_CG_PATH := fmt.Sprintf(`%s/%s`, PARENT_CGROUP_PATH, task_uuid)
-	_task_cg, err := v2.NewManager(BASE_CG_PATH, TASK_CG_PATH, &TaskResources)
-	if err != nil {
-		panic(err)
-	}
-	task.CG = _task_cg
-	task.CGPath = TASK_CG_PATH
+		parent_controllers, err := parent_cgroup.Controllers()
+		if err != nil {
+			panic(err)
+		}
+		task_uuid := strings.Split(task.Id.String(), `-`)[0]
+		TASK_CG_PATH := fmt.Sprintf(`%s/%s`, PARENT_CGROUP_PATH, task_uuid)
+		_task_cg, err := v2.NewManager(BASE_CG_PATH, TASK_CG_PATH, &TaskResources)
+		if err != nil {
+			panic(err)
+		}
+		task.CG = _task_cg
+		task.CGPath = TASK_CG_PATH
 
-	if err := task.CG.ToggleControllers(parent_controllers, v2.Enable); err != nil {
-		panic(err)
+		if err := task.CG.ToggleControllers(parent_controllers, v2.Enable); err != nil {
+			panic(err)
+		}
 	}
-
 	return &task
 }
 
@@ -311,31 +312,31 @@ func (task *Task) Execute(eventChan chan TaskEvent, waiter *sync.WaitGroup, envi
 
 	start_cmd_time := time.Now()
 	task.Command.Cmd.Start()
-
-	go func() {
-		cmd_start_dur := time.Since(start_cmd_time)
-		add_proc_time := time.Now()
-		perr := task.CG.AddProc(uint64(task.Command.Cmd.Process.Pid))
-		add_proc_dur := time.Since(add_proc_time)
-		add_proc_delay := add_proc_time.Sub(start_cmd_time)
-		cg_procs, err := task.CG.Procs(true)
-		if err != nil {
-			panic(err)
-		}
-		cmd_str := task.Config.CmdString
-		cmd_args := strings.Join(task.Command.Cmd.Args, ` `)
-		if perr != nil {
-			terminalWidth, _ := terminaldimensions.Width()
-			maxMessageWidth := uint(terminalWidth) - uint(utils.VisualLength(cmd_str))
-			if uint(utils.VisualLength(cmd_str)) > maxMessageWidth-30 {
-				cmd_str = utils.TrimToVisualLength(cmd_str, int(maxMessageWidth-33)) + "..."
+	if false {
+		go func() {
+			cmd_start_dur := time.Since(start_cmd_time)
+			add_proc_time := time.Now()
+			perr := task.CG.AddProc(uint64(task.Command.Cmd.Process.Pid))
+			add_proc_dur := time.Since(add_proc_time)
+			add_proc_delay := add_proc_time.Sub(start_cmd_time)
+			cg_procs, err := task.CG.Procs(true)
+			if err != nil {
+				panic(err)
 			}
-			if uint(utils.VisualLength(cmd_args)) > maxMessageWidth-30 {
-				cmd_args = utils.TrimToVisualLength(cmd_args, int(maxMessageWidth-33)) + "..."
-			}
+			cmd_str := task.Config.CmdString
+			cmd_args := strings.Join(task.Command.Cmd.Args, ` `)
+			if perr != nil {
+				terminalWidth, _ := terminaldimensions.Width()
+				maxMessageWidth := uint(terminalWidth) - uint(utils.VisualLength(cmd_str))
+				if uint(utils.VisualLength(cmd_str)) > maxMessageWidth-30 {
+					cmd_str = utils.TrimToVisualLength(cmd_str, int(maxMessageWidth-33)) + "..."
+				}
+				if uint(utils.VisualLength(cmd_args)) > maxMessageWidth-30 {
+					cmd_args = utils.TrimToVisualLength(cmd_args, int(maxMessageWidth-33)) + "..."
+				}
 
-			if strings.Contains(fmt.Sprintf(`%s`, perr), `no such process`) {
-				fmt.Fprintf(os.Stderr, `--------------------------------------------------
+				if strings.Contains(fmt.Sprintf(`%s`, perr), `no such process`) {
+					fmt.Fprintf(os.Stderr, `--------------------------------------------------
 Command exited too quickly to track
 --------------------------------------------------
 | PID:                         %d
@@ -346,19 +347,19 @@ Command exited too quickly to track
 | Error:                       %s
 --------------------------------------------------
 `,
-					utils.PID(fmt.Sprintf(`%d`, task.Command.Cmd.Process.Pid)),
-					cmd_str,
-					task.Command.Cmd.Path,
-					cmd_args,
-					add_proc_delay,
-					perr,
-				)
+						utils.PID(fmt.Sprintf(`%d`, task.Command.Cmd.Process.Pid)),
+						cmd_str,
+						task.Command.Cmd.Path,
+						cmd_args,
+						add_proc_delay,
+						perr,
+					)
+				} else {
+					panic(perr)
+				}
 			} else {
-				panic(perr)
-			}
-		} else {
-			if DEBUG_CG_TASK {
-				fmt.Fprintf(os.Stderr, `############################################
+				if DEBUG_CG_TASK {
+					fmt.Fprintf(os.Stderr, `############################################
 %s
 >> Started Task %s in           %s
 >> Started?                     %v
@@ -370,24 +371,20 @@ Command exited too quickly to track
 >> CG Now %s Has %d Procs:      %d
 ############################################
 `,
-					task.Command.StartTime,
-					strings.Split(task.Id.String(), `-`)[0], cmd_start_dur,
-					task.Started,
-					task.Command.Cmd.Process.Pid,
-					cmd_str,
-					task.Command.Cmd.Path,
-					cmd_args,
-					task.Command.Cmd.Process.Pid, task.CGPath, add_proc_dur,
-					task.CGPath, len(cg_procs), cg_procs,
-				)
+						task.Command.StartTime,
+						strings.Split(task.Id.String(), `-`)[0], cmd_start_dur,
+						task.Started,
+						task.Command.Cmd.Process.Pid,
+						cmd_str,
+						task.Command.Cmd.Path,
+						cmd_args,
+						task.Command.Cmd.Process.Pid, task.CGPath, add_proc_dur,
+						task.CGPath, len(cg_procs), cg_procs,
+					)
+				}
 			}
-		}
-	}()
-	go func() {
-		//		time.Sleep(1 * time.Millisecond)
-		//		task.Command.Cmd.ExtraFiles[1].Close()
-	}()
-	//task.Command.Cmd.ExtraFiles[1].Close()
+		}()
+	}
 	for {
 		select {
 		case stdoutMsg, ok := <-stdoutChan:
@@ -454,7 +451,7 @@ Command exited too quickly to track
 
 	// close the write end of the pipe since the child shell is positively no longer writing to it
 	task.Command.Cmd.ExtraFiles[0].Close()
-	task.Command.Cmd.ExtraFiles[1].Close()
+	//task.Command.Cmd.ExtraFiles[1].Close()
 	data, err := ioutil.ReadAll(task.Command.EnvReadFile)
 	utils.CheckError(err, "Could not read env vars from child shell")
 
