@@ -1,5 +1,6 @@
 #!/bin/bash
 set -e 
+cd $(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 f="${1:-example/00-demo.yml}"; shift||true
 a="${@:---only-tags t}"
 go build -o ./bf .
