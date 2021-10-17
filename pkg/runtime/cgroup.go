@@ -103,6 +103,7 @@ Environment
 		//env
 		PARENT_CGROUP_PID, PARENT_CGROUP_UUID, PARENT_CGROUP_PATH,
 	)
+	cgroup_log(`task_end`, msg)
 	if false {
 		pp.Fprintf(os.Stderr, `%s`, task_cgroup_controllers)
 		pp.Fprintf(os.Stderr, `%s`, p_procs)

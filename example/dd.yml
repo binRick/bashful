@@ -1,0 +1,46 @@
+config:
+  log-path: .5.log
+  show-summary-footer: false
+  show-task-output: true
+
+tasks:
+  - name: delete write files
+    tags: [write, dd]
+    cmd: rm -rf /tmp/dd-*.dat||true
+
+  - name: dd read tests
+    tags: [write, dd]
+    parallel-tasks:
+      - name: /dev/random dd reads
+        cmd: dd iflag=fullblock if=/dev/random of=/dev/null bs=1M count=<replace>
+        for-each:
+          - 100
+          - 50
+          - 10
+          - 5
+          - 1
+
+  - name: dd random read /tmp write tests
+    tags: [write, dd]
+    parallel-tasks:
+      - name: dd writes
+        cmd: dd iflag=fullblock if=/dev/random of=/tmp/dd-<replace>MB.dat bs=1M count=<replace>
+        for-each:
+          - 100
+          - 50
+          - 10
+          - 5
+          - 1
+
+  - name: cat /tmp reads and /tmp mbuffer writes
+    tags: [read, dd, write, read_write]
+    parallel-tasks:
+      - name: read and write <replace>MB from /tmp to /tmp with mbuffer
+        cmd: cat /tmp/dd-<replace>MB.dat | mbuffer > /tmp/dd-<replace>-read-and-written.dat
+        for-each:
+          - 100
+          - 50
+          - 10
+          - 5
+          - 1
+
