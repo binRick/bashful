@@ -13,22 +13,29 @@ import (
 const BASE_CG_PATH = `/sys/fs/cgroup`
 
 func cgroup_task_ended(task *Task) {
+	PARENT_CGROUP_PATH := os.Getenv(`PARENT_CGROUP_PATH`)
+	TASK_CG_PATH := fmt.Sprintf(`%s/%s`, PARENT_CGROUP_PATH, strings.Split(task.Id.String(), `-`)[0])
 
 	PARENT_CGROUP_PID := os.Getenv(`PARENT_CGROUP_PID`)
 	PARENT_CGROUP_UUID := os.Getenv(`PARENT_CGROUP_UUID`)
-	PARENT_CGROUP_PATH := os.Getenv(`PARENT_CGROUP_PATH`)
-	parent_cgroup, err := v2.LoadManager(BASE_CG_PATH, PARENT_CGROUP_PATH)
-	utils.CheckError(err, "Could not open cgroups stat")
-
-	parent_controllers, err := parent_cgroup.Controllers()
+	task_cgroup, err := v2.LoadManager(BASE_CG_PATH, TASK_CG_PATH)
+	utils.CheckError(err, "Could not open task cgroup")
+	pp.Fprintf(os.Stderr, `%s`, task_cgroup)
+	task_cgroup_controllers, err := task_cgroup.Controllers()
 	utils.CheckError(err, "Could not open cgroups controllers")
-	p_procs, err := parent_cgroup.Procs(true)
+	p_procs, err := task_cgroup.Procs(true)
 	utils.CheckError(err, "Could not open cgroups procs")
 
-	stats, err := parent_cgroup.Stat()
+	task_procs, err := task_cgroup.Procs(true)
+	utils.CheckError(err, "Could not open cgroups procs")
+
+	stats, err := task_cgroup.Stat()
 	utils.CheckError(err, "Could not open cgroups stat")
+
 	utils.GetColor(`Controllers`, `xxxxxx`)
 
+	derr := task_cgroup.Delete()
+	utils.CheckError(derr, "Could not delete cgroup")
 	msg := fmt.Sprintf(`+++++++++++++++++++++++++++++++++++++++++
 PID %s exited %d in %s
 
@@ -81,9 +88,9 @@ Environment
 
 		//cgroup
 		task.CGPath,
-		len(parent_controllers),
-		utils.GetColor(`Controllers`, strings.Join(parent_controllers, `, `)),
-		len(p_procs),
+		len(task_procs),
+		utils.GetColor(`Controllers`, strings.Join(task_cgroup_controllers, `, `)),
+		len(task_procs),
 		stats.Pids.Limit,
 		stats.CPU.UsageUsec, stats.CPU.ThrottledUsec,
 		stats.Memory.Usage, stats.Memory.UsageLimit, stats.Memory.SwapUsage, stats.Memory.SwapLimit,
@@ -97,9 +104,9 @@ Environment
 		PARENT_CGROUP_PID, PARENT_CGROUP_UUID, PARENT_CGROUP_PATH,
 	)
 	if false {
-		pp.Fprintf(os.Stderr, `%s`, parent_controllers)
+		pp.Fprintf(os.Stderr, `%s`, task_cgroup_controllers)
 		pp.Fprintf(os.Stderr, `%s`, p_procs)
-		for _, pc := range parent_controllers {
+		for _, pc := range task_cgroup_controllers {
 			pp.Fprintf(os.Stderr, `%s`, pc)
 		}
 		//	pp.Fprintf(os.Stderr, `%s`, stats)
