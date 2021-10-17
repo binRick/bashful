@@ -8,7 +8,7 @@ config:
 
 tasks:
   - name: env tests
-    tags: [t00, t]
+    tags: [t00, t, env]
     parallel-tasks:
       - name: 1 env|grep ^__
         env:
@@ -18,8 +18,12 @@ tasks:
         env:
           __XXXXXXXXXXXX: AAAAAAAAAAAAAAAAAAA
         cmd: env|grep ^__
+
       - name: 3 env|grep ^__
         cmd: env|grep ^__
+
+      - name: 3 env|grep FAILED123
+        cmd: env|grep FAILED123
 
 
   - name: Compiling source

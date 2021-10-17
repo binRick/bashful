@@ -380,6 +380,8 @@ func Run(yamlString []byte, cli config.Cli) {
 		client.AddEventHandler(handler.NewVerticalUI(client.Config))
 	}
 	client.AddEventHandler(handler.NewTaskLogger(client.Config))
+	//client.AddEventHandler(handler.NewSimpleLogger(client.Config))
+	client.AddEventHandler(handler.NewEnhancedLogger(client.Config))
 
 	if false {
 		go func() {

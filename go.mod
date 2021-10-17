@@ -22,11 +22,13 @@ require (
 	github.com/lunixbochs/vtclean v0.0.0-20180621232353-2d01aacdc34a
 	github.com/mattn/go-colorable v0.0.9 // indirect
 	github.com/mgutz/ansi v0.0.0-20170206155736-9520e82c474b
+	github.com/nolleh/caption_json_formatter v0.0.0-20201008073015-027350f5400f // indirect
 	github.com/opencontainers/runtime-spec v1.0.2
 	github.com/schollz/progressbar v1.0.0 // indirect
 	github.com/schollz/progressbar/v3 v3.8.3
 	github.com/shirou/gopsutil v3.21.9+incompatible
 	github.com/shirou/gopsutil/v3 v3.21.9
+	github.com/sirupsen/logrus v1.8.1 // indirect
 	github.com/spf13/afero v1.1.2
 	github.com/spf13/cobra v0.0.3
 	github.com/spf13/pflag v1.0.3 // indirect

@@ -30,14 +30,25 @@ var (
 type color_table map[string]string
 
 var Colors = color_table{
-	`Controllers`: `blue`,
-	`Command`:     `yellow+u`,
-	`Cmd`:         `blue+uh`,
-	`ExitCode`:    `cyan+u`,
-	`Pid`:         `cyan+ub`,
-	`Task`:        `magenta+bu`,
-	`Path`:        `Red+hB`,
-	`Environment`: `Red+du`,
+	`Controllers`:       `blue`,
+	`Green`:             `green`,
+	`TaskEvent`:         `yellow+u`,
+	`TaskEventComplete`: `green+u`,
+	`TaskStart`:         `magenta+hu`,
+	`TaskUpdate`:        `cyan+hu`,
+	`TaskEnd`:           `cyan+hu`,
+	`Unregister`:        `yellow+hu`,
+	`UnregisterOK`:      `green+hu`,
+	`UnregisterFailed`:  `red+hu`,
+	`TaskEndOK`:         `green+huB`,
+	`TaskEndFailed`:     `red+huB`,
+	`Command`:           `yellow+u`,
+	`Cmd`:               `blue+uh`,
+	`ExitCode`:          `cyan+u`,
+	`Pid`:               `cyan+ub`,
+	`Task`:              `magenta+bu`,
+	`Path`:              `Red+hB`,
+	`Environment`:       `Red+du`,
 }
 
 func GetColor(t string, d string) string {

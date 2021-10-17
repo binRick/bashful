@@ -1,6 +1,6 @@
 config:
   log-path: .5.log
-  show-summary-footer: false
+  show-summary-footer: true
   show-task-output: true
 
 tasks:

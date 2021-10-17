@@ -1,7 +1,8 @@
 #!/bin/bash
-set -e 
+set -e
 cd $(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-f="${1:-example/00-demo.yml}"; shift||true
+f="${1:-example/00-demo.yml}"
+shift || true
 a="${@:---only-tags t}"
 go build -o ./bf .
 err=$(mktemp)
@@ -10,22 +11,24 @@ pfx="extrace -Ql -o .e passh reap"
 cmd_run="./bf run"
 cmd_run="$pfx $cmd_run"
 
-cc(){
-if [[ -f .e ]]; then 
-echo -ne "forks: "; wc -l .e;  echo -ne "sttys: "; grep -c stty .e; 
+cc() {
+	if [[ -f .e ]]; then
+		echo -ne "forks: "
+		wc -l .e
+		echo -ne "sttys: "
+		grep -c stty .e
 
-trap "unlink .e" EXIT
+		trap "unlink .e" EXIT
 
-fi
+	fi
 }
-dorun(){
-  (
-    eval $cmd_run $f $a || \
-    eval $cmd_run example/05-minimal.yml
-  )
+dorun() {
+	(
+		eval $cmd_run $f $a ||
+			eval $cmd_run example/05-minimal.yml
+	)
 }
-
 
 trap cc EXIT
-dorun 2> .ee || cat .ee
+dorun 2>.ee || cat .ee
 unlink $err
