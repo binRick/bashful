@@ -14,11 +14,10 @@ tasks:
       - name: /dev/random dd reads
         cmd: dd iflag=fullblock if=/dev/random of=/dev/null bs=1M count=<replace>
         for-each:
+          - 500
           - 100
           - 50
           - 10
-          - 5
-          - 1
 
   - name: dd random read /tmp write tests
     tags: [write, dd]
@@ -26,11 +25,10 @@ tasks:
       - name: dd writes
         cmd: dd iflag=fullblock if=/dev/random of=/tmp/dd-<replace>MB.dat bs=1M count=<replace>
         for-each:
+          - 500
           - 100
           - 50
           - 10
-          - 5
-          - 1
 
   - name: cat /tmp reads and /tmp mbuffer writes
     tags: [read, dd, write, read_write]
@@ -38,9 +36,8 @@ tasks:
       - name: read and write <replace>MB from /tmp to /tmp with mbuffer
         cmd: cat /tmp/dd-<replace>MB.dat | mbuffer > /tmp/dd-<replace>-read-and-written.dat
         for-each:
+          - 500
           - 100
           - 50
           - 10
-          - 5
-          - 1
 
