@@ -252,7 +252,9 @@ func init() {
 
 	runCmd.Flags().StringVar(&tags, "tags", "", "A comma delimited list of matching task tags. If a task's tag matches *or if it is not tagged* then it will be executed (also see --only-tags)")
 	runCmd.Flags().StringVar(&onlyTags, "only-tags", "", "A comma delimited list of matching task tags. A task will only be executed if it has a matching tag")
-	cg_init()
+	if false {
+		cg_init()
+	}
 }
 
 func get_tasks(task_config *config.Config) []string {
