@@ -123,58 +123,60 @@ func cg_init() {
 	os.Setenv(`CGROUPS_BASE_CG_PATH`, BASE_CG_PATH)
 	os.Setenv(`BASHFUL_CGROUP_PATH`, BASHFUL_CGROUP_PATH)
 
-	if CG_VER == 2 {
-		_bfcg, err := v2.LoadManager(BASE_CG_PATH, BASHFUL_CGROUP_PATH)
-		if err != nil {
-			_, err := v2.NewManager(BASE_CG_PATH, BASHFUL_CGROUP_PATH, &v2.Resources{})
-			if err != nil {
-				panic(err)
-			}
+	if false {
+		if CG_VER == 2 {
 			_bfcg, err := v2.LoadManager(BASE_CG_PATH, BASHFUL_CGROUP_PATH)
 			if err != nil {
-				panic(err)
+				_, err := v2.NewManager(BASE_CG_PATH, BASHFUL_CGROUP_PATH, &v2.Resources{})
+				if err != nil {
+					panic(err)
+				}
+				_bfcg, err := v2.LoadManager(BASE_CG_PATH, BASHFUL_CGROUP_PATH)
+				if err != nil {
+					panic(err)
+				}
+				bfcg = _bfcg
+			} else {
+				bfcg = _bfcg
 			}
-			bfcg = _bfcg
-		} else {
-			bfcg = _bfcg
-		}
 
-		root_controllers, err := bfcg.RootControllers()
-		if err != nil {
-			panic(err)
-		}
-
-		_parent_cgroup, err := v2.NewManager(BASE_CG_PATH, PARENT_CGROUP_PATH, &BashfulResources)
-		if err != nil {
-			panic(err)
-		}
-		parent_cgroup = _parent_cgroup
-		if err := parent_cgroup.ToggleControllers(root_controllers, v2.Enable); err != nil {
-			panic(err)
-		}
-		if false {
-			parent_controllers, err := parent_cgroup.Controllers()
-			if err != nil {
-				panic(err)
-			}
-			stats, err := parent_cgroup.Stat()
+			root_controllers, err := bfcg.RootControllers()
 			if err != nil {
 				panic(err)
 			}
 
-			_, err = bfcg.Procs(true)
+			_parent_cgroup, err := v2.NewManager(BASE_CG_PATH, PARENT_CGROUP_PATH, &BashfulResources)
 			if err != nil {
 				panic(err)
 			}
+			parent_cgroup = _parent_cgroup
+			if err := parent_cgroup.ToggleControllers(root_controllers, v2.Enable); err != nil {
+				panic(err)
+			}
+			if false {
+				parent_controllers, err := parent_cgroup.Controllers()
+				if err != nil {
+					panic(err)
+				}
+				stats, err := parent_cgroup.Stat()
+				if err != nil {
+					panic(err)
+				}
 
-			p_procs, err := parent_cgroup.Procs(true)
-			if err != nil {
-				panic(err)
-			}
-			if DEBUG_CG {
-				pp.Println(stats)
-				fmt.Printf("<ROOT>    %s  %d Root Controllers: %s\n", len(root_controllers), root_controllers)
-				fmt.Printf("<PARENT>  %s %d Procs| %d Parent Controllers: %s\n", PARENT_CGROUP_PATH, len(p_procs), len(parent_controllers), parent_controllers)
+				_, err = bfcg.Procs(true)
+				if err != nil {
+					panic(err)
+				}
+
+				p_procs, err := parent_cgroup.Procs(true)
+				if err != nil {
+					panic(err)
+				}
+				if DEBUG_CG {
+					pp.Println(stats)
+					fmt.Printf("<ROOT>    %s  %d Root Controllers: %s\n", len(root_controllers), root_controllers)
+					fmt.Printf("<PARENT>  %s %d Procs| %d Parent Controllers: %s\n", PARENT_CGROUP_PATH, len(p_procs), len(parent_controllers), parent_controllers)
+				}
 			}
 		}
 	}
