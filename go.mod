@@ -8,8 +8,8 @@ require (
 	github.com/containerd/cgroups v1.0.2
 	github.com/deckarep/golang-set v1.7.1
 	github.com/dustin/go-humanize v1.0.0
-	github.com/gofrs/uuid v4.0.0+incompatible // indirect
-	github.com/google/gops v0.3.21 // indirect
+	github.com/gofrs/uuid v4.0.0+incompatible
+	github.com/google/gops v0.3.21
 	github.com/google/uuid v1.3.0
 	github.com/gosuri/uilive v0.0.0-20170323041506-ac356e6e42cd // indirect
 	github.com/gosuri/uiprogress v0.0.0-20170224063937-d0567a9d84a1
@@ -24,7 +24,7 @@ require (
 	github.com/mgutz/ansi v0.0.0-20170206155736-9520e82c474b
 	github.com/opencontainers/runtime-spec v1.0.2
 	github.com/schollz/progressbar v1.0.0 // indirect
-	github.com/schollz/progressbar/v3 v3.8.3 // indirect
+	github.com/schollz/progressbar/v3 v3.8.3
 	github.com/shirou/gopsutil v3.21.9+incompatible
 	github.com/shirou/gopsutil/v3 v3.21.9
 	github.com/spf13/afero v1.1.2
