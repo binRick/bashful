@@ -1,11 +1,9 @@
 package handler
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"strings"
-	"syscall"
 
 	"github.com/nolleh/caption_json_formatter"
 	"github.com/wagoodman/bashful/pkg/config"
@@ -17,8 +15,7 @@ import (
 )
 
 var (
-	logger                    = NewLogger()
-	DEFAULT_LOG_PATH_TEMPLATE = `/var/log/bashful-events-%d.log`
+	logger = NewLogger()
 )
 
 // this was just a (successful) experiment :) needs to be reworked
@@ -53,11 +50,8 @@ type EnhancedLogger struct {
 	config  *config.Config
 }
 
-func LogPath() string {
-	return fmt.Sprintf(DEFAULT_LOG_PATH_TEMPLATE, syscall.Getpid())
-}
-func NewEnhancedLogger(config *config.Config) *EnhancedLogger {
-	f, err := os.OpenFile(LogPath(), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600)
+func NewEnhancedLogger(config *config.Config, log_path string) *EnhancedLogger {
+	f, err := os.OpenFile(log_path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600)
 	if err != nil {
 		panic(err)
 	}
