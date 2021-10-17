@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"time"
 
 	v2 "github.com/containerd/cgroups/v2"
 	"github.com/k0kubun/pp"
@@ -26,9 +25,9 @@ func remove_parent_cgroup() {
 
 	io_stat, err := ioutil.ReadFile(f_io)
 	utils.CheckError(err, "Could not read io.stat")
-	pp.Println(io_stat, f_io)
 
-	time.Sleep(10 * time.Minute)
+	fmt.Fprintf(os.Stdout, `%s:%s`, f_io, pp.Sprintf(`%s`, string(io_stat)))
+	//	time.Sleep(10 * time.Minute)
 
 	cg, err := v2.LoadManager(BASE_CG_PATH, PARENT_CGROUP_PATH)
 	utils.CheckError(err, "Could not open cgroup")
