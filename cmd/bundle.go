@@ -24,8 +24,11 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
+	"time"
 
 	guuid "github.com/gofrs/uuid"
+	"github.com/k0kubun/go-ansi"
+	"github.com/schollz/progressbar/v3"
 	"github.com/spf13/cobra"
 	"github.com/wagoodman/bashful/pkg/config"
 	"github.com/wagoodman/bashful/pkg/runtime"
@@ -69,7 +72,36 @@ func Bundle(yamlString []byte, outputPath string, cli config.Cli) {
 		utils.ExitWithErrorMessage(err.Error())
 	}
 
+	doneCh := make(chan struct{})
+
 	fmt.Println(utils.Bold("Bundling " + cli.YamlPath + " to " + outputPath))
+	bar := progressbar.NewOptions(100,
+		progressbar.OptionSetWriter(ansi.NewAnsiStdout()),
+		progressbar.OptionEnableColorCodes(true),
+		progressbar.OptionShowBytes(true),
+		progressbar.OptionSetWidth(35),
+		progressbar.OptionSetDescription("[cyan][1/3][reset] Writing moshable file..."),
+		progressbar.OptionSetTheme(progressbar.Theme{
+			Saucer:        "[green]=[reset]",
+			SaucerHead:    "[green]>[reset]",
+			SaucerPadding: " ",
+			BarStart:      "[",
+			BarEnd:        "]",
+		}),
+		progressbar.OptionOnCompletion(func() {
+			doneCh <- struct{}{}
+		}),
+	)
+
+	go func() {
+		for i := 0; i < 100; i++ {
+			bar.Add(1)
+			time.Sleep(1 * time.Millisecond)
+		}
+	}()
+
+	<-doneCh
+	fmt.Println("\n ======= progress bar completed ==========\n")
 
 	client.Bundle(cli.YamlPath, outputPath)
 
