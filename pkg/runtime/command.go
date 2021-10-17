@@ -9,12 +9,11 @@ import (
 	"syscall"
 	"time"
 
-	v2 "github.com/containerd/cgroups/v2"
 	"github.com/wagoodman/bashful/pkg/config"
 	"github.com/wagoodman/bashful/utils"
 )
 
-var parent_cgroup, bfcg *v2.Manager
+var BASH_TRACE_MODE = os.Getenv(`__BASHFUL_BASH_TRACE_MODE`)
 
 func newCommand(taskConfig config.TaskConfig) command {
 	shell := `bash`
@@ -22,6 +21,7 @@ func newCommand(taskConfig config.TaskConfig) command {
 	_shell, err := exec.LookPath("bash")
 	utils.CheckError(err, "Could not find bash")
 	shell = _shell
+
 	readFd, writeFd, err := os.Pipe()
 	utils.CheckError(err, "Could not open env pipe for child shell")
 
@@ -34,12 +34,26 @@ func newCommand(taskConfig config.TaskConfig) command {
 	if taskConfig.Sudo {
 		sudoCmd = "sudo -nS "
 	}
-	echo_pid_fd_cmd := ``
-	exec_cmd := fmt.Sprintf(`%s %s %s; BASHFUL_RC=$?; env >&3; exit $BASHFUL_RC`,
-		echo_pid_fd_cmd,
+
+	//	eof := `EOF`
+	prefix_exec_cmd := ``
+	if BASH_TRACE_MODE == `1` {
+		prefix_exec_cmd = strings.Trim(fmt.Sprintf(`
+exec 19>>/tmp/bashful-bash-trace-log-$$.log
+BASH_XTRACEFD=19 
+set -x
+`), ` `)
+	}
+	exec_cmd := strings.Trim(fmt.Sprintf(`%s
+%s %s
+BASHFUL_RC=$? 
+env >&3 
+exit $BASHFUL_RC
+`,
+		prefix_exec_cmd,
 		sudoCmd,
 		taskConfig.CmdString,
-	)
+	), ` `)
 	cmd := exec.Command(shell, "--noprofile", "--norc", "+e", "-c", exec_cmd)
 	cmd.Stdin = strings.NewReader(string(sudoPassword) + "\n")
 
