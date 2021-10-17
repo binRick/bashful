@@ -1,10 +1,21 @@
 config:
   log-path: .5.log
-  collapse-on-completion: true
   show-summary-footer: false
   show-task-output: true
 
 tasks:
+  - name: env tests
+    tags: t000
+    parallel-tasks:
+      - name: 1 env|grep ^________________
+        env:
+          __XXXXXXXXXXXX: BBBBBBBBBBBBBBBBBB
+        cmd: env|grep ^__
+      - name: false
+        cmd: echo false
+
+      - name: sleep 5
+        cmd: sleep 5
   - name: env tests
     tags: t00
     parallel-tasks:

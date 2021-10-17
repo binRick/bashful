@@ -671,6 +671,11 @@ func (handler *VerticalUI) footer(status runtime.TaskStatus, message string) str
 			mem_str,
 			utils.FormatDuration(duration),
 		)
+		terminalWidth, _ := terminaldimensions.Width()
+		maxMessageWidth := uint(terminalWidth) - uint(utils.VisualLength(durString))
+		if uint(utils.VisualLength(durString)) > maxMessageWidth-40 {
+			durString = utils.TrimToVisualLength(durString, int(maxMessageWidth-43)) + "..."
+		}
 
 		totalEta := time.Duration(handler.config.TotalEtaSeconds) * time.Second
 		remainingEta := time.Duration(totalEta.Seconds()-duration.Seconds()) * time.Second

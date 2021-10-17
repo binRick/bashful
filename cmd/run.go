@@ -79,6 +79,7 @@ var BashfulResources = v2.Resources{
 		Max:  &mem_max,
 		Swap: &swap_max,
 	},
+	IO: &v2.IO{},
 }
 
 func gops_init() {

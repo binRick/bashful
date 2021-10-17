@@ -6,8 +6,6 @@ import (
 	"encoding/gob"
 	"errors"
 	"fmt"
-	"github.com/howeyc/gopass"
-	color "github.com/mgutz/ansi"
 	"io"
 	"net/url"
 	"os"
@@ -15,6 +13,9 @@ import (
 	"runtime"
 	"strings"
 	"time"
+
+	"github.com/howeyc/gopass"
+	color "github.com/mgutz/ansi"
 )
 
 var (
@@ -22,7 +23,26 @@ var (
 	Red    = color.ColorFunc("red+h")
 	Blue   = color.ColorFunc("blue+h")
 	Bold   = color.ColorFunc("default+b")
+	PID    = color.ColorFunc("cyan+bh")
+	Cmd    = color.ColorFunc("yellow+u")
 )
+
+type color_table map[string]string
+
+var Colors = color_table{
+	`Controllers`: `blue`,
+	`Command`:     `yellow+u`,
+	`Cmd`:         `blue+uh`,
+	`ExitCode`:    `cyan+u`,
+	`Pid`:         `cyan+ub`,
+	`Task`:        `magenta+bu`,
+	`Path`:        `Red+hB`,
+	`Environment`: `Red+du`,
+}
+
+func GetColor(t string, d string) string {
+	return color.ColorFunc(Colors[t])(d)
+}
 
 // MinMax returns the min and max values from an array of float64 values
 func MinMax(array []float64) (float64, float64, error) {

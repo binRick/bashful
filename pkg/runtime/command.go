@@ -9,12 +9,19 @@ import (
 	"syscall"
 	"time"
 
+	v2 "github.com/containerd/cgroups/v2"
 	"github.com/wagoodman/bashful/pkg/config"
 	"github.com/wagoodman/bashful/utils"
 )
 
+var parent_cgroup, bfcg *v2.Manager
+
 func newCommand(taskConfig config.TaskConfig) command {
-	shell := `/bin/bash`
+	shell := `bash`
+
+	_shell, err := exec.LookPath("bash")
+	utils.CheckError(err, "Could not find bash")
+	shell = _shell
 
 	readFd, writeFd, err := os.Pipe()
 	utils.CheckError(err, "Could not open env pipe for child shell")
@@ -26,7 +33,7 @@ func newCommand(taskConfig config.TaskConfig) command {
 	if taskConfig.Sudo {
 		sudoCmd = "sudo -nS "
 	}
-	echo_pid_fd_cmd := fmt.Sprintf(`echo $$ >&4 && `)
+	echo_pid_fd_cmd := ``
 	exec_cmd := fmt.Sprintf(`%s %s %s; BASHFUL_RC=$?; env >&3; exit $BASHFUL_RC`,
 		echo_pid_fd_cmd,
 		sudoCmd,

@@ -28,7 +28,6 @@ import (
 	"math"
 	"os"
 	"os/exec"
-	"strconv"
 	"strings"
 	"sync"
 	"syscall"
@@ -36,7 +35,6 @@ import (
 
 	v2 "github.com/containerd/cgroups/v2"
 	"github.com/google/uuid"
-	"github.com/k0kubun/pp"
 	"github.com/lunixbochs/vtclean"
 	"github.com/wagoodman/bashful/pkg/config"
 	"github.com/wagoodman/bashful/utils"
@@ -56,7 +54,9 @@ const (
 	StatusError
 )
 
-var DEBUG_CG = true
+var DEBUG_CG = false
+var DEBUG_CG_TASK = true
+var DEBUG_CG_END = true
 
 var swap_max int64 = 512 * 1000 * 1000
 var mem_max int64 = 256 * 1000 * 1000
@@ -94,14 +94,15 @@ func NewTask(taskConfig config.TaskConfig, runtimeOptions *config.Options) *Task
 	BASE_CG_PATH := os.Getenv(`CGROUPS_BASE_CG_PATH`)
 	PARENT_CGROUP_PATH := os.Getenv(`PARENT_CGROUP_PATH`)
 	BASHFUL_CGROUP_PATH := os.Getenv(`BASHFUL_CGROUP_PATH`)
-
-	_bfcg, err := v2.LoadManager(BASE_CG_PATH, BASHFUL_CGROUP_PATH)
-	if err != nil {
-		panic(err)
-	}
-	bfcg := _bfcg
 	if false {
-		fmt.Println(bfcg)
+		_bfcg, err := v2.LoadManager(BASE_CG_PATH, BASHFUL_CGROUP_PATH)
+		if err != nil {
+			panic(err)
+		}
+		bfcg := _bfcg
+		if false {
+			fmt.Println(bfcg)
+		}
 	}
 
 	_parent_cgroup, err := v2.LoadManager(BASE_CG_PATH, PARENT_CGROUP_PATH)
@@ -127,31 +128,11 @@ func NewTask(taskConfig config.TaskConfig, runtimeOptions *config.Options) *Task
 		panic(err)
 	}
 
-	stats, err := parent_cgroup.Stat()
-	if err != nil {
-		panic(err)
-	}
-	p_procs, err := parent_cgroup.Procs(true)
-	if err != nil {
-		panic(err)
-	}
-
-	if DEBUG_CG {
-		if false {
-			pp.Println(stats)
-			fmt.Printf("[NEWTASK] <PARENT>  %s %d Procs| %d Parent Controllers: %s\n", PARENT_CGROUP_PATH, len(p_procs), len(parent_controllers), parent_controllers)
-
-			pp.Fprintf(os.Stderr, "\n\nNEW TASK %s>  %s %s children\n\n", strings.Split(task.Id.String(), `-`)[0], syscall.Getpid(), len(task.Children))
-		}
-	}
 	return &task
 }
 
 // UpdateExec reinstantiates the planned command to run based on the given path to an executable
 func (task *Task) UpdateExec(execpath string) {
-	if DEBUG_BF {
-		pp.Fprintf(os.Stderr, "UpdateExec>> %s\n", execpath)
-	}
 
 	if task.Config.CmdString == "" {
 		task.Config.CmdString = task.Options.ExecReplaceString
@@ -169,10 +150,6 @@ func (task *Task) UpdateExec(execpath string) {
 
 // Kill will stop any running command (including child Tasks) with a -9 signal
 func (task *Task) Kill() {
-	exec_uuid := uuid.New()
-	if DEBUG_BF {
-		pp.Fprintf(os.Stderr, "KILL> %s %d\n", exec_uuid.String(), syscall.Getpid())
-	}
 	if task.Config.CmdString != "" && task.Started && !task.Completed {
 		syscall.Kill(-task.Command.Cmd.Process.Pid, syscall.SIGKILL)
 	}
@@ -254,10 +231,6 @@ func (task *Task) Execute(eventChan chan TaskEvent, waiter *sync.WaitGroup, envi
 
 	eventChan <- TaskEvent{Task: task, Status: StatusRunning, ReturnCode: -1}
 	waiter.Add(1)
-	if DEBUG_BF {
-		//		pp.Fprintf(os.Stderr, "Execute Task> %d | %s %s\n\n", syscall.Getpid(), task.Command.Cmd.Path, strings.Join(task.Command.Cmd.Args, ` `))
-		//	pp.Println(task)
-	}
 	defer waiter.Done()
 
 	stdoutChan := make(chan string, 1000)
@@ -336,37 +309,56 @@ func (task *Task) Execute(eventChan chan TaskEvent, waiter *sync.WaitGroup, envi
 		}
 	}
 
-	s := time.Now()
+	start_cmd_time := time.Now()
 	task.Command.Cmd.Start()
-	cmd_start_dur := time.Since(s)
 
 	go func() {
-
-		task.Command.Cmd.ExtraFiles[1].Close()
-		_forked_pid, err := ioutil.ReadAll(task.Command.PidReadFile)
-		utils.CheckError(err, "Could not pid fd from child shell")
-		forked_pid, err := strconv.ParseInt(strings.Trim(fmt.Sprintf(`%s`, _forked_pid), "\n"), 10, 0)
-		utils.CheckError(err, "Could not parse pid from child shell")
-		s = time.Now()
-
-		if false {
-			perr := task.CG.AddProc(uint64(task.Command.Cmd.Process.Pid))
-			if perr != nil {
-				panic(perr)
-			}
-		}
-		add_proc_dur := time.Since(s)
+		cmd_start_dur := time.Since(start_cmd_time)
+		add_proc_time := time.Now()
+		perr := task.CG.AddProc(uint64(task.Command.Cmd.Process.Pid))
+		add_proc_dur := time.Since(add_proc_time)
+		add_proc_delay := add_proc_time.Sub(start_cmd_time)
 		cg_procs, err := task.CG.Procs(true)
 		if err != nil {
 			panic(err)
 		}
-		cmd_lim := 10099
 		cmd_str := task.Config.CmdString
-		if len(cmd_str) > cmd_lim {
-			cmd_str = fmt.Sprintf(`%s...`, cmd_str[0:cmd_lim-1])
-		}
-		if DEBUG_CG {
-			fmt.Fprintf(os.Stderr, `############################################
+		cmd_args := strings.Join(task.Command.Cmd.Args, ` `)
+		if perr != nil {
+			terminalWidth, _ := terminaldimensions.Width()
+			maxMessageWidth := uint(terminalWidth) - uint(utils.VisualLength(cmd_str))
+			if uint(utils.VisualLength(cmd_str)) > maxMessageWidth-30 {
+				cmd_str = utils.TrimToVisualLength(cmd_str, int(maxMessageWidth-33)) + "..."
+			}
+			if uint(utils.VisualLength(cmd_args)) > maxMessageWidth-30 {
+				cmd_args = utils.TrimToVisualLength(cmd_args, int(maxMessageWidth-33)) + "..."
+			}
+
+			if strings.Contains(fmt.Sprintf(`%s`, perr), `no such process`) {
+				fmt.Fprintf(os.Stderr, `--------------------------------------------------
+Command exited too quickly to track
+--------------------------------------------------
+| PID:                         %d
+| Configured Command:          %s
+| Exec Path:                   %s
+| Exec Command:                %s
+| Cgroup Add Attempt Delay:    %s
+| Error:                       %s
+--------------------------------------------------
+`,
+					utils.PID(fmt.Sprintf(`%d`, task.Command.Cmd.Process.Pid)),
+					cmd_str,
+					task.Command.Cmd.Path,
+					cmd_args,
+					add_proc_delay,
+					perr,
+				)
+			} else {
+				panic(perr)
+			}
+		} else {
+			if DEBUG_CG_TASK {
+				fmt.Fprintf(os.Stderr, `############################################
 %s
 >> Started Task %s in           %s
 >> Started?                     %v
@@ -378,17 +370,24 @@ func (task *Task) Execute(eventChan chan TaskEvent, waiter *sync.WaitGroup, envi
 >> CG Now %s Has %d Procs:      %d
 ############################################
 `,
-				task.Command.StartTime,
-				strings.Split(task.Id.String(), `-`)[0], cmd_start_dur,
-				task.Started,
-				forked_pid,
-				cmd_str,
-				task.Command.Cmd.Path, strings.Join(task.Command.Cmd.Args, ` `),
-				task.Command.Cmd.Process.Pid, task.CGPath, add_proc_dur,
-				task.CGPath, len(cg_procs), cg_procs,
-			)
+					task.Command.StartTime,
+					strings.Split(task.Id.String(), `-`)[0], cmd_start_dur,
+					task.Started,
+					task.Command.Cmd.Process.Pid,
+					cmd_str,
+					task.Command.Cmd.Path,
+					cmd_args,
+					task.Command.Cmd.Process.Pid, task.CGPath, add_proc_dur,
+					task.CGPath, len(cg_procs), cg_procs,
+				)
+			}
 		}
 	}()
+	go func() {
+		//		time.Sleep(1 * time.Millisecond)
+		//		task.Command.Cmd.ExtraFiles[1].Close()
+	}()
+	//task.Command.Cmd.ExtraFiles[1].Close()
 	for {
 		select {
 		case stdoutMsg, ok := <-stdoutChan:
@@ -451,8 +450,11 @@ func (task *Task) Execute(eventChan chan TaskEvent, waiter *sync.WaitGroup, envi
 	task.Command.ReturnCode = returnCode
 	task.Command.StopTime = time.Now()
 
+	cgroup_task_ended(task)
+
 	// close the write end of the pipe since the child shell is positively no longer writing to it
 	task.Command.Cmd.ExtraFiles[0].Close()
+	task.Command.Cmd.ExtraFiles[1].Close()
 	data, err := ioutil.ReadAll(task.Command.EnvReadFile)
 	utils.CheckError(err, "Could not read env vars from child shell")
 

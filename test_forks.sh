@@ -3,7 +3,21 @@ set -e
 f="${1:-example/00-demo.yml}"; shift||true
 a="${@:---only-tags t}"
 go build -o ./bf .
-./bf run example/05-minimal.yml --only-tags t00 2>.ee
+err=$(mktemp)
+dorun(){
+  (
+  reap ./bf run $f $a || \
+    reap ./bf run example/05-minimal.yml
+  )
+}
+dorun 2> .ee || cat .ee
+#| tee $err | tee .ee || cat $err
+
+unlink $err
+
+exit
+
+
 set +e
 extrace -Ql -o .e passh ./bf run $f $a
 
