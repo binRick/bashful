@@ -561,9 +561,6 @@ func (handler *VerticalUI) footer(status runtime.TaskStatus, message string) str
 			cached_misc.ProcsRunning,
 			created_since_started,
 		)
-		net_str := fmt.Sprintf("%d Ints",
-			len(cached_ints),
-		)
 		conns_str := fmt.Sprintf("%d Conns, %d TCPs",
 			len(cached_conns),
 			cur_estab_qty,
@@ -585,10 +582,9 @@ func (handler *VerticalUI) footer(status runtime.TaskStatus, message string) str
 			hn = strings.Split(hn, `.`)[0]
 		}
 		io_str = ``
-		durString = fmt.Sprintf("[%s]|%s|%s|%s|%s|%s|Mem:%s|[%s] Runtime",
+		durString = fmt.Sprintf("[%s]|%s|%s|%s|%s|Mem:%s|[%s] Runtime",
 			hn,
 			io_str,
-			net_str,
 			conns_str,
 			usage_str,
 			procs_str,

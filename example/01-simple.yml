@@ -2,6 +2,30 @@
 # is given for each task.
 tasks:
   - cmd: example/scripts/random-worker.sh 10
+  - cmd: date > /tmp/bashful-example-1-001.log
+
+  - cmd: >
+      date > /tmp/bashful-example-20-001.log && 
+      date > /tmp/bashful-example-21-001.log
+
+  - cmd: |
+      date > /tmp/bashful-example-10-001.log
+      date > /tmp/bashful-example-11-001.log
+
+  - cmd: |
+      #!/bin/bash
+      date > /tmp/bashful-example-30-001.log
+      date > /tmp/bashful-example-31-001.log
+
+  - cmd: |
+      #!bash
+      date > /tmp/bashful-example-50-001.log
+      date > /tmp/bashful-example-51-001.log
+
+  - cmd: |
+      bash -c "date > /tmp/bashful-example-60-001.log"
+      bash -c "date > /tmp/bashful-example-61-001.log"
+
 
   - name: Compiling source
     parallel-tasks:

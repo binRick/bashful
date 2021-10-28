@@ -328,11 +328,11 @@ func (task *Task) Execute(eventChan chan TaskEvent, waiter *sync.WaitGroup, envi
 			if perr != nil {
 				terminalWidth, _ := terminaldimensions.Width()
 				maxMessageWidth := uint(terminalWidth) - uint(utils.VisualLength(cmd_str))
-				if uint(utils.VisualLength(cmd_str)) > maxMessageWidth-30 {
-					cmd_str = utils.TrimToVisualLength(cmd_str, int(maxMessageWidth-33)) + "..."
+				if uint(utils.VisualLength(cmd_str)) > maxMessageWidth-3 {
+					cmd_str = utils.TrimToVisualLength(cmd_str, int(maxMessageWidth-3)) + "..."
 				}
-				if uint(utils.VisualLength(cmd_args)) > maxMessageWidth-30 {
-					cmd_args = utils.TrimToVisualLength(cmd_args, int(maxMessageWidth-33)) + "..."
+				if uint(utils.VisualLength(cmd_args)) > maxMessageWidth-3 {
+					cmd_args = utils.TrimToVisualLength(cmd_args, int(maxMessageWidth-3)) + "..."
 				}
 
 				if strings.Contains(fmt.Sprintf(`%s`, perr), `no such process`) {

@@ -49,6 +49,8 @@ import (
 var tags, onlyTags string
 var listTagsMode bool
 var devMode bool
+var statsMode bool
+var statsModeDefault bool = false
 var cgroupsMode bool
 var listTasksMode bool
 var eventLogMode bool
@@ -123,6 +125,7 @@ func init() {
 	//  RUN OPTIONS
 	runCmd.Flags().BoolVarP(&cgroupsMode, "cgroups", "c", false, "Cgroups Mode")
 	runCmd.Flags().BoolVarP(&devMode, "dev-mode", "d", false, "Dev Mode")
+	runCmd.Flags().BoolVarP(&statsMode, "stats-mode", "s", statsModeDefault, "Stats Mode")
 	runCmd.Flags().BoolVarP(&dryRunMode, "dry-run", "n", false, "Dry Run")
 	runCmd.Flags().BoolVarP(&eventLogMode, "log-events", "E", false, "Log Events")
 	runCmd.Flags().StringVarP(&eventLogFile, "log-events-file", "F", DEFAULT_EVENTS_LOG_FILE, "Log Events File")
@@ -162,6 +165,15 @@ func Run(yamlString []byte, cli config.Cli) {
 		tags := get_tasks(client.Config)
 		fmt.Fprintf(os.Stdout, "%s\n", strings.Join(tags, "\n"))
 		os.Exit(0)
+	}
+	sm := os.Getenv(`STATS_MODE`)
+	if !statsMode {
+		if sm == `1` || sm == `true` || sm == `yes` {
+			statsMode = true
+		}
+	}
+	if statsMode {
+		fmt.Fprintf(os.Stderr, "%s\n", `Running in Stats Mode!`)
 	}
 
 	if client.Config.Options.SingleLineDisplay {
@@ -225,7 +237,7 @@ func Run(yamlString []byte, cli config.Cli) {
 
 	log.LogToMain("Exiting", "")
 
-	remove_parent_cgroup()
+	//remove_parent_cgroup()
 
 	if failedTasksErr != nil {
 		utils.Exit(1)

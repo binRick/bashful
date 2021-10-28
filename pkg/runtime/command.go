@@ -13,7 +13,10 @@ import (
 	"github.com/wagoodman/bashful/utils"
 )
 
-var BASH_TRACE_MODE = os.Getenv(`__BASHFUL_BASH_TRACE_MODE`)
+var (
+	BASH_TRACE_MODE = os.Getenv(`__BASHFUL_BASH_TRACE_MODE`)
+	EXTRACE_MODE    = os.Getenv(`__BASHFUL_EXTRACE_MODE`)
+)
 
 func newCommand(taskConfig config.TaskConfig) command {
 	shell := `bash`
@@ -34,8 +37,17 @@ func newCommand(taskConfig config.TaskConfig) command {
 	if taskConfig.Sudo {
 		sudoCmd = "sudo -nS "
 	}
+	extrace_args := ``
+	extrace_path := ``
+	if EXTRACE_MODE == `1` {
+		_extrace_path, err := exec.LookPath("extrace")
+		utils.CheckError(err, "Could not find extrace")
+		extrace_path = _extrace_path
+		extrace_log := `/tmp/bashful-extrace-$$.log`
+		extrace_args = `-Qfultd`
+		sudoCmd = fmt.Sprintf(`%s %s`, sudoCmd, fmt.Sprintf(`%s %s -o %s`, extrace_path, extrace_args, extrace_log))
+	}
 
-	//	eof := `EOF`
 	prefix_exec_cmd := ``
 	if BASH_TRACE_MODE == `1` {
 		prefix_exec_cmd = strings.Trim(fmt.Sprintf(`
@@ -45,7 +57,10 @@ set -x
 `), ` `)
 	}
 	exec_cmd := strings.Trim(fmt.Sprintf(`%s
+eval "$(cat <<EOF
 %s %s
+EOF
+)"
 BASHFUL_RC=$? 
 env >&3 
 exit $BASHFUL_RC

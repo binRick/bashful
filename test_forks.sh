@@ -21,14 +21,18 @@ cc() {
 		trap "unlink .e" EXIT
 
 	fi
+	if [[ "$OK" != 1 ]]; then
+    reset
+  fi
 }
 dorun() {
 	(
-		eval $cmd_run $f $a ||
-			eval $cmd_run example/05-minimal.yml
+		eval $cmd_run $f $a || {			eval $cmd_run example/05-minimal.yml; exit 1; }
+    eval $cmd_run example/dd.yml
 	)
 }
-
 trap cc EXIT
 dorun 2>.ee || cat .ee
 unlink $err
+echo
+export OK=1
