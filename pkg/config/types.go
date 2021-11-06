@@ -175,6 +175,7 @@ type TaskConfig struct {
 	CommandLogFile string            `yaml:"cmd-log"`
 	ForEachList    [][]string        `yaml:"for-each-list"`
 	ForEach        []string          `yaml:"for-each"`
+	Vars           map[string]string `yaml:"vars"`
 	Env            map[string]string `yaml:"env"`
 	StdoutLogFile  string            `yaml:"stdout-log"`
 	StderrLogFile  string            `yaml:"stderr-log"`
