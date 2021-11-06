@@ -25,6 +25,7 @@ import (
 	"os"
 
 	mapset "github.com/deckarep/golang-set"
+	"github.com/k0kubun/pp"
 	"github.com/shirou/gopsutil/process"
 
 	"io/ioutil"
@@ -41,7 +42,7 @@ import (
 )
 
 // todo: put these in a cli struct instance instead, then most logic can be in the cli struct
-var tags, onlyTags string
+var tags, onlyTags, skipTags string
 var listTagsMode bool
 var devMode bool
 var statsMode bool
@@ -93,6 +94,25 @@ var runCmd = &cobra.Command{
 			}
 		}
 
+		nl := []string{}
+		for _, value := range strings.Split(skipTags, ",") {
+			do_skip := false
+			if value != "" {
+				for _, tt := range cli.RunTags {
+					if tt == value {
+						do_skip = true
+					}
+					if !do_skip {
+						nl = append(nl, value)
+					}
+				}
+
+			}
+		}
+
+		pp.Println(`running tags: `, len(cli.RunTags), `=>`, len(nl))
+		cli.RunTags = nl
+
 		// todo: make this a function for CLI (addTag or something)
 		cli.RunTagSet = mapset.NewSet()
 		for _, tag := range cli.RunTags {
@@ -129,6 +149,7 @@ func init() {
 	//  TAGS
 	runCmd.Flags().StringVar(&tags, "untagged-and-tags", "", "A comma delimited list of matching task tags. If a task's tag matches *or if it is not tagged* then it will be executed (also see --only-tags)")
 	runCmd.Flags().StringVarP(&onlyTags, "only-tags", "t", "", "A comma delimited list of matching task tags. A task will only be executed if it has a matching tag")
+	runCmd.Flags().StringVarP(&skipTags, "skip-tags", "x", "", "A comma delimited list of task tags to skip. A task will only be executed if it does not have a matching tag")
 }
 
 func Run(yamlString []byte, cli config.Cli) {
