@@ -42,6 +42,7 @@ import (
 
 // todo: put these in a cli struct instance instead, then most logic can be in the cli struct
 var tags, onlyTags, skipTags string
+var verboseMode bool
 var listTagsMode bool
 var devMode bool
 var DEFAULT_EVENTS_LOG_FILE = `/var/log/bashful-events.log`
@@ -154,6 +155,7 @@ func init() {
 	runCmd.Flags().StringVar(&tags, "untagged-and-tags", "", "A comma delimited list of matching task tags. If a task's tag matches *or if it is not tagged* then it will be executed (also see --only-tags)")
 	runCmd.Flags().StringVarP(&onlyTags, "only-tags", "t", "", "A comma delimited list of matching task tags. A task will only be executed if it has a matching tag")
 	runCmd.Flags().StringVarP(&skipTags, "skip-tags", "x", "", "A comma delimited list of task tags to skip. A task will only be executed if it does not have a matching tag")
+	runCmd.Flags().BoolVarP(&verboseMode, "verbose", "v", false, "Verbose Mode")
 }
 
 func Run(yamlString []byte, cli config.Cli) {
