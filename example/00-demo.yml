@@ -1,7 +1,6 @@
 config:
-
-  # Supress the error summary that follows
-  show-failure-report: false
+  replica-replace-pattern: '%'
+  show-failure-report: yes
 
   # Show an eta for each task on the screen (being shown on every line 
   # with a command running)
@@ -24,6 +23,28 @@ x-reference-data:
 
 tasks:
 
+  - name: test0 %
+    tags: t
+    cmd: echo %
+    ignore-failure: no
+    stdout-log: /tmp/test0-%.log
+    for-each:
+      - abc
+      - def
+
+  - name: test1
+    tags: t
+    ignore-failure: no
+    parallel-tasks:
+      - name: "Cloning %"
+        cmd: ls /1||date
+        ignore-failure: no
+        stdout-log: /tmp/test1-%-out.log
+        stderr-log: /tmp/test1-%-err.log
+        for-each:
+          - abc
+          - def
+
   - name: test1
     tags: t
     cmd: example/dev.sh
@@ -31,6 +52,7 @@ tasks:
     env:
       __TEST1_AAA: 123
       __TEST1_BBB: 456
+
   - name: test2
     tags: t
     cmd: example/dev.sh
