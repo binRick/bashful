@@ -22,9 +22,13 @@ package config
 
 // NewOptions creates a new Options populated with sane default values
 func NewOptions() *Options {
+	DEFAULT_COLLAPSE_ON_COMPLETION := false
+	if VERBOSE_MODE {
+		DEFAULT_COLLAPSE_ON_COMPLETION = false
+	}
 	return &Options{
 		BulletChar:           "•",
-		CollapseOnCompletion: false,
+		CollapseOnCompletion: DEFAULT_COLLAPSE_ON_COMPLETION,
 		ColorError:           160,
 		ColorPending:         22,
 		ColorRunning:         22,

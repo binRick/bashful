@@ -22,8 +22,11 @@ package config
 
 import (
 	"fmt"
+	"os"
 	"strings"
 )
+
+var VERBOSE_MODE = (os.Getenv(`VERBOSE_MODE`) == `true`)
 
 // NewTaskConfig creates a new TaskConfig populated with sane default values (derived from the global Options)
 func NewTaskConfig() (obj TaskConfig) {
@@ -32,7 +35,10 @@ func NewTaskConfig() (obj TaskConfig) {
 	obj.ShowTaskOutput = globalOptions.ShowTaskOutput
 	obj.EventDriven = globalOptions.EventDriven
 	obj.CollapseOnCompletion = globalOptions.CollapseOnCompletion
+	if VERBOSE_MODE {
+		obj.CollapseOnCompletion = false
 
+	}
 	return obj
 }
 

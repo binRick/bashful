@@ -62,6 +62,8 @@ type display struct {
 	line *jotframe.Line
 }
 
+var VERBOSE_MODE = (os.Getenv(`VERBOSE_MODE`) == `true`)
+
 type summary struct {
 	Status  string
 	Percent string
@@ -229,6 +231,10 @@ func (handler *VerticalUI) Unregister(task *runtime.Task) {
 
 		hasHeader := len(task.Children) > 0
 		collapseSection := task.Config.CollapseOnCompletion && hasHeader && task.FailedChildren == 0
+		if VERBOSE_MODE {
+
+			collapseSection = false
+		}
 
 		// complete the proc group TaskStatus
 		if hasHeader {

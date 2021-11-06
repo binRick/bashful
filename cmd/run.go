@@ -62,7 +62,9 @@ var runCmd = &cobra.Command{
 	Long:  `Execute the given yaml file with bashful`,
 	Args:  cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-
+		if verboseMode {
+			os.Setenv(`VERBOSE_MODE`, `true`)
+		}
 		if tags != "" && onlyTags != "" {
 			utils.ExitWithErrorMessage("Options 'tags' and 'only-tags' are mutually exclusive.")
 		}
