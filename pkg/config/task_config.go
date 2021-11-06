@@ -100,6 +100,7 @@ func (taskConfig *TaskConfig) compile(config *Config) (tasks []TaskConfig) {
 			newConfig.Name = strings.Replace(newConfig.Name, config.Options.ReplicaReplaceString, replicaValue, -1)
 			newConfig.CmdString = strings.Replace(newConfig.CmdString, config.Options.ReplicaReplaceString, replicaValue, -1)
 			newConfig.URL = strings.Replace(newConfig.URL, config.Options.ReplicaReplaceString, replicaValue, -1)
+			newConfig.CommandLogFile = strings.Replace(newConfig.CommandLogFile, config.Options.ReplicaReplaceString, replicaValue, -1)
 			newConfig.StdoutLogFile = strings.Replace(newConfig.StdoutLogFile, config.Options.ReplicaReplaceString, replicaValue, -1)
 			newConfig.StderrLogFile = strings.Replace(newConfig.StderrLogFile, config.Options.ReplicaReplaceString, replicaValue, -1)
 

@@ -172,11 +172,12 @@ type TaskConfig struct {
 	EventDriven bool `yaml:"event-driven"`
 
 	// ForEach is a list of strings that will be used to make replicas if the current task (tailored Name/CmdString replacements are handled via the 'ReplicaReplaceString' option)
-	ForEachList   [][]string        `yaml:"for-each-list"`
-	ForEach       []string          `yaml:"for-each"`
-	Env           map[string]string `yaml:"env"`
-	StdoutLogFile string            `yaml:"stdout-log"`
-	StderrLogFile string            `yaml:"stderr-log"`
+	CommandLogFile string            `yaml:"cmd-log"`
+	ForEachList    [][]string        `yaml:"for-each-list"`
+	ForEach        []string          `yaml:"for-each"`
+	Env            map[string]string `yaml:"env"`
+	StdoutLogFile  string            `yaml:"stdout-log"`
+	StderrLogFile  string            `yaml:"stderr-log"`
 
 	// IgnoreFailure indicates when no errors should be registered (all task command non-zero return codes will be treated as a zero return code)
 	IgnoreFailure bool `yaml:"ignore-failure"`

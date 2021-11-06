@@ -24,13 +24,29 @@ x-reference-data:
 tasks:
 
   - name: test0 %
-    tags: t
+    tags: [t,t0]
     cmd: echo %
     ignore-failure: no
     stdout-log: /tmp/test0-%.log
+    cmd-log: /tmp/test0-%-cmd.log
     for-each:
       - abc
       - def
+
+  - name: test01
+    tags: t01
+    ignore-failure: no
+    cmd-log: /tmp/test01-cmd.log
+    parallel-tasks:
+      - name: "Cloning %"
+        cmd: echo %
+        ignore-failure: no
+        stdout-log: /tmp/test01-%-out.log
+        stderr-log: /tmp/test01-%-err.log
+        cmd-log: /tmp/test01-cmd1.log
+        for-each:
+          - abc
+          - def
 
   - name: test1
     tags: t

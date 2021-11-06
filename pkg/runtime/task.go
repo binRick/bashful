@@ -209,7 +209,7 @@ func (task *Task) Execute(eventChan chan TaskEvent, waiter *sync.WaitGroup, envi
 							_f.Close()
 						}
 					}
-					f, err := os.OpenFile(task.Config.StderrLogFile, os.O_APPEND|os.O_WRONLY, 0644)
+					f, err := os.OpenFile(task.Config.StderrLogFile, os.O_APPEND|os.O_WRONLY, 0600)
 					if err == nil {
 						_, _ = f.WriteString(string(message) + "\n")
 						f.Close()
@@ -224,7 +224,7 @@ func (task *Task) Execute(eventChan chan TaskEvent, waiter *sync.WaitGroup, envi
 							_f.Close()
 						}
 					}
-					f, err := os.OpenFile(task.Config.StdoutLogFile, os.O_APPEND|os.O_WRONLY, 0644)
+					f, err := os.OpenFile(task.Config.StdoutLogFile, os.O_APPEND|os.O_WRONLY, 0600)
 					if err == nil {
 						_, _ = f.WriteString(string(message) + "\n")
 						f.Close()
@@ -233,6 +233,19 @@ func (task *Task) Execute(eventChan chan TaskEvent, waiter *sync.WaitGroup, envi
 			}
 
 			resultChan <- vtclean.Clean(message, false)
+		}
+	}
+	//	cmd_started := time.Now()
+
+	var command_log_file_callback = func(cmd string, exit_code int, ended time.Time) {
+		if len(task.Config.CommandLogFile) > 0 {
+			duration := time.Since(ended)
+			msg := fmt.Sprintf(`%s exited %d after %s`, cmd, exit_code, duration)
+			f, err := os.OpenFile(task.Config.CommandLogFile, os.O_APPEND|os.O_WRONLY, 0600)
+			if err == nil {
+				_, _ = f.WriteString(msg + "\n")
+				f.Close()
+			}
 		}
 	}
 
@@ -265,7 +278,7 @@ func (task *Task) Execute(eventChan chan TaskEvent, waiter *sync.WaitGroup, envi
 			}
 		}
 	}
-
+	//	cmd_started = time.Now()
 	task.Command.Cmd.Start()
 	for {
 		select {
@@ -328,6 +341,7 @@ func (task *Task) Execute(eventChan chan TaskEvent, waiter *sync.WaitGroup, envi
 	}
 	task.Command.ReturnCode = returnCode
 	task.Command.StopTime = time.Now()
+	command_log_file_callback(``, task.Command.ReturnCode, task.Command.StopTime)
 
 	// close the write end of the pipe since the child shell is positively no longer writing to it
 	task.Command.Cmd.ExtraFiles[0].Close()
