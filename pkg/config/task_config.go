@@ -23,8 +23,6 @@ package config
 import (
 	"fmt"
 	"strings"
-
-	"github.com/k0kubun/pp"
 )
 
 // NewTaskConfig creates a new TaskConfig populated with sane default values (derived from the global Options)
@@ -82,7 +80,6 @@ func (taskConfig *TaskConfig) compile(config *Config) (tasks []TaskConfig) {
 			taskConfig.ForEach = append(taskConfig.ForEach, fmt.Sprintf(`%s`, _l))
 		}
 	}
-	pp.Println(taskConfig.ForEach)
 	if len(taskConfig.ForEach) > 0 {
 		for _, replicaValue := range taskConfig.ForEach {
 			// make replacements of select attributes on a copy of the Config
@@ -97,6 +94,7 @@ func (taskConfig *TaskConfig) compile(config *Config) (tasks []TaskConfig) {
 			newConfig.Name = strings.Replace(newConfig.Name, config.Options.ReplicaReplaceString, replicaValue, -1)
 			newConfig.CmdString = strings.Replace(newConfig.CmdString, config.Options.ReplicaReplaceString, replicaValue, -1)
 			newConfig.URL = strings.Replace(newConfig.URL, config.Options.ReplicaReplaceString, replicaValue, -1)
+			newConfig.StdoutLogFile = strings.Replace(newConfig.StdoutLogFile, config.Options.ReplicaReplaceString, replicaValue, -1)
 
 			newConfig.Tags = make(stringArray, len(taskConfig.Tags))
 			for k := range taskConfig.Tags {

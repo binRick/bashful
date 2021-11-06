@@ -4,18 +4,30 @@ config:
   show-task-output: true
 
 tasks:
-  - name: delete write files
-    tags: [write, dd, always]
-    cmd: rm -rf /tmp/dd-*.dat||true
+  - name: t1
+    tags: [always,1]
+    stdout-log: /tmp/to1.log
+    stderr-log: /tmp/te1.log
+    cmd: echo ok
 
-  - name: dd read tests1111111
-    tags: [write, dd, always]
+  - name: T1
+    tags: [always, t]
+    stdout-log: /tmp/to2.log
+    stderr-log: /tmp/te2.log
     parallel-tasks:
-      - name: t1
+      - name: T1 <replace>
         cmd: echo <replace>
         for-each:
           - abc
           - def
+
+  - name: delete write files
+    tags: [write, dd, always]
+    stdout-log: /tmp/t11.log
+    stderr-log: /tmp/te11.log
+    cmd: rm -rf /tmp/dd-*.dat||true
+
+
   - name: dd read tests1111111
     tags: [write, dd, always]
     parallel-tasks:

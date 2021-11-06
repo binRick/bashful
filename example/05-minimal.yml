@@ -4,6 +4,15 @@ config:
   show-task-output: true
 
 tasks:
+  - name: t1 %
+    tags: [t]
+    stdout-log: /tmp/t11o.log
+    stderr-log: /tmp/t11e.log
+    cmd: echo OK %
+    for-each:
+      - abc
+      - def
+    
   - name: env tests
     tags: t000
     parallel-tasks:

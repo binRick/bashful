@@ -9,7 +9,6 @@ err=$(mktemp)
 
 pfx="extrace -Ql -o .e passh reap"
 cmd_run="./bf run"
-cmd_run="$pfx $cmd_run"
 
 cc() {
 	if [[ -f .e ]]; then
@@ -25,12 +24,14 @@ cc() {
     reset
   fi
 }
+
 dorun() {
 	(
 		eval $cmd_run $f $a || {			eval $cmd_run example/05-minimal.yml; exit 1; }
     eval $cmd_run example/dd.yml
 	)
 }
+
 trap cc EXIT
 dorun 2>.ee || cat .ee
 unlink $err
