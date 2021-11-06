@@ -172,6 +172,7 @@ type TaskConfig struct {
 	EventDriven bool `yaml:"event-driven"`
 
 	// ForEach is a list of strings that will be used to make replicas if the current task (tailored Name/CmdString replacements are handled via the 'ReplicaReplaceString' option)
+	ForEachList   [][]string        `yaml:"for-each-list"`
 	ForEach       []string          `yaml:"for-each"`
 	Env           map[string]string `yaml:"env"`
 	StdoutLogFile string            `yaml:"stdout-log"`

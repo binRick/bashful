@@ -5,8 +5,35 @@ config:
 
 tasks:
   - name: delete write files
-    tags: [write, dd]
+    tags: [write, dd, always]
     cmd: rm -rf /tmp/dd-*.dat||true
+
+  - name: dd read tests1111111
+    tags: [write, dd, always]
+    parallel-tasks:
+      - name: t1
+        cmd: echo <replace>
+        for-each:
+          - abc
+          - def
+  - name: dd read tests1111111
+    tags: [write, dd, always]
+    parallel-tasks:
+      - name: t1
+        cmd: echo replace
+        for-each: [50]
+        for-each-lists:
+          - [10,20]
+
+  - name: dd read tests1111111
+    tags: [write, dd, always]
+    parallel-tasks:
+      - name: /dev/random dd reads11111111 <replace>
+        cmd: dd iflag=fullblock if=/dev/random of=/dev/null bs=1M count=<replace>
+        for-each: [20]
+        for-each-lists:
+          - [10,20]
+          - [30,40]
 
   - name: dd read tests
     tags: [write, dd]

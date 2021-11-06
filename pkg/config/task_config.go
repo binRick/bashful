@@ -23,6 +23,8 @@ package config
 import (
 	"fmt"
 	"strings"
+
+	"github.com/k0kubun/pp"
 )
 
 // NewTaskConfig creates a new TaskConfig populated with sane default values (derived from the global Options)
@@ -75,6 +77,12 @@ func (taskConfig *TaskConfig) compile(config *Config) (tasks []TaskConfig) {
 		taskConfig.Name = config.replaceArguments(taskConfig.Name)
 	}
 
+	for _, l := range taskConfig.ForEachList {
+		for _, _l := range l {
+			taskConfig.ForEach = append(taskConfig.ForEach, fmt.Sprintf(`%s`, _l))
+		}
+	}
+	pp.Println(taskConfig.ForEach)
 	if len(taskConfig.ForEach) > 0 {
 		for _, replicaValue := range taskConfig.ForEach {
 			// make replacements of select attributes on a copy of the Config
