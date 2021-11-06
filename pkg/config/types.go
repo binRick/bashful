@@ -164,6 +164,12 @@ type TaskConfig struct {
 	// CmdString is the bash command to invoke when "running" this task
 	CmdString string `yaml:"cmd"`
 
+	RescueCmdString string `yaml:"rescue-cmd"`
+	PreCmdString    string `yaml:"pre-cmd"`
+	PostCmdString   string `yaml:"post-cmd"`
+	DebugCmdString  string `yaml:"debug-cmd"`
+	DebugCmdLog     string `yaml:"debug-log"`
+
 	// CwdString is current working directory
 	CwdString string `yaml:"cwd"`
 
@@ -174,18 +180,20 @@ type TaskConfig struct {
 	EventDriven bool `yaml:"event-driven"`
 
 	// ForEach is a list of strings that will be used to make replicas if the current task (tailored Name/CmdString replacements are handled via the 'ReplicaReplaceString' option)
-	CommandLogFile string            `yaml:"cmd-log"`
-	ForEachList    [][]string        `yaml:"for-each-list"`
-	ForEach        []string          `yaml:"for-each"`
-	Vars           map[string]string `yaml:"vars"`
-	When           bool              `yaml:"when"`
-	WhenResult     bool
-	WhenError      error
-	ApplyEachVars  map[string]map[string]string `yaml:"apply-each-vars"`
-	Env            map[string]string            `yaml:"env"`
-	StdoutLogFile  string                       `yaml:"stdout-log"`
-	StderrLogFile  string                       `yaml:"stderr-log"`
-	CurrentItem    string
+	CommandLogFile         string            `yaml:"cmd-log"`
+	ForEachList            [][]string        `yaml:"for-each-list"`
+	ForEach                []string          `yaml:"for-each"`
+	Vars                   map[string]string `yaml:"vars"`
+	When                   bool              `yaml:"when"`
+	WhenResult             bool
+	WhenResultRendered     bool
+	WhenResultRenderedLogs []string
+	WhenResultRenderError  error
+	ApplyEachVars          map[string]map[string]string `yaml:"apply-each-vars"`
+	Env                    map[string]string            `yaml:"env"`
+	StdoutLogFile          string                       `yaml:"stdout-log"`
+	StderrLogFile          string                       `yaml:"stderr-log"`
+	CurrentItem            string
 
 	// IgnoreFailure indicates when no errors should be registered (all task command non-zero return codes will be treated as a zero return code)
 	IgnoreFailure bool `yaml:"ignore-failure"`

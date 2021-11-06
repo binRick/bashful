@@ -9,6 +9,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/k0kubun/pp"
 	"github.com/noirbizarre/gonja"
 	"github.com/wagoodman/bashful/pkg/config"
 	"github.com/wagoodman/bashful/utils"
@@ -53,6 +54,16 @@ set -x
 `), ` `)
 	}
 
+	//pp.Println(taskConfig)
+	for k, v := range map[string]map[string]string{
+		`CmdString`:       {`src`: taskConfig.CmdString},
+		`PreCmdString`:    {`src`: taskConfig.PreCmdString},
+		`PostCmdString`:   {`src`: taskConfig.PostCmdString},
+		`RescueCmdString`: {`src`: taskConfig.RescueCmdString},
+		`DebugCmdString`:  {`src`: taskConfig.DebugCmdString},
+	} {
+		pp.Println(k, v)
+	}
 	tpl, err := gonja.FromString(taskConfig.CmdString)
 	if err == nil {
 		context1 := gonja.Context{}

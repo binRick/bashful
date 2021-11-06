@@ -54,6 +54,11 @@ tasks:
     parallel-tasks:
       - name: "Cloning %"
         cmd: echo %
+        pre-cmd: echo pre %
+        post-cmd: echo post %
+        rescue-cmd: echo r %
+        debug-cmd: echo d %
+        debug-log: /tmp/d1
         ignore-failure: no
         stdout-log: /tmp/test01-%-out.log
         stderr-log: /tmp/test01-%-err.log
