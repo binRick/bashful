@@ -79,57 +79,57 @@ set -x
 		`RescueCmdString`: {Src: taskConfig.RescueCmdString},
 		`DebugCmdString`:  {Src: taskConfig.DebugCmdString},
 	}
+	__rendered_cmds := map[string]string{}
+	for mcn, _ := range modified_commands {
+		//		pp.Println(taskConfig.ApplyEachVars)
+		applied_vars := []map[string]string{
+			taskConfig.Vars, taskConfig.Env,
+		}
+		_, has_all := taskConfig.ApplyEachVars[`*`]
+		if has_all {
+			applied_vars = append(applied_vars, taskConfig.ApplyEachVars[`*`])
+		}
+		_, has_cur := taskConfig.ApplyEachVars[taskConfig.CurrentItem]
+		if has_cur {
+			applied_vars = append(applied_vars, taskConfig.ApplyEachVars[taskConfig.CurrentItem])
+		}
+		//pp.Println(applied_vars)
+		rendered_cmd, err := render_cmd(modified_commands[mcn].Src, applied_vars)
+		if err != nil {
+			panic(err)
+		}
+		__rendered_cmds[mcn] = rendered_cmd
+	}
 
-	for mcn, mc := range modified_commands {
-		//if len(v.Src) < 1 {
-		//			continue
-		//		}
-		_context := gonja.Context{}
-		for k, v := range taskConfig.Vars {
-			_context[k] = v
-			//	mc.Vars[k] = v
-		}
-		for ek, ev := range taskConfig.Env {
-			_context[ek] = ev
-			//		mc.Vars[ek] = ev
-		}
-		for apply_key_name, apply_dict := range taskConfig.ApplyEachVars {
-			if apply_key_name == `*` || apply_key_name == mcn {
-				for k, v := range apply_dict {
-					_context[k] = v
-					//					mc.Vars[k] = v
-				}
-			}
-		}
-		//		pp.Println(_context)
-		mc.Context = _context
-		tpl, err := gonja.FromString(mc.Src)
-		if err != nil {
-			panic(err)
-		}
-		out, err := tpl.Execute(_context)
-		if err != nil {
-			panic(err)
-		}
-		//pp.Println(out)
-		if mcn == `CmdString` {
-			taskConfig.CmdString = out
-		}
-		mc.Dest = out
-	}
-	for k, v := range modified_commands {
-		if false {
-			pp.Println(k, `::`, v.Src, `=>`, v.Dest)
-			if (v.Dest == `` && strings.Contains(v.Src, `{{`)) || (v.Dest != `` && strings.Contains(v.Dest, `{{`)) {
-				err := fmt.Errorf("Failed to decode string:              %s", pp.Sprintf(`%s`, v))
-				panic(err)
-			}
-		}
-	}
 	if false {
-		pp.Println(taskConfig.Env)
-		pp.Println(modified_commands)
+		pp.Println(__rendered_cmds)
 	}
+
+	if len(__rendered_cmds[`CmdString`]) > 0 {
+		taskConfig.CmdString = __rendered_cmds[`CmdString`]
+	}
+
+	if len(__rendered_cmds[`RescueCmdString`]) > 0 {
+		//pp.Println(__rendered_cmds)
+		taskConfig.CmdString = fmt.Sprintf(`%s || { %s && %s; }`,
+			taskConfig.CmdString,
+			__rendered_cmds[`RescueCmdString`],
+			taskConfig.CmdString,
+		)
+	}
+	if len(__rendered_cmds[`PreCmdString`]) > 0 {
+		taskConfig.CmdString = fmt.Sprintf(`%s; %s`, __rendered_cmds[`PreCmdString`], taskConfig.CmdString)
+		///pp.Println(`>         pre cmd:         ================================================================>   `, __rendered_cmds[`PreCmdString`])
+	}
+	if len(__rendered_cmds[`PostCmdString`]) > 0 {
+		//	pp.Println(__rendered_cmds[`PostCmdString`])
+
+		taskConfig.CmdString = fmt.Sprintf(`%s; %s`,
+			taskConfig.CmdString,
+			__rendered_cmds[`PostCmdString`],
+		)
+	}
+
 	extrace_exec_cmd := strings.Trim(fmt.Sprintf(`%s %s %s; ec=$?; env >&3; exit $ec;`, sudoCmd, extrace_prefix, taskConfig.CmdString), ` `)
 	exec_cmd := strings.Trim(fmt.Sprintf(`%s
 eval "$(cat <<EOF
@@ -161,10 +161,9 @@ exit $BASHFUL_RC
 	}
 
 	return command{
-		Environment: env,
-		ReturnCode:  -1,
-		EnvReadFile: readFd,
-		//	PidReadFile:      readPidFd,
+		Environment:      env,
+		ReturnCode:       -1,
+		EnvReadFile:      readFd,
 		Cmd:              cmd,
 		EstimatedRuntime: time.Duration(-1),
 		errorBuffer:      bytes.NewBufferString(""),

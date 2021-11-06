@@ -1,6 +1,7 @@
 config:
   replica-replace-pattern: '%'
   show-failure-report: yes
+  ignore-failure: no
   vars:
     abc: aMAINNNNNNNNNNNNNNNNNNNNNN
     def: zNNNNNNNNNNNNNNNNNNNNNN
@@ -26,31 +27,46 @@ x-reference-data:
 
 tasks:
 
-  - name: test0 %
+  - name: test00 %
     tags: [t,t0]
-    cmd: echo abc={{abc}}, def={{def}} wow123={{WOW123}}, test1={{test1}} test2={{test2}} test3={{test3}} item=%
-    ignore-failure: no
-    stdout-log: /tmp/test0-%-stdout.log
-    stderr-log: /tmp/test0-%-stderr.log
-    cmd-log: /tmp/test0-%-cmd.log
-    pre-cmd: echo pre abc={{abc}} test3={{test3}}
-    post-cmd: echo pre abc={{abc}} test3={{test3}}
-    rescue-cmd: echo pre abc={{abc}}
-    debug-cmd: echo pre
-    debug-log: /tmp/test0-debug.log
+    cmd: echo -e     "item=% V1={{V1}} V2={{V2}} V3={{V3}}"
+    pre_cmd: echo -e "item=% V1={{V1}} V2={{V2}} V3={{V3}}"
     env:
       KEY1: VAL1
       KEY2: VAL2
-    vars:
-      abc: a1111
-      def: z1111
-      WOW123: xxxxxxxxxxxx123
     apply-each-vars:
       all: { test1: works1 }
       ALL: { test2: works2 }
       '*': { test3: works3 }
       abc: { abc: def }
       WOW123: { abc: 111111111111 }
+    for-each:
+      - abc
+      - def
+      - WOW123
+
+  - name: test0 %
+    tags: [t,t0]
+    cmd: echo -e "CMD |V|{{V1}}/{{V2}}/{{V3}}|"
+    stdout-log: /tmp/test0-%-stdout.log
+    stderr-log: /tmp/test0-%-stderr.log
+    cmd-log: /tmp/test0-%-cmd.log
+    pre-cmd: echo -e "PRE abc={{abc}} test3={{test3}} item=%"
+    post-cmd: echo -e "POST abc={{abc}} test3={{test3}} item=%"
+    rescue-cmd: echo -e "rescue abc={{abc}} item=%"
+    debug-cmd: echo -e "DEBUG pre item=%"
+    debug-log: /tmp/test0-debug-%.log
+    env:
+      KEY1: VAL1
+      KEY2: VAL2
+    vars:
+      V1: aaaaa
+      V2: bbbbb
+      V3: ccccc
+    apply-each-vars:
+      '*': { V1: works1 }
+      def: { V2: works2 }
+      WOW123: { V3: works3 }
     for-each:
       - abc
       - def
