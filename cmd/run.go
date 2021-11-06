@@ -25,7 +25,6 @@ import (
 	"os"
 
 	mapset "github.com/deckarep/golang-set"
-	"github.com/k0kubun/pp"
 	"github.com/shirou/gopsutil/process"
 
 	"io/ioutil"
@@ -45,6 +44,7 @@ import (
 var tags, onlyTags, skipTags string
 var listTagsMode bool
 var devMode bool
+var DEFAULT_EVENTS_LOG_FILE = `/var/log/bashful-events.log`
 var statsMode bool
 var statsModeDefault bool = false
 var cgroupsMode bool
@@ -95,22 +95,27 @@ var runCmd = &cobra.Command{
 		}
 
 		nl := []string{}
-		for _, value := range strings.Split(skipTags, ",") {
+		for _, tt := range cli.RunTags {
 			do_skip := false
-			if value != "" {
-				for _, tt := range cli.RunTags {
-					if tt == value {
-						do_skip = true
+			for _, value := range strings.Split(skipTags, ",") {
+				if tt == value {
+					do_skip = true
+				}
+				if !do_skip {
+					has := false
+					for _, nk := range nl {
+						if nk == tt {
+							has = true
+						}
 					}
-					if !do_skip {
-						nl = append(nl, value)
+					if !has {
+						nl = append(nl, tt)
 					}
 				}
-
 			}
 		}
 
-		pp.Println(`running tags: `, len(cli.RunTags), `=>`, len(nl))
+		//		pp.Println(`running tags: `, len(cli.RunTags), `=>`, len(nl))
 		cli.RunTags = nl
 
 		// todo: make this a function for CLI (addTag or something)
@@ -128,7 +133,6 @@ var runCmd = &cobra.Command{
 
 	},
 }
-var DEFAULT_EVENTS_LOG_FILE = `/var/log/bashful-events.log`
 
 func init() {
 	gops_init()
