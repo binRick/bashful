@@ -41,6 +41,7 @@ type Config struct {
 
 	// CachePath is the dir path to place any temporary files
 	CachePath string
+	Vars      map[string]string `yaml:"vars"`
 
 	// LogCachePath is the dir path to place temporary logs
 	LogCachePath string
@@ -79,7 +80,8 @@ type Cli struct {
 // Options is the set of values to be applied to all tasks or affect general behavior
 type Options struct {
 	// BulletChar is a character (or short string) that should prefix any displayed task name
-	BulletChar string `yaml:"bullet-char"`
+	BulletChar string            `yaml:"bullet-char"`
+	Vars       map[string]string `yaml:"vars"`
 
 	// Bundle is a list of relative file paths that should be included in a bashful bundle
 	Bundle []string `yaml:"bundle"`
@@ -176,9 +178,14 @@ type TaskConfig struct {
 	ForEachList    [][]string        `yaml:"for-each-list"`
 	ForEach        []string          `yaml:"for-each"`
 	Vars           map[string]string `yaml:"vars"`
-	Env            map[string]string `yaml:"env"`
-	StdoutLogFile  string            `yaml:"stdout-log"`
-	StderrLogFile  string            `yaml:"stderr-log"`
+	When           bool              `yaml:"when"`
+	WhenResult     bool
+	WhenError      error
+	ApplyEachVars  map[string]map[string]string `yaml:"apply-each-vars"`
+	Env            map[string]string            `yaml:"env"`
+	StdoutLogFile  string                       `yaml:"stdout-log"`
+	StderrLogFile  string                       `yaml:"stderr-log"`
+	CurrentItem    string
 
 	// IgnoreFailure indicates when no errors should be registered (all task command non-zero return codes will be treated as a zero return code)
 	IgnoreFailure bool `yaml:"ignore-failure"`

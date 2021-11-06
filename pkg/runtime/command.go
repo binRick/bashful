@@ -9,6 +9,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/noirbizarre/gonja"
 	"github.com/wagoodman/bashful/pkg/config"
 	"github.com/wagoodman/bashful/utils"
 )
@@ -27,11 +28,6 @@ func newCommand(taskConfig config.TaskConfig) command {
 
 	readFd, writeFd, err := os.Pipe()
 	utils.CheckError(err, "Could not open env pipe for child shell")
-
-	if false {
-		//readPidFd, writePidFd, err := os.Pipe()
-		//utils.CheckError(err, "Could not open pid pipe for child shell")
-	}
 
 	sudoCmd := ""
 	if taskConfig.Sudo {
@@ -56,6 +52,42 @@ BASH_XTRACEFD=19
 set -x
 `), ` `)
 	}
+
+	tpl, err := gonja.FromString(taskConfig.CmdString)
+	if err == nil {
+		context1 := gonja.Context{}
+		for k, v := range taskConfig.Vars {
+			context1[k] = v
+		}
+		for apply_key_name, apply_dict := range taskConfig.ApplyEachVars {
+			apply_key_match := (apply_key_name == taskConfig.CurrentItem)
+			if apply_key_name == `*` {
+				apply_key_match = true
+			}
+			if apply_key_name == `ALL` {
+				apply_key_match = true
+			}
+			if apply_key_name == `all` {
+				apply_key_match = true
+			}
+			if apply_key_match {
+				//		if (apply_key_name == '*' or strings.ToLower(apply_key_name) == `all` or  apply_key_name == taskConfig.CurrentItem) {
+				for k, v := range apply_dict {
+					context1[k] = v
+				}
+				//			pp.Println(taskConfig.ApplyEachVars, apply_dict, taskConfig.CurrentItem)
+			}
+		}
+		out, err := tpl.Execute(context1)
+		if err == nil {
+			taskConfig.CmdString = out
+		} else {
+			fmt.Println(err)
+		}
+	} else {
+		fmt.Println(err)
+	}
+
 	exec_cmd := strings.Trim(fmt.Sprintf(`%s
 eval "$(cat <<EOF
 %s %s

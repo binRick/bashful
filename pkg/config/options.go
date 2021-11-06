@@ -26,7 +26,7 @@ func NewOptions() *Options {
 	if VERBOSE_MODE {
 		DEFAULT_COLLAPSE_ON_COMPLETION = false
 	}
-	return &Options{
+	options := &Options{
 		BulletChar:           "•",
 		CollapseOnCompletion: DEFAULT_COLLAPSE_ON_COMPLETION,
 		ColorError:           160,
@@ -48,7 +48,13 @@ func NewOptions() *Options {
 		StopOnFailure:        true,
 		SingleLineDisplay:    false,
 		UpdateInterval:       -1,
+		Vars:                 map[string]string{},
+		Env:                  map[string]string{},
 	}
+	//fmt.Fprintf(os.Stdout, "%s\n", pp.Sprintf(`%s`, options))
+	//	fmt.Fprintf(os.Stdout, "\n\n%s\n\n", pp.Sprintf(`%s`, options.Vars))
+	//	os.Exit(1)
+	return options
 }
 
 // UnmarshalYAML parses and creates a Options from a given user yaml string

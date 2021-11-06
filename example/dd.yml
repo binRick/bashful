@@ -2,6 +2,9 @@ config:
   log-path: .5.log
   show-summary-footer: true
   show-task-output: true
+  vars:
+    abc: aaaa
+    def: zzza
 
 tasks:
   - name: t1

@@ -1,6 +1,9 @@
 config:
   replica-replace-pattern: '%'
   show-failure-report: yes
+  vars:
+    abc: aMAINNNNNNNNNNNNNNNNNNNNNN
+    def: zNNNNNNNNNNNNNNNNNNNNNN
 
   # Show an eta for each task on the screen (being shown on every line 
   # with a command running)
@@ -25,13 +28,24 @@ tasks:
 
   - name: test0 %
     tags: [t,t0]
-    cmd: echo %
+    cmd: echo abc={{abc}}, def={{def}} wow123={{WOW123}}, test1={{test1}} test2={{test2}} test3={{test3}} item=%
     ignore-failure: no
     stdout-log: /tmp/test0-%.log
     cmd-log: /tmp/test0-%-cmd.log
+    vars:
+      abc: a1111
+      def: z1111
+      WOW123: xxxxxxxxxxxx123
+    apply-each-vars:
+      all: { test1: works1 }
+      ALL: { test2: works2 }
+      '*': { test3: works3 }
+      abc: { abc: def }
+      WOW123: { abc: 111111111111 }
     for-each:
       - abc
       - def
+      - WOW123
 
   - name: test01
     tags: t01
@@ -44,6 +58,9 @@ tasks:
         stdout-log: /tmp/test01-%-out.log
         stderr-log: /tmp/test01-%-err.log
         cmd-log: /tmp/test01-cmd1.log
+        vars:
+            abc: a222222
+            def: z2222222
         for-each:
           - abc
           - def
@@ -79,8 +96,8 @@ tasks:
   - name: Cloning Repos
     collapse-on-completion: true
     parallel-tasks:
-      - name: "Cloning <replace>"
-        cmd: example/scripts/random-worker.sh 1 <replace>
+      - name: "Cloning %"
+        cmd: example/scripts/random-worker.sh 1 %
         ignore-failure: true
         for-each: *app-names
 

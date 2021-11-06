@@ -19,8 +19,8 @@ require (
 	github.com/k0kubun/pp v3.0.1+incompatible
 	github.com/kr/pretty v0.3.0 // indirect
 	github.com/lunixbochs/vtclean v0.0.0-20180621232353-2d01aacdc34a
-	github.com/mattn/go-colorable v0.0.9 // indirect
 	github.com/mgutz/ansi v0.0.0-20170206155736-9520e82c474b
+	github.com/noirbizarre/gonja v0.0.0-20200629003239-4d051fd0be61 // indirect
 	github.com/nolleh/caption_json_formatter v0.0.0-20201008073015-027350f5400f
 	github.com/opencontainers/runtime-spec v1.0.2
 	github.com/schollz/progressbar/v3 v3.8.3

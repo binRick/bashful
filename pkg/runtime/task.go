@@ -90,7 +90,6 @@ func NewTask(taskConfig config.TaskConfig, runtimeOptions *config.Options) *Task
 
 // UpdateExec reinstantiates the planned command to run based on the given path to an executable
 func (task *Task) UpdateExec(execpath string) {
-
 	if task.Config.CmdString == "" {
 		task.Config.CmdString = task.Options.ExecReplaceString
 	}
@@ -263,6 +262,8 @@ func (task *Task) Execute(eventChan chan TaskEvent, waiter *sync.WaitGroup, envi
 		if false {
 		}
 	}
+	// Compile the template first (i. e. creating the AST)
+
 	if task.Options.Env != nil {
 		for k, v := range task.Options.Env {
 			task.Command.Cmd.Env = append(task.Command.Cmd.Env, fmt.Sprintf("%s=%s", k, v))
@@ -278,7 +279,7 @@ func (task *Task) Execute(eventChan chan TaskEvent, waiter *sync.WaitGroup, envi
 			}
 		}
 	}
-	//	cmd_started = time.Now()
+
 	task.Command.Cmd.Start()
 	for {
 		select {
