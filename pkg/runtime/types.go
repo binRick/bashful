@@ -27,7 +27,6 @@ import (
 	"sync"
 	"time"
 
-	v2 "github.com/containerd/cgroups/v2"
 	"github.com/google/uuid"
 	"github.com/wagoodman/bashful/pkg/config"
 )
@@ -89,7 +88,6 @@ type TaskStatistics struct {
 // Task is a runtime object derived from the TaskConfig (parsed from the user yaml) and contains everything needed to Execute, track, and display the task.
 type Task struct {
 	Id     uuid.UUID
-	CG     *v2.Manager
 	CGPath string
 
 	// Config is the user-defined values parsed from the run yaml

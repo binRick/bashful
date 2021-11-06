@@ -7,6 +7,9 @@ import (
 	"github.com/google/gops/agent"
 )
 
+var GOPS_ENABLED = false
+var CG_VER = 0
+
 func gops_init() {
 	if GOPS_ENABLED {
 		go func() {

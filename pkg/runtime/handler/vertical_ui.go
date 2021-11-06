@@ -3,7 +3,6 @@ package handler
 import (
 	"syscall"
 
-	"github.com/containerd/cgroups"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 
 	"bytes"
@@ -45,7 +44,6 @@ type VerticalUI struct {
 	startTime   time.Time
 	runtimeData *runtime.TaskStatistics
 	frame       *jotframe.FixedFrame
-	Cgroups     map[uint]cgroups.Cgroup
 }
 
 // display represents all non-Config items that control how the task line should be printed to the screen
@@ -122,7 +120,6 @@ func NewVerticalUI(cfg *config.Config) *VerticalUI {
 		ticker:    time.NewTicker(updateInterval),
 		startTime: time.Now(),
 		config:    cfg,
-		Cgroups:   map[uint]cgroups.Cgroup{},
 	}
 
 	go handler.spinnerHandler()
@@ -415,7 +412,6 @@ var cached_io_sums = map[string]int64{
 	`write_bytes`: 0,
 }
 var first_run = true
-var cmd_cg cgroups.Cgroup
 var cg_limit1 = &specs.LinuxResources{
 	BlockIO: &specs.LinuxBlockIO{},
 	CPU:     &specs.LinuxCPU{},

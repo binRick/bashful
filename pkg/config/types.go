@@ -21,7 +21,7 @@
 package config
 
 import (
-	"github.com/containerd/cgroups"
+	//	"github.com/containerd/cgroups"
 	mapset "github.com/deckarep/golang-set"
 	"github.com/gofrs/uuid"
 	"github.com/opencontainers/runtime-spec/specs-go"
@@ -55,10 +55,10 @@ type Config struct {
 	TotalEtaSeconds float64
 }
 type BashfulCgroup struct {
-	ParentUUID      uuid.UUID
-	ParentCgroup    cgroups.Cgroup
-	CommandCgroups  map[string]cgroups.Cgroup
-	TaskCgroups     map[string]cgroups.Cgroup
+	ParentUUID uuid.UUID
+	//	ParentCgroup    cgroups.Cgroup
+	//	CommandCgroups  map[string]cgroups.Cgroup
+	//	TaskCgroups     map[string]cgroups.Cgroup
 	CgroupIDs       []string
 	ParentResources *specs.LinuxResources
 	SetupTimestamp  int64
@@ -71,9 +71,9 @@ type Cli struct {
 	RunTagSet              mapset.Set
 	ExecuteOnlyMatchedTags bool
 	Args                   []string
-	CgroupController       cgroups.Cgroup
-	CgroupControllerUUID   uuid.UUID
-	BashfulCgroup          BashfulCgroup
+	//	CgroupController       cgroups.Cgroup
+	CgroupControllerUUID uuid.UUID
+	BashfulCgroup        BashfulCgroup
 }
 
 // Options is the set of values to be applied to all tasks or affect general behavior

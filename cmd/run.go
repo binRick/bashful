@@ -23,12 +23,8 @@ package cmd
 import (
 	"fmt"
 	"os"
-	"syscall"
 
-	"github.com/containerd/cgroups"
 	mapset "github.com/deckarep/golang-set"
-	"github.com/google/uuid"
-	"github.com/k0kubun/pp"
 	"github.com/shirou/gopsutil/process"
 
 	"io/ioutil"
@@ -36,7 +32,6 @@ import (
 	"strings"
 	"time"
 
-	guuid "github.com/gofrs/uuid"
 	"github.com/spf13/cobra"
 	"github.com/wagoodman/bashful/pkg/config"
 	"github.com/wagoodman/bashful/pkg/log"
@@ -69,14 +64,11 @@ var runCmd = &cobra.Command{
 		if tags != "" && onlyTags != "" {
 			utils.ExitWithErrorMessage("Options 'tags' and 'only-tags' are mutually exclusive.")
 		}
-		parent_cg_uuid := guuid.Must(guuid.NewV4())
 		cli := config.Cli{
 			YamlPath: args[0],
 			BashfulCgroup: config.BashfulCgroup{
-				ParentUUID:      parent_cg_uuid,
-				ParentResources: cg_limit1,
-				TaskCgroups:     map[string]cgroups.Cgroup{},
-				CommandCgroups:  map[string]cgroups.Cgroup{},
+				//ParentUUID:      parent_cg_uuid,
+				//ParentResources: cg_limit1,
 				//ParentCgroup:    parent_cg,
 				CgroupIDs: []string{},
 			},
@@ -137,15 +129,9 @@ func init() {
 	//  TAGS
 	runCmd.Flags().StringVar(&tags, "untagged-and-tags", "", "A comma delimited list of matching task tags. If a task's tag matches *or if it is not tagged* then it will be executed (also see --only-tags)")
 	runCmd.Flags().StringVarP(&onlyTags, "only-tags", "t", "", "A comma delimited list of matching task tags. A task will only be executed if it has a matching tag")
-	if false {
-		cg_init()
-	}
 }
 
 func Run(yamlString []byte, cli config.Cli) {
-	if DEBUG_BF {
-		pp.Fprintf(os.Stderr, "RUN> %s %d\n", uuid.New().String(), syscall.Getpid())
-	}
 	client, err := runtime.NewClientFromYaml(yamlString, &cli)
 	if err != nil {
 		utils.ExitWithErrorMessage(err.Error())
@@ -201,14 +187,12 @@ func Run(yamlString []byte, cli config.Cli) {
 						}
 						if !has {
 							found_pids = append(found_pids, pid)
-							//						if cli.BashfulCgroup.ParentCgroup.Add(cgroups.Process{Pid: int(pid)}) != nil {
 							//						panic(err)
 							//				}
 						}
 						if false {
 						}
 						fmt.Fprintf(os.Stderr, "ADDING pid> %s to %d PIDs\n", pid, len(found_pids))
-						//						if cli.BashfulCgroup.ParentCgroup.Add(cgroups.Process{Pid: int(pid)}) != nil {
 						//						//					panic(err)
 						//				}
 					}

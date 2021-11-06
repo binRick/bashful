@@ -23,10 +23,8 @@ package runtime
 import (
 	"fmt"
 	"os"
-	"syscall"
 	"time"
 
-	"github.com/k0kubun/pp"
 	"github.com/wagoodman/bashful/pkg/config"
 	"github.com/wagoodman/bashful/pkg/log"
 	"github.com/wagoodman/bashful/utils"
@@ -185,30 +183,9 @@ func (executor *Executor) execute(task *Task) error {
 
 var DEBUG_EXEC_BF = false
 
-func cg_exec(task *Task) {
-	cg_procs, err := task.CG.Procs(true)
-	if err != nil {
-		panic(err)
-	}
-	cg_stat, err := task.CG.Stat()
-	if err != nil {
-		panic(err)
-	}
-	if DEBUG_EXEC_BF {
-		pp.Fprintf(os.Stderr, "EXECUTOR RUN> %d/%d Procs %s\n", cg_stat.Pids.Current, cg_stat.Pids.Limit, syscall.Getpid())
-		if false {
-			pp.Fprintf(os.Stderr, "EXECUTOR RUN> %s \n", cg_stat)
-			pp.Fprintf(os.Stderr, "EXECUTOR RUN> %d \n", cg_procs)
-		}
-	}
-}
-
 func (executor *Executor) run() error {
 	for _, task := range executor.Tasks {
 		// todo: execute should return error and be checked here
-		if false {
-			cg_exec(task)
-		}
 
 		executor.execute(task)
 

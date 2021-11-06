@@ -64,10 +64,7 @@ func d1() {
 		resources.Pids = &specs.LinuxPids{}
 		resources.Pids.Limit = int64(max)
 	*/
-	//control, err := cgroups.New(cgroups.Systemd, cgroups.Slice("test.slice", "chronyd1"), &resources)
-	///////control, err := cgroups.New(cgroups.Systemd, cgroups.StaticPath("/sys/fs/cgroup/foo"), &resources)
 
-	//	control, err := cgroups.New(cgroups.V1, cgroups.StaticPath("test"), &specs.LinuxResources{})
 	/*
 		if err != nil {
 			fmt.Println(err)
@@ -77,7 +74,6 @@ func d1() {
 			fmt.Println("control is nil")
 			return
 		}
-		for _, s := range cgroups.Subsystems() {
 			if false {
 				pp.Println(s)
 			}
