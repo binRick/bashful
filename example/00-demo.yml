@@ -30,8 +30,17 @@ tasks:
     tags: [t,t0]
     cmd: echo abc={{abc}}, def={{def}} wow123={{WOW123}}, test1={{test1}} test2={{test2}} test3={{test3}} item=%
     ignore-failure: no
-    stdout-log: /tmp/test0-%.log
+    stdout-log: /tmp/test0-%-stdout.log
+    stderr-log: /tmp/test0-%-stderr.log
     cmd-log: /tmp/test0-%-cmd.log
+    pre-cmd: echo pre abc={{abc}} test3={{test3}}
+    post-cmd: echo pre abc={{abc}} test3={{test3}}
+    rescue-cmd: echo pre abc={{abc}}
+    debug-cmd: echo pre
+    debug-log: /tmp/test0-debug.log
+    env:
+      KEY1: VAL1
+      KEY2: VAL2
     vars:
       abc: a1111
       def: z1111

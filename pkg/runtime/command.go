@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -19,6 +20,21 @@ var (
 	BASH_TRACE_MODE = os.Getenv(`__BASHFUL_BASH_TRACE_MODE`)
 	EXTRACE_MODE    = os.Getenv(`__BASHFUL_EXTRACE_MODE`)
 )
+
+type ModifiedCommand struct {
+	Name    string
+	Src     string
+	Dest    string
+	Context gonja.Context
+	Error   error
+	Vars    map[string]string
+}
+
+var cmd_counter uint64
+
+type ModifiedCommands map[string]ModifiedCommand
+
+var brief_cmd_mode = false
 
 func newCommand(taskConfig config.TaskConfig) command {
 	shell := `bash`
@@ -36,14 +52,15 @@ func newCommand(taskConfig config.TaskConfig) command {
 	}
 	extrace_args := ``
 	extrace_path := ``
-	if EXTRACE_MODE == `1` {
-		_extrace_path, err := exec.LookPath("extrace")
-		utils.CheckError(err, "Could not find extrace")
-		extrace_path = _extrace_path
-		extrace_log := `/tmp/bashful-extrace-$$.log`
-		extrace_args = `-Qfultd`
-		sudoCmd = fmt.Sprintf(`%s %s`, sudoCmd, fmt.Sprintf(`%s %s -o %s`, extrace_path, extrace_args, extrace_log))
-	}
+	_extrace_path, err := exec.LookPath("extrace")
+	utils.CheckError(err, "Could not find extrace")
+	extrace_path = _extrace_path
+	extrace_log_dir := fmt.Sprintf(`/tmp`)
+	atomic.AddUint64(&cmd_counter, 1)
+	extrace_log := fmt.Sprintf(`%s/bashful-extrace-%d-%d.log`, extrace_log_dir, syscall.Getpid(), cmd_counter)
+	extrace_args = `-Qultd`
+	extrace_prefix := ``
+	extrace_prefix = fmt.Sprintf(`%s %s -o %s`, extrace_path, extrace_args, extrace_log)
 
 	prefix_exec_cmd := ``
 	if BASH_TRACE_MODE == `1` {
@@ -55,50 +72,65 @@ set -x
 	}
 
 	//pp.Println(taskConfig)
-	for k, v := range map[string]map[string]string{
-		`CmdString`:       {`src`: taskConfig.CmdString},
-		`PreCmdString`:    {`src`: taskConfig.PreCmdString},
-		`PostCmdString`:   {`src`: taskConfig.PostCmdString},
-		`RescueCmdString`: {`src`: taskConfig.RescueCmdString},
-		`DebugCmdString`:  {`src`: taskConfig.DebugCmdString},
-	} {
-		pp.Println(k, v)
-	}
-	tpl, err := gonja.FromString(taskConfig.CmdString)
-	if err == nil {
-		context1 := gonja.Context{}
-		for k, v := range taskConfig.Vars {
-			context1[k] = v
-		}
-		for apply_key_name, apply_dict := range taskConfig.ApplyEachVars {
-			apply_key_match := (apply_key_name == taskConfig.CurrentItem)
-			if apply_key_name == `*` {
-				apply_key_match = true
-			}
-			if apply_key_name == `ALL` {
-				apply_key_match = true
-			}
-			if apply_key_name == `all` {
-				apply_key_match = true
-			}
-			if apply_key_match {
-				//		if (apply_key_name == '*' or strings.ToLower(apply_key_name) == `all` or  apply_key_name == taskConfig.CurrentItem) {
-				for k, v := range apply_dict {
-					context1[k] = v
-				}
-				//			pp.Println(taskConfig.ApplyEachVars, apply_dict, taskConfig.CurrentItem)
-			}
-		}
-		out, err := tpl.Execute(context1)
-		if err == nil {
-			taskConfig.CmdString = out
-		} else {
-			fmt.Println(err)
-		}
-	} else {
-		fmt.Println(err)
+	var modified_commands = ModifiedCommands{
+		`CmdString`:       {Src: taskConfig.CmdString},
+		`PreCmdString`:    {Src: taskConfig.PreCmdString},
+		`PostCmdString`:   {Src: taskConfig.PostCmdString},
+		`RescueCmdString`: {Src: taskConfig.RescueCmdString},
+		`DebugCmdString`:  {Src: taskConfig.DebugCmdString},
 	}
 
+	for mcn, mc := range modified_commands {
+		//if len(v.Src) < 1 {
+		//			continue
+		//		}
+		_context := gonja.Context{}
+		for k, v := range taskConfig.Vars {
+			_context[k] = v
+			//	mc.Vars[k] = v
+		}
+		for ek, ev := range taskConfig.Env {
+			_context[ek] = ev
+			//		mc.Vars[ek] = ev
+		}
+		for apply_key_name, apply_dict := range taskConfig.ApplyEachVars {
+			if apply_key_name == `*` || apply_key_name == mcn {
+				for k, v := range apply_dict {
+					_context[k] = v
+					//					mc.Vars[k] = v
+				}
+			}
+		}
+		//		pp.Println(_context)
+		mc.Context = _context
+		tpl, err := gonja.FromString(mc.Src)
+		if err != nil {
+			panic(err)
+		}
+		out, err := tpl.Execute(_context)
+		if err != nil {
+			panic(err)
+		}
+		//pp.Println(out)
+		if mcn == `CmdString` {
+			taskConfig.CmdString = out
+		}
+		mc.Dest = out
+	}
+	for k, v := range modified_commands {
+		if false {
+			pp.Println(k, `::`, v.Src, `=>`, v.Dest)
+			if (v.Dest == `` && strings.Contains(v.Src, `{{`)) || (v.Dest != `` && strings.Contains(v.Dest, `{{`)) {
+				err := fmt.Errorf("Failed to decode string:              %s", pp.Sprintf(`%s`, v))
+				panic(err)
+			}
+		}
+	}
+	if false {
+		pp.Println(taskConfig.Env)
+		pp.Println(modified_commands)
+	}
+	extrace_exec_cmd := strings.Trim(fmt.Sprintf(`%s %s %s; ec=$?; env >&3; exit $ec;`, sudoCmd, extrace_prefix, taskConfig.CmdString), ` `)
 	exec_cmd := strings.Trim(fmt.Sprintf(`%s
 eval "$(cat <<EOF
 %s %s
@@ -112,17 +144,18 @@ exit $BASHFUL_RC
 		sudoCmd,
 		taskConfig.CmdString,
 	), ` `)
-	cmd := exec.Command(shell, "--noprofile", "--norc", "+e", "-c", exec_cmd)
+	brief_cmd_mode = true
+	if brief_cmd_mode {
+		exec_cmd = strings.Trim(fmt.Sprintf(`%s %s; ec=$?; env >&3; exit $ec;`, sudoCmd, taskConfig.CmdString), ` `)
+	}
+	if EXTRACE_MODE == `1` {
+		exec_cmd = extrace_exec_cmd
+	}
+	cmd := exec.Command(shell, "--noprofile", "--norc", "+x", "+e", "-c", exec_cmd)
 	cmd.Stdin = strings.NewReader(string(sudoPassword) + "\n")
-
-	// Set current working directory; default is empty
 	cmd.Dir = taskConfig.CwdString
 	env := map[string]string{}
-
-	// allow the child process to provide env vars via a pipe (FD3)
 	cmd.ExtraFiles = []*os.File{writeFd}
-
-	// set this command as a process group
 	cmd.SysProcAttr = &syscall.SysProcAttr{
 		Setpgid: true,
 	}
