@@ -27,30 +27,102 @@ x-reference-data:
 
 tasks:
 
-  - name: ansible %
+  - name: Process Ansible Module Command %
+    tags: [t,t0,ansible]
+    cmd: echo
+    pre-cmd: echo
+    for-each-list:
+      -
+        - abc
+      -
+        - def
+        - WOW123
+    ansible:
+      command:
+        options: 
+          enabled: no
+          after-command: yes
+          before-command: yes
+        args: 
+          val: ls
+          warn: false
+
+  - name: Process Ansible Module Command ls with args %
+    tags: [t,t0,ansible]
+    cmd: echo
+    pre-cmd: echo
+    for-each-list:
+      -
+        - abc
+      -
+        - def
+        - WOW123
+    ansible:
+      command:
+        options: 
+          enabled: no
+          after-command: yes
+          before-command: yes
+        args: 
+          val: ls /
+          warn: false
+
+  - name: Process Ansible Module Systemd %
+    tags: [t,t0,ansible]
+    cmd: echo
+    pre-cmd: echo
+    for-each:
+      - 
+    ansible:
+      service_facts:
+        options: 
+          enabled: no
+          after-command: yes
+          before-command: yes
+        args: 
+
+  - name: Process Items with Ansible Modules
     tags: [t,t0,ansible]
     cmd: echo -e     "item=% V1={{V1}} V2={{V2}} V3={{V3}}"
-    pre_cmd: echo -e "item=% V1={{V1}} V2={{V2}} V3={{V3}}"
+    pre-cmd: echo -e "item=% V1={{V1}} V2={{V2}} V3={{V3}}"
+    for-each:
+      - abc
+      - def
+      - WOW123
+    apply-each-vars:
+      all: { test1: works1 }
+      ALL: { test2: works2 }
+      '*': { test3: works3 }
+      abc: { abc: def }
+      WOW123: { abc: 111111111111 }
     ansible:
       command:
         options: 
           enabled: no
           after-command: no
         args: 
-          val: env
+          val: echo env
           warn: false
-      get_facts:
+      setup:
+        connection:
+          connection: ssh
+          user: root
+          timeout: 2
+          ssh-extra-args: '-oHostname=2.3.2.3 -oPort=25222'
         options: 
           enabled: no
-          before-command: yes
-          after-command: yes
+          before-command: no
+          after-command: no
         args: 
+          #          filter: 'gather_subset=!all'
+
       command:
         options: 
-          enabled: no
+          enabled: yes
+          before-command: no
           after-command: yes
         args: 
-          val: ls /
+          val: ls
           warn: false
       ping:
         options: 
@@ -75,17 +147,6 @@ tasks:
     env:
       KEY1: VAL1
       KEY2: VAL2
-    apply-each-vars:
-      all: { test1: works1 }
-      ALL: { test2: works2 }
-      '*': { test3: works3 }
-      abc: { abc: def }
-      WOW123: { abc: 111111111111 }
-    for-each:
-      - abc
-      - def
-      - WOW123
-
   - name: test00 %
     tags: [t,t0]
     cmd: echo -e     "item=% V1={{V1}} V2={{V2}} V3={{V3}}"

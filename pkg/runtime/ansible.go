@@ -11,7 +11,6 @@ import (
 	"github.com/apenella/go-ansible/pkg/adhoc"
 	"github.com/apenella/go-ansible/pkg/options"
 	guuid "github.com/gofrs/uuid"
-	"github.com/k0kubun/pp"
 	"github.com/wagoodman/bashful/utils"
 )
 
@@ -22,7 +21,7 @@ var DEFAULT_ENV = map[string]string{
 	`ANSIBLE_DEPRECATION_WARNINGS`: `False`, `ANSIBLE_FORCE_COLOR`: `True`, `ANSIBLE_ANY_ERRORS_FATAL`: `True`, `ANSIBLE_DISPLAY_ARGS_TO_STDOUT`: `False`,
 }
 
-func NewAdhoc(module_name string, module_args map[string]interface{}) *adhoc.AnsibleAdhocCmd {
+func NewAdhoc(module_name string, module_args map[string]interface{}, module_hosts []string) *adhoc.AnsibleAdhocCmd {
 	U := guuid.Must(guuid.NewV4())
 	tree_path := fmt.Sprintf(`%s/%s/%d/%s.json`, ad_hoc_tree_dir_prefix, module_name, syscall.Getpid(), strings.Split(U.String(), `-`)[0])
 	EnsureFileDir(tree_path)
@@ -30,11 +29,12 @@ func NewAdhoc(module_name string, module_args map[string]interface{}) *adhoc.Ans
 	if err != nil {
 		panic(err)
 	}
-	os.Setenv(`ANSIBLE_PYTHON_INTERPRETER`, py3)
+
 	module_args_encoded, _ := json.Marshal(module_args)
+	mhl := fmt.Sprintf(`%s,`, strings.Join(module_hosts, `,`))
 	adhoc := &adhoc.AnsibleAdhocCmd{
 		///	Binary:  ap,
-		Pattern: "all",
+		Pattern: mhl,
 		ConnectionOptions: &options.AnsibleConnectionOptions{
 			Connection:    "local",
 			SSHCommonArgs: "",
@@ -45,7 +45,8 @@ func NewAdhoc(module_name string, module_args map[string]interface{}) *adhoc.Ans
 		},
 		Options: &adhoc.AnsibleAdhocOptions{
 			ModuleName: module_name,
-			Inventory:  `localhost,`,
+			Inventory:  mhl,
+			Limit:      mhl,
 			Tree:       tree_path,
 			Verbose:    VERBOSE_MODE,
 			OneLine:    true,
@@ -63,9 +64,23 @@ func NewAdhoc(module_name string, module_args map[string]interface{}) *adhoc.Ans
 	if false {
 		adhoc.Binary = ap
 	}
+	os.Setenv(`ANSIBLE_PYTHON_INTERPRETER`, `auto_silent`)
+	if len(module_hosts) == 1 && module_hosts[0] == `localhost` {
+		os.Setenv(`ANSIBLE_PYTHON_INTERPRETER`, py3)
+	} else {
+		adhoc.ConnectionOptions = &options.AnsibleConnectionOptions{
+			Connection:    "ssh",
+			SSHCommonArgs: "",
+			SSHExtraArgs:  "",
+			PrivateKey:    "",
+			Timeout:       5,
+			User:          "root",
+		}
+
+	}
 	if len(module_args) > 0 && string(module_args_encoded) != `null` {
 		for kk, vv := range module_args {
-			kv = fmt.Sprintf(`%s %s`, kv, fmt.Sprintf(`%s=%s`, kk, fmt.Sprintf(`%v`, vv)))
+			kv = fmt.Sprintf(`%s %s`, kv, fmt.Sprintf(`%s=\'%s\'`, kk, fmt.Sprintf(`%v`, vv)))
 		}
 	}
 	kv = strings.Trim(kv, ` `)
@@ -78,7 +93,7 @@ func NewAdhoc(module_name string, module_args map[string]interface{}) *adhoc.Ans
 		adhoc.Options.Args = fmt.Sprintf(`'%s'`, module_args[`val`])
 	}
 	//	fmt.Fprintf(os.Stderr, "\n\n%s\n\n", fmt.Sprintf(`%s`, adhoc.String()))
-	fmt.Fprintf(os.Stderr, "\n\n%s\n\n", pp.Sprintf(`%s`, adhoc))
+	//	fmt.Fprintf(os.Stderr, "\n\n%s\n\n", pp.Sprintf(`%s`, adhoc))
 	for k, v := range DEFAULT_ENV {
 		os.Setenv(k, v)
 	}

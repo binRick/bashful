@@ -81,7 +81,16 @@ set -x
 			if false {
 				pp.Println(module_name, module_args)
 			}
-			adhoc := NewAdhoc(module_name, module_args[`args`])
+			module_hosts := []string{`localhost`}
+			remote_host := ``
+			remote_host = `f180.vpnservice.company`
+			remote_host = `localhost`
+			if len(remote_host) > 0 {
+				module_hosts = []string{
+					remote_host,
+				}
+			}
+			adhoc := NewAdhoc(module_name, module_args[`args`], module_hosts)
 			_adhoc_cmd, _ := adhoc.Command()
 			if false {
 				pp.Println(_adhoc_cmd)
@@ -102,7 +111,7 @@ set -x
 				if has_after {
 					old_cmd := taskConfig.CmdString
 					new_cmd := fmt.Sprintf(`%s; %s`, taskConfig.CmdString, adhoc_cmd)
-					if false {
+					if false && VERBOSE_MODE {
 						pp.Printf(`
 					AFTER CMD:         >>>            %s
 ansible cmd:  %s
@@ -125,7 +134,7 @@ new cmd:      %s
 						adhoc_cmd,
 						taskConfig.CmdString,
 					)
-					if false {
+					if false && VERBOSE_MODE {
 						pp.Printf(`
 					BEFORE CMD:         >>>            %s
 ansible cmd:  %s
@@ -159,7 +168,6 @@ new cmd:      %s
 	}
 	__rendered_cmds := map[string]string{}
 	for mcn, _ := range modified_commands {
-		//		pp.Println(taskConfig.ApplyEachVars)
 		applied_vars := []map[string]string{
 			taskConfig.Vars, taskConfig.Env,
 		}
@@ -171,7 +179,6 @@ new cmd:      %s
 		if has_cur {
 			applied_vars = append(applied_vars, taskConfig.ApplyEachVars[taskConfig.CurrentItem])
 		}
-		//pp.Println(applied_vars)
 		rendered_cmd, err := render_cmd(modified_commands[mcn].Src, applied_vars)
 		if err != nil {
 			panic(err)
@@ -179,16 +186,11 @@ new cmd:      %s
 		__rendered_cmds[mcn] = rendered_cmd
 	}
 
-	if false {
-		pp.Println(__rendered_cmds)
-	}
-
 	if len(__rendered_cmds[`CmdString`]) > 0 {
 		taskConfig.CmdString = __rendered_cmds[`CmdString`]
 	}
 
 	if len(__rendered_cmds[`RescueCmdString`]) > 0 {
-		//pp.Println(__rendered_cmds)
 		taskConfig.CmdString = fmt.Sprintf(`%s || { %s && %s; }`,
 			taskConfig.CmdString,
 			__rendered_cmds[`RescueCmdString`],
