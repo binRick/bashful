@@ -71,6 +71,44 @@ set -x
 `), ` `)
 	}
 
+	if len(taskConfig.Ansible) > 0 {
+		if VERBOSE_MODE {
+			pp.Println(taskConfig.Ansible)
+		}
+		for module_name, module_args := range taskConfig.Ansible {
+			if VERBOSE_MODE {
+				pp.Println(module_name, module_args)
+			}
+			module_hosts := []string{`localhost`}
+			remote_host := ``
+			remote_host = `f180.vpnservice.company`
+			remote_host = `localhost`
+			if len(remote_host) > 0 {
+				module_hosts = []string{
+					remote_host,
+				}
+			}
+			adhoc := NewAdhoc(module_name, module_args[`args`], module_hosts)
+			_, has_options := module_args[`options`]
+			_, has_args := module_args[`args`]
+			_adhoc_cmd, _ := adhoc.Command()
+			fmt.Println(pp.Sprintf(`%s`, strings.Join(_adhoc_cmd, ` `)), has_args, has_options)
+			if has_options {
+				_, has_enabled := module_args[`options`][`enabled`]
+				_, has_before_cmd := module_args[`options`][`before-cmd`]
+				_, has_after_cmd := module_args[`options`][`after-cmd`]
+				if has_enabled {
+					if has_before_cmd {
+					}
+					if has_after_cmd {
+					}
+					if false {
+						taskConfig.CmdString = fmt.Sprintf(`%s && %s`, strings.Join(_adhoc_cmd, ` `), taskConfig.CmdString)
+					}
+				}
+			}
+		}
+	}
 	//pp.Println(taskConfig)
 	var modified_commands = ModifiedCommands{
 		`CmdString`:       {Src: taskConfig.CmdString},
@@ -79,6 +117,7 @@ set -x
 		`RescueCmdString`: {Src: taskConfig.RescueCmdString},
 		`DebugCmdString`:  {Src: taskConfig.DebugCmdString},
 	}
+
 	__rendered_cmds := map[string]string{}
 	for mcn, _ := range modified_commands {
 		//		pp.Println(taskConfig.ApplyEachVars)

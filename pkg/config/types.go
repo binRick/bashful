@@ -189,10 +189,12 @@ type TaskConfig struct {
 	WhenResultRendered     bool
 	WhenResultRenderedLogs []string
 	WhenResultRenderError  error
-	ApplyEachVars          map[string]map[string]string `yaml:"apply-each-vars"`
-	Env                    map[string]string            `yaml:"env"`
-	StdoutLogFile          string                       `yaml:"stdout-log"`
-	StderrLogFile          string                       `yaml:"stderr-log"`
+	ApplyEachVars          map[string]map[string]string                 `yaml:"apply-each-vars"`
+	Ansible                map[string]map[string]map[string]interface{} `yaml:"ansible"`
+	AnsiblePlaybook        map[string]interface{}                       `yaml:"ansible-playbook"`
+	Env                    map[string]string                            `yaml:"env"`
+	StdoutLogFile          string                                       `yaml:"stdout-log"`
+	StderrLogFile          string                                       `yaml:"stderr-log"`
 	CurrentItem            string
 
 	// IgnoreFailure indicates when no errors should be registered (all task command non-zero return codes will be treated as a zero return code)

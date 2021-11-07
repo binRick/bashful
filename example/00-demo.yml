@@ -10,7 +10,7 @@ config:
   # with a command running)
   show-task-times: true
 
-  log-path: build.log
+  log-path: /tmp/demo-00.log
   env:
     __TEST1_GLOBAL: 12345
 
@@ -26,6 +26,64 @@ x-reference-data:
     - yup-another-app-7
 
 tasks:
+
+  - name: Process Ansible Module Command %
+    tags: [t,t0,ansible]
+    cmd: echo CMD item=%
+    pre-cmd: echo PRE item=%
+    for-each-list:
+      -
+        - abc
+      -
+        - def
+        - WOW123
+    ansible:
+      file:
+        options:
+          enabled: no
+          after-command: no
+          before-command: no
+        args:
+          state: absent
+          path: /tmp/xyz
+      copy:
+        options:
+          enabled: no
+          after-command: no
+          before-command: no
+        args:
+          content: xyz
+          dest: /tmp/xyz
+        
+      command:
+        options:
+          enabled: no
+          after-command: no
+          before-command: no
+        args:
+          val: id
+          warn: false
+
+  - name: Process Ansible Module Command ls with args %
+    tags: [t,t0,ansible]
+    cmd: echo
+    pre-cmd: echo
+    for-each-list:
+      -
+        - abc
+      -
+        - def
+        - WOW123
+    ansible:
+      command:
+        options:
+          enabled: no
+          after-command: no
+          before-command: no
+        args:
+          val: id
+          warn: false
+
 
   - name: test00 %
     tags: [t,t0]
