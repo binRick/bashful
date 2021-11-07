@@ -10,7 +10,7 @@ config:
   # with a command running)
   show-task-times: true
 
-  log-path: /tmp/demo-00.log
+  log-path: build.log
   env:
     __TEST1_GLOBAL: 12345
 
@@ -27,94 +27,6 @@ x-reference-data:
 
 tasks:
 
-  - name: Process Ansible Module Command %
-    tags: [t,t0,ansible]
-    cmd: echo
-    pre-cmd: echo
-    for-each-list:
-      -
-        - abc
-      -
-        - def
-        - WOW123
-    ansible:
-      command:
-        options: 
-          enabled: no
-          after-command: no
-          before-command: no
-        args: 
-          val: id
-          warn: false
-
-  - name: Process Ansible Module Command ls with args %
-    tags: [t,t0,ansible]
-    cmd: echo
-    pre-cmd: echo
-    for-each-list:
-      -
-        - abc
-      -
-        - def
-        - WOW123
-    ansible:
-      command:
-        options: 
-          enabled: no
-          after-command: no
-          before-command: no
-        args: 
-          val: id
-          warn: false
-
-  - name: Process Ansible Module Command ls with args %
-    tags: [t,t0,ansible]
-    cmd: echo
-    pre-cmd: echo
-    ignore-failure: yes
-    for-each-list:
-      -
-        - abc
-      -
-        - def
-        - WOW123
-    ansible:
-      copy:
-        options: 
-          enabled: yes
-          after-command: no
-          before-command: no
-        args: 
-          content: WOW
-          dest: /.PP
-      command:
-        options: 
-          enabled: no
-          after-command: no
-          before-command: no
-        args: 
-          val: id
-          warn: false
-
-
-  - name: Process Items with Ansible Modules
-    tags: [t,t0,ansible]
-    cmd: echo OK
-    pre-cmd: echo OK
-    for-each:
-      - abc
-      - def
-      - WOW123
-    apply-each-vars:
-      all: { test1: works1 }
-      ALL: { test2: works2 }
-      '*': { test3: works3 }
-      abc: { abc: def }
-      WOW123: { abc: 111111111111 }
-
-    env:
-      KEY1: VAL1
-      KEY2: VAL2
   - name: test00 %
     tags: [t,t0]
     cmd: echo -e     "item=% V1={{V1}} V2={{V2}} V3={{V3}}"

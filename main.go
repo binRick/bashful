@@ -20,7 +20,9 @@
 
 package main
 
-import "bashful/cmd"
+import (
+	"github.com/wagoodman/bashful/cmd"
+)
 
 var (
 	version   = "No version provided"

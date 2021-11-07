@@ -129,6 +129,13 @@ func (task *Task) requiresSudoPassword() bool {
 
 	return false
 }
+func FileExists(filename string) bool {
+	info, err := os.Stat(filename)
+	if os.IsNotExist(err) {
+		return false
+	}
+	return !info.IsDir()
+}
 
 // estimateRuntime returns the ETA in seconds until command completion
 func (task *Task) estimateRuntime() float64 {

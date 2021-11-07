@@ -2,7 +2,6 @@ package runtime
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 	"os"
 	"os/exec"
@@ -72,93 +71,7 @@ set -x
 `), ` `)
 	}
 
-	//pp.Println(taskConfig.Ansible)
-	if len(taskConfig.Ansible) > 0 {
-		if false {
-			pp.Println(taskConfig.Ansible)
-		}
-		for module_name, module_args := range taskConfig.Ansible {
-			if false {
-				pp.Println(module_name, module_args)
-			}
-			module_hosts := []string{`localhost`}
-			remote_host := ``
-			remote_host = `f180.vpnservice.company`
-			remote_host = `localhost`
-			if len(remote_host) > 0 {
-				module_hosts = []string{
-					remote_host,
-				}
-			}
-			adhoc := NewAdhoc(module_name, module_args[`args`], module_hosts)
-			_adhoc_cmd, _ := adhoc.Command()
-			if false {
-				pp.Println(_adhoc_cmd)
-			}
-			adhoc_cmd := adhoc.String()
-			adhoc_cmd = fmt.Sprintf(`%s`, adhoc_cmd)
-			if false {
-				pp.Println(adhoc_cmd)
-			}
-			do_ansible := false
-			_, has_options := module_args[`options`]
-			if has_options {
-				val, has_enabled := module_args[`options`][`enabled`]
-				if has_enabled && val == true {
-					do_ansible = true
-				}
-				_, has_after := module_args[`options`][`after-command`]
-				if has_after {
-					old_cmd := taskConfig.CmdString
-					new_cmd := fmt.Sprintf(`%s; %s`, taskConfig.CmdString, adhoc_cmd)
-					if false && VERBOSE_MODE {
-						pp.Printf(`
-					AFTER CMD:         >>>            %s
-ansible cmd:  %s
-old cmd:      %s
-new cmd:      %s
-
-					`,
-							module_args[`options`][`after-command`],
-							adhoc_cmd,
-							old_cmd, new_cmd,
-						)
-					}
-					taskConfig.CmdString = new_cmd
-				}
-
-				_, has_before := module_args[`options`][`bofore-command`]
-				if has_before {
-					old_cmd := taskConfig.CmdString
-					new_cmd := fmt.Sprintf(`%s; %s`,
-						adhoc_cmd,
-						taskConfig.CmdString,
-					)
-					if false && VERBOSE_MODE {
-						pp.Printf(`
-					BEFORE CMD:         >>>            %s
-ansible cmd:  %s
-old cmd:      %s
-new cmd:      %s
-
-					`,
-							module_args[`options`][`before-command`],
-							adhoc_cmd,
-							old_cmd, new_cmd,
-						)
-					}
-					taskConfig.CmdString = new_cmd
-
-				}
-				if do_ansible {
-					adhoc_err := adhoc.Run(context.TODO())
-					if adhoc_err != nil {
-						panic(adhoc_err)
-					}
-				}
-			}
-		}
-	}
+	//pp.Println(taskConfig)
 	var modified_commands = ModifiedCommands{
 		`CmdString`:       {Src: taskConfig.CmdString},
 		`PreCmdString`:    {Src: taskConfig.PreCmdString},
@@ -168,6 +81,7 @@ new cmd:      %s
 	}
 	__rendered_cmds := map[string]string{}
 	for mcn, _ := range modified_commands {
+		//		pp.Println(taskConfig.ApplyEachVars)
 		applied_vars := []map[string]string{
 			taskConfig.Vars, taskConfig.Env,
 		}
@@ -179,6 +93,7 @@ new cmd:      %s
 		if has_cur {
 			applied_vars = append(applied_vars, taskConfig.ApplyEachVars[taskConfig.CurrentItem])
 		}
+		//pp.Println(applied_vars)
 		rendered_cmd, err := render_cmd(modified_commands[mcn].Src, applied_vars)
 		if err != nil {
 			panic(err)
@@ -186,11 +101,16 @@ new cmd:      %s
 		__rendered_cmds[mcn] = rendered_cmd
 	}
 
+	if false {
+		pp.Println(__rendered_cmds)
+	}
+
 	if len(__rendered_cmds[`CmdString`]) > 0 {
 		taskConfig.CmdString = __rendered_cmds[`CmdString`]
 	}
 
 	if len(__rendered_cmds[`RescueCmdString`]) > 0 {
+		//pp.Println(__rendered_cmds)
 		taskConfig.CmdString = fmt.Sprintf(`%s || { %s && %s; }`,
 			taskConfig.CmdString,
 			__rendered_cmds[`RescueCmdString`],

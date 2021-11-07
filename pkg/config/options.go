@@ -15,17 +15,14 @@
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
 // AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
 package config
 
-import (
-	ansible_options "github.com/apenella/go-ansible"
-)
-
 // NewOptions creates a new Options populated with sane default values
 func NewOptions() *Options {
-	DEFAULT_COLLAPSE_ON_COMPLETION := true
+	DEFAULT_COLLAPSE_ON_COMPLETION := false
 	if VERBOSE_MODE {
 		DEFAULT_COLLAPSE_ON_COMPLETION = false
 	}
@@ -37,16 +34,16 @@ func NewOptions() *Options {
 		ColorRunning:         22,
 		ColorSuccess:         10,
 		EventDriven:          true,
-		ExecReplaceString:    "%",
+		ExecReplaceString:    "<exec>",
 		IgnoreFailure:        false,
-		MaxParallelCmds:      10,
-		ReplicaReplaceString: "%",
+		MaxParallelCmds:      4,
+		ReplicaReplaceString: "<replace>",
 		ShowFailureReport:    true,
-		ShowSummaryErrors:    true,
+		ShowSummaryErrors:    false,
 		ShowSummaryFooter:    true,
 		ShowSummarySteps:     true,
 		ShowSummaryTimes:     true,
-		ShowTaskEta:          true,
+		ShowTaskEta:          false,
 		ShowTaskOutput:       true,
 		StopOnFailure:        true,
 		SingleLineDisplay:    false,
@@ -59,8 +56,6 @@ func NewOptions() *Options {
 	//	os.Exit(1)
 	return options
 }
-
-var default_ansible_connection = &ansible_options.AnsibleConnectionOptions{}
 
 // UnmarshalYAML parses and creates a Options from a given user yaml string
 func (options *Options) UnmarshalYAML(unmarshal func(interface{}) error) error {
