@@ -34,6 +34,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/k0kubun/pp"
 	"github.com/lunixbochs/vtclean"
 	"github.com/wagoodman/bashful/pkg/config"
 	"github.com/wagoodman/bashful/utils"
@@ -69,15 +70,23 @@ func NewTask(taskConfig config.TaskConfig, runtimeOptions *config.Options) *Task
 		Options: runtimeOptions,
 	}
 
-	vars_lists := []map[string]string{
-		runtimeOptions.Vars,
-		runtimeOptions.Env,
-	}
-	for _, vars_list := range vars_lists {
-		for vk, vv := range vars_list {
-			_, hasv := task.Config.Vars[vk]
-			if !hasv {
-				task.Config.Vars[vk] = vv
+	if false {
+		vars_lists := []map[string]string{
+			runtimeOptions.Vars,
+			runtimeOptions.Env,
+		}
+		if task.Config.Vars == nil {
+			task.Config.Vars = map[string]string{}
+		}
+		for _, vars_list := range vars_lists {
+			pp.Println(vars_list)
+			for vk, vv := range vars_list {
+				if len(vk) > 0 {
+					_, hasv := task.Config.Vars[vk]
+					if !hasv {
+						task.Config.Vars[vk] = vv
+					}
+				}
 			}
 		}
 	}

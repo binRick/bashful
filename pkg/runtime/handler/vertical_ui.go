@@ -368,6 +368,14 @@ func (handler *VerticalUI) OnEvent(task *runtime.Task, e runtime.TaskEvent) {
 			Eta:    handler.CurrentEta(eventTask),
 		}
 	} else {
+		//pp.Println(e, handler, eventTask)
+		if VERBOSE_MODE {
+			pp.Println(e.Status)
+			pp.Println(eventTask.Config.Name)
+			pp.Println(e.Stdout)
+			pp.Println(handler.spinner.Current())
+			pp.Println(handler.CurrentEta(eventTask))
+		}
 		eventDisplayData.Values = lineInfo{
 			Status: handler.TaskStatusColor(e.Status, "i"),
 			Title:  eventTask.Config.Name,

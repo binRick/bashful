@@ -1,0 +1,90 @@
+config:
+  replica-replace-pattern: '%'
+  show-failure-report: yes
+  ignore-failure: no
+  vars:
+    abc: aMAINNNNNNNNNNNNNNNNNNNNNN
+    def: zNNNNNNNNNNNNNNNNNNNNNN
+    TEST_FILE: ansible-test-file-0-1.dat
+  show-task-times: true
+
+  log-path: /tmp/ansible-test-recovery-cmd.log
+  env:
+    __TEST1_GLOBAL: 12345
+    TEST_FILE: xxxxxxxxxx
+
+x-reference-data:
+  all-apps: &app-names
+    - some-lib-4
+    - utilities-lib
+    - important-lib
+    - some-app1
+    - some-app3
+    - some-awesome-app-5
+    - watcher-app
+    - yup-another-app-7
+
+tasks:
+  - name: "Ensure {{TEST_FILE}} Does not exist"
+    stdout-log: /tmp/ansible-test-recovery-unlink-stdout.log
+    stderr-log: /tmp/ansible-test-recovery-unlink-stderr.log
+    cmd: "[[ -f '{{TEST_FILE}}' ]] && unlink '{{TEST_FILE}}'"
+    ignore-failure: no
+    env:
+      TEST_FILE: xxxxxxxxxxxxxxx1
+    vars:
+      TEST_FILE: ansible-test-file-0-1.dat
+    apply-each-vars:
+      '*':
+        TEST_FILE: ansible-test-file-0-1.dat
+    for-each-list:
+      -
+        - abc
+      -
+        - def
+        - WOW123
+
+  - name: "%: Execute Command with Rescue"
+    cmd: "cat /tmp/{{TEST_FILE}}"
+    rescue-cmd: date > /tmp/{{TEST_FILE}}
+    stdout-log: /tmp/ansible-test-recovery-cmd-stdout.log
+    env:
+      XXXXXXXXX: xxxxxxxxx
+    stderr-log: /tmp/ansible-test-recovery-cmd-stderr.log
+    vars:
+      TEST_FILE: ansible-test-file-0-1.dat
+    apply-each-vars:
+      '*':
+        TEST_FILE: ansible-test-file-0-1.dat
+    for-each-list:
+      -
+        - abc
+      -
+        - def
+        - WOW123
+    post-cmd: echo post
+    ansible:
+      file:
+        options:
+          enabled: yes
+          before-command: yes
+          after-command: no
+        args:
+          state: absent
+          path: /tmp/test-file-1.dat
+
+  - name: Ensure {{TEST_FILE}} Does exist
+    stdout-log: /tmp/ansible-test-recovery-cat-stdout.log
+    stderr-log: /tmp/ansible-test-recovery-cat-stderr.log
+    cmd: cat '{{TEST_FILE}}'
+    vars:
+      TEST_FILE: ansible-test-file-0-1.dat
+    apply-each-vars:
+      '*':
+        TEST_FILE: ansible-test-file-0-1.dat
+    for-each-list:
+      -
+        - abc
+      -
+        - def
+        - WOW123

@@ -1,35 +1,28 @@
+
+x-reference-data:
+  log-path: &log-path /tmp/ansible-test-vars.log
+
 config:
   replica-replace-pattern: '%'
   show-failure-report: yes
   ignore-failure: no
-  vars:
-    abc: aMAINNNNNNNNNNNNNNNNNNNNNN
-    def: zNNNNNNNNNNNNNNNNNNNNNN
-    V5: DEFAULT_V5
   show-task-times: true
-
-  log-path: /tmp/ansible-test-vars.log
-  env:
-    __TEST1_GLOBAL: 12345
+  log-path: *log-path
+  vars:
     V2: DEFAULT_V2
     V3: DEFAULT_V3
-    V4: DEFAULT_V4
+    V5: DEFAULT_V5
+    LOG_PATH1: *log-path
+  env:
+    LOG_PATH: *log-path
+    V4: GLOBAL_ENV_V4
 
-x-reference-data:
-  all-apps: &app-names
-    - some-lib-4
-    - utilities-lib
-    - important-lib
-    - some-app1
-    - some-app3
-    - some-awesome-app-5
-    - watcher-app
-    - yup-another-app-7
 
 tasks:
 
-  - name: "%: Test Variable Overrides"
-    cmd: echo CMD % V1={{V1}} V2={{V2}} V3={{V3}} V4={{V4}} V5={{V5}}
+  - name: "%: Test Variable Override Behavior"
+    cmd: |
+      echo -n 'Variables:  '; eval jo ITEM='%' V1='{{V1}}' V2='{{V2}}' V3='{{V3}}' V4='{{V4}}' V5='{{V5}}' LOG_PATH='{{LOG_PATH}}' LOG_PATH1='{{LOG_PATH1}}' | jq -C
     pre-cmd: echo PRE % V1={{V1}} V4={{V4}}
     post-cmd: echo POST % V1={{V1}}
     rescue-cmd: date > /tmp/{{TEST_FILE}}
@@ -38,14 +31,15 @@ tasks:
     env:
       KEY1: VAL1
       KEY2: VAL2
-      V4: ENV_V4
+      V4: TASK_ENV_V4
     vars:
       V1: aaaaaaaaaaaaa
       V3: DEFAULT_TASK_V3
       TEST_FILE: ansible-test-file-0-1.dat
     apply-each-vars:
       '*': { V2: bbbbbbbbb }
-      abc: { V3: ccccccccc }
+      abc: 
+        V3: APPLIED_V3
       WOW123: { V3: 111111111111 }
     ansible:
       ping:
