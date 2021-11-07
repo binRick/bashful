@@ -26,7 +26,7 @@ import (
 	"strings"
 )
 
-var VERBOSE_MODE = (os.Getenv(`VERBOSE_MODE`) == `true`)
+var VERBOSE_MODE = (os.Getenv(`__BASHFUL_VERBOSE_MODE`) == `true`)
 
 // NewTaskConfig creates a new TaskConfig populated with sane default values (derived from the global Options)
 func NewTaskConfig() (obj TaskConfig) {

@@ -62,7 +62,7 @@ type display struct {
 	line *jotframe.Line
 }
 
-var VERBOSE_MODE = (os.Getenv(`VERBOSE_MODE`) == `true`)
+var VERBOSE_MODE = (os.Getenv(`__BASHFUL_VERBOSE_MODE`) == `true`)
 
 type summary struct {
 	Status  string

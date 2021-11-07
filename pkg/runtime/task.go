@@ -69,8 +69,20 @@ func NewTask(taskConfig config.TaskConfig, runtimeOptions *config.Options) *Task
 		Options: runtimeOptions,
 	}
 
-	task.Command = newCommand(task.Config)
+	vars_lists := []map[string]string{
+		runtimeOptions.Vars,
+		runtimeOptions.Env,
+	}
+	for _, vars_list := range vars_lists {
+		for vk, vv := range vars_list {
+			_, hasv := task.Config.Vars[vk]
+			if !hasv {
+				task.Config.Vars[vk] = vv
+			}
+		}
+	}
 
+	task.Command = newCommand(task.Config)
 	task.events = make(chan TaskEvent)
 	task.Status = StatusPending
 

@@ -175,9 +175,12 @@ After cmd:      %v
 
 	__rendered_cmds := map[string]string{}
 	for mcn, _ := range modified_commands {
-		//		pp.Println(taskConfig.ApplyEachVars)
 		applied_vars := []map[string]string{
 			taskConfig.Vars, taskConfig.Env,
+		}
+		if VERBOSE_MODE {
+			pp.Fprintf(os.Stderr, "\nTask Config:\n%s\n\n", taskConfig)
+			pp.Fprintf(os.Stderr, "\nglobal_task_vars:\n%s\n\n", global_task_vars)
 		}
 		_, has_all := taskConfig.ApplyEachVars[`*`]
 		if has_all {
@@ -187,7 +190,9 @@ After cmd:      %v
 		if has_cur {
 			applied_vars = append(applied_vars, taskConfig.ApplyEachVars[taskConfig.CurrentItem])
 		}
-		//pp.Println(applied_vars)
+		if VERBOSE_MODE {
+			fmt.Fprintf(os.Stderr, "\nApplied Vars:\n%s\n\n", pp.Sprintf(`%s`, applied_vars))
+		}
 		rendered_cmd, err := render_cmd(modified_commands[mcn].Src, applied_vars)
 		if err != nil {
 			panic(err)
@@ -195,8 +200,8 @@ After cmd:      %v
 		__rendered_cmds[mcn] = rendered_cmd
 	}
 
-	if false {
-		pp.Println(__rendered_cmds)
+	if VERBOSE_MODE {
+		pp.Fprintf(os.Stderr, "Rendered Commands: %s", __rendered_cmds)
 	}
 
 	if len(__rendered_cmds[`CmdString`]) > 0 {
@@ -204,7 +209,6 @@ After cmd:      %v
 	}
 
 	if len(__rendered_cmds[`RescueCmdString`]) > 0 {
-		//pp.Println(__rendered_cmds)
 		taskConfig.CmdString = fmt.Sprintf(`%s || { %s && %s; }`,
 			taskConfig.CmdString,
 			__rendered_cmds[`RescueCmdString`],
@@ -213,11 +217,9 @@ After cmd:      %v
 	}
 	if len(__rendered_cmds[`PreCmdString`]) > 0 {
 		taskConfig.CmdString = fmt.Sprintf(`%s; %s`, __rendered_cmds[`PreCmdString`], taskConfig.CmdString)
-		///pp.Println(`>         pre cmd:         ================================================================>   `, __rendered_cmds[`PreCmdString`])
+		//pp.Println(`>         pre cmd:         ================================================================>   `, __rendered_cmds[`PreCmdString`])
 	}
 	if len(__rendered_cmds[`PostCmdString`]) > 0 {
-		//	pp.Println(__rendered_cmds[`PostCmdString`])
-
 		taskConfig.CmdString = fmt.Sprintf(`%s; %s`,
 			taskConfig.CmdString,
 			__rendered_cmds[`PostCmdString`],

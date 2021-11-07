@@ -183,6 +183,8 @@ func (executor *Executor) execute(task *Task) error {
 
 var DEBUG_EXEC_BF = false
 
+var global_task_vars = map[string]interface{}{}
+
 func (executor *Executor) run() error {
 	for _, task := range executor.Tasks {
 		// todo: execute should return error and be checked here

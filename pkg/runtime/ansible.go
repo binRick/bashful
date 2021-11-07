@@ -15,7 +15,7 @@ import (
 )
 
 var ad_hoc_tree_dir_prefix = `/tmp/bashful-go-ansible`
-var VERBOSE_MODE = (os.Getenv(`VERBOSE_MODE`) == `true`)
+var VERBOSE_MODE = (os.Getenv(`__BASHFUL_VERBOSE_MODE`) == `true`)
 
 var DEFAULT_ENV = map[string]string{
 	`ANSIBLE_DEPRECATION_WARNINGS`: `False`, `ANSIBLE_FORCE_COLOR`: `True`, `ANSIBLE_ANY_ERRORS_FATAL`: `True`, `ANSIBLE_DISPLAY_ARGS_TO_STDOUT`: `False`,

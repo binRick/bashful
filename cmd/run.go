@@ -44,7 +44,7 @@ var runCmd = &cobra.Command{
 	Args:  cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		if verboseMode {
-			os.Setenv(`VERBOSE_MODE`, `true`)
+			os.Setenv(`__BASHFUL_VERBOSE_MODE`, `true`)
 		}
 		os.Setenv(`__BASHFUL_EXEC_HOSTNAME`, execHostname)
 		if tags != "" && onlyTags != "" {
