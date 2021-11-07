@@ -58,8 +58,9 @@ tasks:
           path: /tmp/test-file-1.dat
 
   - name: Validate File /tmp/test-file-1.dat does not exist with shell command
+    ignore-failure: yes
     tags: [ansible]
-    cmd: 'ls /tmp/test-file-1.dat && exit 1 || true'
+    cmd: ls /tmp/test-file-1.dat
 
   - name: Create File /tmp/test-file-1.dat with Ansible Module
     tags: [ansible]

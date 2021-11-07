@@ -187,10 +187,7 @@ var global_task_vars = map[string]interface{}{}
 
 func (executor *Executor) run() error {
 	for _, task := range executor.Tasks {
-		// todo: execute should return error and be checked here
-
 		executor.execute(task)
-
 		if exitSignaled {
 			log.LogToMain("signaled to exit", log.StyleMajor)
 			break
