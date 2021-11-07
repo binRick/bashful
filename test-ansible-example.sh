@@ -6,17 +6,16 @@ source .optparse.sh
 EXAMPLE_FILE_PREFIX=ansible-test
 EXAMPLE_FILE_DIR="$(pwd)/example"
 BASHFUL_BINARY=$(pwd)/bashful
-
+DEFAULT_MODE=run
 optparse.define short=f long=file variable=EXAMPLE_FILE_NAME_SUFFIX= desc="Example File Suffix" default=file-lifecycle
 optparse.define short=V long=verbose variable=VERBOSE_MODE desc="Verbose Mode" default= value=1
 optparse.define short=D long=debug variable=DEBUG_MODE desc="Debug Mode" default= value=1
-optparse.define short=l long=list variable=LIST_EXAMPLE_FILE_NAMES_MODE desc="List Example File Names" default= value=1
+optparse.define short=m long=mode variable=EXEC_MODE desc="Mode- run, list, list-files" default=$DEFAULT_MODE
 optparse.define short=P long=preview variable=PREVIEW_MODE desc="Preview Mode" default= value=1
 optparse.define short=N long=nodemon variable=NODEMON_MODE desc="Nodemon Mode" default= value=1
 optparse.define short=n long=nodemon variable=DRY_RUN_MODE desc="Dry Run Mode" default= value=1
 optparse.define short=R long=run-mode variable=RUN_MODE desc="Set Run Mode (default enabled)" default=enabled
 source "$(optparse.build)"
-
 
 of=$(mktemp).yaml
 yaml_decode_error_file=$(mktemp).log
@@ -46,35 +45,78 @@ preview_cmd="command cat $EXAMPLE_FILE|yaml2json 2>/dev/null|json2yaml>$of && co
 NODEMON_WATCH_FILES="-w $BASHFUL_BINARY -w . -w example"
 NODEMON_WATCH_EXTENSIONS="sh,yaml,j2"
 
-cmd="$ls_example_files_cmd" debug_cmd
-eval "$ls_example_files_cmd"
+ls_example_file_name_suffixes() {
+	[[ "$DEBUG_MODE" == 1 ]] && cmd="$ls_example_files_cmd" debug_cmd
+	eval "$ls_example_files_cmd"
+}
+
+ls_example_files() {
+	while read -r l; do
+		fp="$EXAMPLE_FILE_DIR/$EXAMPLE_FILE_PREFIX-$l.yml"
+		if [[ -f "$fp" ]]; then
+			echo -e "$fp"
+		else
+			ansi --red --bold "Example file '$fp' does not exist!"
+			exit 1
+
+		fi
+	done < <(ls_example_file_name_suffixes)
+	true
+}
 
 cmd="$BASHFUL_BINARY run $EXAMPLE_FILE"
+if [[ ! -f "$EXAMPLE_FILE" ]]; then
+	ansi --red --bold "Example file '$EXAMPLE_FILE' does not exist!"
+	ls_example_files
+	exit 1
+fi
 [[ "$VERBOSE_MODE" == 1 ]] && cmd="$cmd --verbose"
-nodemon_cmd="$(command -v nodemon) -V --signal SIGKILL  -I $NODEMON_WATCH_FILES -e $NODEMON_WATCH_EXTENSIONS -x $(command -v sh) -- -c '$cmd||true; clear'"
+nodemon_cmd="$(command -v nodemon) -V --signal SIGKILL  -I $NODEMON_WATCH_FILES -e $NODEMON_WATCH_EXTENSIONS -x $(command -v bash) -- -c '$cmd||true; reset;'"
 [[ "$NODEMON_MODE" == 1 ]] && cmd="$nodemon_cmd"
 
-if ! eval "$validate_cmd" 2>/dev/null; then
-	contents="$(cat $yaml_decode_error_file | egrep -v 'YAMLLoadWarning')"
-	(
-		msg="$(
-			cat <<EOF
+validate_yaml() {
+
+	if ! eval "$validate_cmd" 2>/dev/null; then
+		contents="$(cat $yaml_decode_error_file | egrep -v 'YAMLLoadWarning')"
+		(
+			msg="$(
+				cat <<EOF
 
 $(ansi --red --bg-white --blink --underline "     YAML Failed to Decode!     ")
     
 $(ansi --red --bold "$contents")
 
 EOF
-		)"
-		echo -e "$msg"
-	) >&2
-	exit 1
-fi
+			)"
+			echo -e "$msg"
+		) >&2
+		exit 1
+	fi
+}
 
-[[ "$PREVIEW_MODE" == 1 ]] && eval "$preview_cmd"
-if [[ "$LIST_EXAMPLE_FILE_NAMES_MODE" == "1" ]]; then
-	ansi --yellow list
-else
-  [[ "$DEBUG_MODE" == 1 ]] && debug_cmd
-	[[ "$DRY_RUN_MODE" != 1 &&  "$RUN_MODE" == enabled ]] && eval "$cmd"
-fi
+main() {
+	case "$EXEC_MODE" in
+	run)
+		[[ "$PREVIEW_MODE" == 1 ]] && eval "$preview_cmd"
+		[[ "$DEBUG_MODE" == 1 ]] && debug_cmd
+		if [[ "$DRY_RUN_MODE" != 1 && "$RUN_MODE" == enabled ]]; then
+			validate_yaml
+
+			eval "$cmd"
+		fi
+		;;
+	list)
+		ls_example_file_name_suffixes
+		;;
+	list-files)
+		ls_example_files
+		;;
+	*)
+		ansi --red --bold "Unhandled Mode '$EXEC_MODE'"
+		exit 1
+		;;
+	esac
+	exit
+}
+
+main
