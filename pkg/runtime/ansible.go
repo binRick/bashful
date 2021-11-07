@@ -25,10 +25,9 @@ func GetDefaultAnsibleAdhocOptions() *ansible_adhoc.AnsibleAdhocOptions {
 	return &ansible_adhoc.AnsibleAdhocOptions{
 		ModuleName: `ping`,
 		Inventory:  `localhost,`,
-		Limit:      `localhost`,
-		//            Tree:       tree_path,
-		Verbose: VERBOSE_MODE,
-		OneLine: true,
+		Limit:      `localhost,`,
+		Verbose:    VERBOSE_MODE,
+		OneLine:    true,
 	}
 }
 
@@ -68,6 +67,7 @@ func NewAdhoc(module_name string, module_args map[string]interface{}, module_hos
 	mhl := fmt.Sprintf(`%s,`, strings.Join(module_hosts, `,`))
 
 	var adhoc = GetDefaultAdhocCmd()
+	adhoc.Pattern = mhl
 	adhoc.Options.Inventory = mhl
 	adhoc.Options.Limit = mhl
 	adhoc.Options.ModuleName = module_name
