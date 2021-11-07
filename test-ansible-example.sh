@@ -16,31 +16,6 @@ optparse.define short=N long=nodemon variable=NODEMON_MODE desc="Nodemon Mode" d
 optparse.define short=n long=dry-run variable=DRY_RUN_MODE desc="Dry Run Mode" default= value=1
 source "$(optparse.build)"
 
-check_multiple() {
-	if echo -e "$EXAMPLE_FILE_NAME_SUFFIX" | grep -q ","; then
-		local re_exec_cmd="$(command -v multiview)  -p -c $EXAMPLE_FILE_PREFIX"
-		while read -r fs; do
-			ansi --yellow "$fs"
-			local me="${BASH_SOURCE[0]}"
-			local args=
-			[[ "$DRY_RUN_MODE" == 1 ]] && args+=" --dry-run"
-			[[ "$PREVIEW_MODE" == 1 ]] && args+=" --preview"
-			[[ "$DEBUG_MODE" == 1 ]] && args+=" --debug"
-			[[ "$VERBOSE_MODE" == 1 ]] && args+=" --verbose"
-			lf=$(mktemp)
-			local c="passh $me --file $fs --mode $EXEC_MODE $args --dry-run"
-      c="$c"
-      c="env bash -c '$c'"
-			local re_exec_cmd+=" [ $c ]"
-		done < <(echo -e "$EXAMPLE_FILE_NAME_SUFFIX" | tr ',' '\n' | egrep -v '^$')
-		ansi --yellow "$re_exec_cmd"
-		eval "$re_exec_cmd"
-		exit
-	fi
-}
-
-check_multiple
-
 setup_options() {
 	ls_example_files_cmd="ls $EXAMPLE_FILE_DIR/$EXAMPLE_FILE_PREFIX-*.yml|xargs -I % basename % .yml|sed \"s|^$EXAMPLE_FILE_PREFIX-||g\""
 	_ls_example_files_cmd="ls $EXAMPLE_FILE_DIR/$EXAMPLE_FILE_PREFIX-*.yml|xargs -I % echo %"
@@ -132,18 +107,21 @@ dev_mode() {
 #__dev
 
 debug_item() {
+
 	local _type="$1"
 	local _title="$2"
 	local _cmd="$3"
 	local _json="type='$_type' title='$_title' cmd='$_cmd'"
-	_json="$(eval jo $_json)"
-	echo -e "$_json" | jq -C >&2
-	msg="$(
-		cat <<EOF
+	if [[ "$DEBUG_MODE" == 1 ]]; then
+		_json="$(eval jo $_json)"
+		echo -e "$_json" | jq -C >&2
+		msg="$(
+			cat <<EOF
 $(ansi --magenta "[$_type]") $(ansi --cyan "$_title"): $(ansi --yellow --italic --bg-black "$_cmd")
 EOF
-	)"
-	echo >&2 -e "$msg"
+		)"
+		echo >&2 -e "$msg"
+	fi
 }
 
 trap cleanup EXIT
@@ -236,6 +214,55 @@ dev_mode1() {
 	preview_yaml_contents "/tmp/passwd" "title"
 	exit 2
 }
+
+check_multiple() {
+	if echo -e "$EXAMPLE_FILE_NAME_SUFFIX" | grep -q ","; then
+		local re_exec_cmds=()
+		local re_exec_cmd="$(command -v multiview)  -p -c $EXAMPLE_FILE_PREFIX"
+		RE_EXEC_MODES="$(echo -e "$EXAMPLE_FILE_NAME_SUFFIX" | tr ',' '\n' | egrep -v '^$')"
+		all_loaded=0
+		while read -r _m; do
+			if [[ "$all_loaded" == 0 && "$EXEC_MODE" == all ]]; then
+				while read -r _m; do
+					RE_EXEC_MODES+="\n$_m"
+				done < <(ls_example_file_name_suffixes)
+				all_loaded=1
+			fi
+		done < <(echo -e "$RE_EXEC_MODES")
+		#			local re_exec_cmd+=" [ $c ]"
+		#			re_exec_cmds+=("$c")
+		#      if [[ "$EXEC_MODE" == all ]]; then
+		#      else
+		#      fi
+		#
+		while read -r fs; do
+			local me="${BASH_SOURCE[0]}"
+			local args=
+			[[ "$DRY_RUN_MODE" == 1 ]] && args+=" --dry-run"
+			[[ "$PREVIEW_MODE" == 1 ]] && args+=" --preview"
+			[[ "$DEBUG_MODE" == 1 ]] && args+=" --debug"
+			[[ "$VERBOSE_MODE" == 1 ]] && args+=" --verbose"
+			lf=$(mktemp)
+			local c="$me --file $fs --mode $EXEC_MODE $args"
+			#c="env bash -c '$c'"
+
+			local re_exec_cmd+=" [ $c ]"
+			re_exec_cmds+=("$c")
+		done < <(echo -e "$RE_EXEC_MODES")
+		(
+			for _cmd in "${re_exec_cmds[@]}"; do
+				debug_item "Command" "Re Exec Command" "$_cmd"
+				if [[ "$IS_EXITING" == 1 ]]; then continue; fi
+				ansi >&2 --yellow --bg-black "$_cmd"
+				set +e
+				eval "$_cmd"
+			done
+		)
+		exit
+	fi
+}
+
+check_multiple
 
 main() {
 	setup_cmds
