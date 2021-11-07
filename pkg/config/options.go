@@ -19,9 +19,11 @@
 
 package config
 
+import "github.com/apenella/go-ansible"
+
 // NewOptions creates a new Options populated with sane default values
 func NewOptions() *Options {
-	DEFAULT_COLLAPSE_ON_COMPLETION := false
+	DEFAULT_COLLAPSE_ON_COMPLETION := true
 	if VERBOSE_MODE {
 		DEFAULT_COLLAPSE_ON_COMPLETION = false
 	}
@@ -33,16 +35,16 @@ func NewOptions() *Options {
 		ColorRunning:         22,
 		ColorSuccess:         10,
 		EventDriven:          true,
-		ExecReplaceString:    "<exec>",
+		ExecReplaceString:    "%",
 		IgnoreFailure:        false,
-		MaxParallelCmds:      4,
-		ReplicaReplaceString: "<replace>",
+		MaxParallelCmds:      10,
+		ReplicaReplaceString: "%",
 		ShowFailureReport:    true,
-		ShowSummaryErrors:    false,
+		ShowSummaryErrors:    true,
 		ShowSummaryFooter:    true,
 		ShowSummarySteps:     true,
 		ShowSummaryTimes:     true,
-		ShowTaskEta:          false,
+		ShowTaskEta:          true,
 		ShowTaskOutput:       true,
 		StopOnFailure:        true,
 		SingleLineDisplay:    false,
@@ -55,6 +57,8 @@ func NewOptions() *Options {
 	//	os.Exit(1)
 	return options
 }
+
+var default_ansible_connection = &ansible.AnsibleConnectionOptions{}
 
 // UnmarshalYAML parses and creates a Options from a given user yaml string
 func (options *Options) UnmarshalYAML(unmarshal func(interface{}) error) error {

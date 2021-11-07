@@ -80,7 +80,7 @@ func NewAdhoc(module_name string, module_args map[string]interface{}, module_hos
 	}
 	if len(module_args) > 0 && string(module_args_encoded) != `null` {
 		for kk, vv := range module_args {
-			kv = fmt.Sprintf(`%s %s`, kv, fmt.Sprintf(`%s=\'%s\'`, kk, fmt.Sprintf(`%v`, vv)))
+			kv = fmt.Sprintf(`%s %s`, kv, fmt.Sprintf(`%s="%s"`, kk, fmt.Sprintf(`%v`, vv)))
 		}
 	}
 	kv = strings.Trim(kv, ` `)
@@ -92,7 +92,9 @@ func NewAdhoc(module_name string, module_args map[string]interface{}, module_hos
 	if hasval {
 		adhoc.Options.Args = fmt.Sprintf(`'%s'`, module_args[`val`])
 	}
-	//	fmt.Fprintf(os.Stderr, "\n\n%s\n\n", fmt.Sprintf(`%s`, adhoc.String()))
+	if VERBOSE_MODE {
+		fmt.Fprintf(os.Stderr, "\n\n%s\n\n", fmt.Sprintf(`%s`, adhoc.String()))
+	}
 	//	fmt.Fprintf(os.Stderr, "\n\n%s\n\n", pp.Sprintf(`%s`, adhoc))
 	for k, v := range DEFAULT_ENV {
 		os.Setenv(k, v)
