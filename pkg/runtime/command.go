@@ -17,8 +17,9 @@ import (
 )
 
 var (
-	BASH_TRACE_MODE = os.Getenv(`__BASHFUL_BASH_TRACE_MODE`)
-	EXTRACE_MODE    = os.Getenv(`__BASHFUL_EXTRACE_MODE`)
+	BASH_TRACE_MODE       = os.Getenv(`__BASHFUL_BASH_TRACE_MODE`)
+	EXTRACE_MODE          = os.Getenv(`__BASHFUL_EXTRACE_MODE`)
+	BASHFUL_EXEC_HOSTNAME = os.Getenv(`__BASHFUL_EXEC_HOSTNAME`)
 )
 
 type ModifiedCommand struct {
@@ -34,13 +35,25 @@ var cmd_counter uint64
 
 type ModifiedCommands map[string]ModifiedCommand
 
+var (
+	extrace_args = `-Qultd`
+)
+
 var brief_cmd_mode = false
 
 func newCommand(taskConfig config.TaskConfig) command {
+	BASHFUL_EXEC_HOSTNAME = os.Getenv(`__BASHFUL_EXEC_HOSTNAME`)
+	if BASHFUL_EXEC_HOSTNAME == `` {
+		BASHFUL_EXEC_HOSTNAME = `localhost`
+	}
 	shell := `bash`
 
-	_shell, err := exec.LookPath("bash")
-	utils.CheckError(err, "Could not find bash")
+	_extrace_path, err := exec.LookPath("extrace")
+	utils.CheckError(err, "Could not find extrace")
+	_shell, err := exec.LookPath(shell)
+	utils.CheckError(err, "Could not find shell")
+	_sudo, err := exec.LookPath(`sudo`)
+	utils.CheckError(err, "Could not find sudo")
 	shell = _shell
 
 	readFd, writeFd, err := os.Pipe()
@@ -48,17 +61,15 @@ func newCommand(taskConfig config.TaskConfig) command {
 
 	sudoCmd := ""
 	if taskConfig.Sudo {
-		sudoCmd = "sudo -nS "
+		sudoCmd = fmt.Sprintf("%s -nS ", _sudo)
 	}
+
 	extrace_args := ``
 	extrace_path := ``
-	_extrace_path, err := exec.LookPath("extrace")
-	utils.CheckError(err, "Could not find extrace")
 	extrace_path = _extrace_path
 	extrace_log_dir := fmt.Sprintf(`/tmp`)
 	atomic.AddUint64(&cmd_counter, 1)
 	extrace_log := fmt.Sprintf(`%s/bashful-extrace-%d-%d.log`, extrace_log_dir, syscall.Getpid(), cmd_counter)
-	extrace_args = `-Qultd`
 	extrace_prefix := ``
 	extrace_prefix = fmt.Sprintf(`%s %s -o %s`, extrace_path, extrace_args, extrace_log)
 
@@ -81,13 +92,9 @@ set -x
 			if has_options && has_args {
 
 				module_hosts := []string{`localhost`}
-				remote_host := ``
-				remote_host = `f180.vpnservice.company`
-				remote_host = `f181.vpnservice.company`
-				//			remote_host = `localhost`
-				if len(remote_host) > 0 {
+				if len(BASHFUL_EXEC_HOSTNAME) > 0 {
 					module_hosts = []string{
-						remote_host,
+						BASHFUL_EXEC_HOSTNAME,
 					}
 				}
 
@@ -115,6 +122,7 @@ set -x
 					taskConfig.CmdString = modified_cmd
 					if VERBOSE_MODE {
 						fmt.Fprintf(os.Stderr, `
+Hostname:       %s
 
 Cmd Before:     %s
 Cmd After:      %s
@@ -133,6 +141,7 @@ Has After cmd:  %v
 After cmd:      %v
 
 `,
+							BASHFUL_EXEC_HOSTNAME,
 							orig_cmd,
 							modified_cmd,
 							module_name,

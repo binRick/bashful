@@ -1,23 +1,3 @@
-// Copyright © 2018 Alex Goodman
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-// THE SOFTWARE.
-
 package cmd
 
 import (
@@ -45,6 +25,7 @@ var tags, onlyTags, skipTags string
 var verboseMode bool
 var listTagsMode bool
 var devMode bool
+var execHostname string
 var DEFAULT_EVENTS_LOG_FILE = `/var/log/bashful-events.log`
 var statsMode bool
 var statsModeDefault bool = false
@@ -65,6 +46,7 @@ var runCmd = &cobra.Command{
 		if verboseMode {
 			os.Setenv(`VERBOSE_MODE`, `true`)
 		}
+		os.Setenv(`__BASHFUL_EXEC_HOSTNAME`, execHostname)
 		if tags != "" && onlyTags != "" {
 			utils.ExitWithErrorMessage("Options 'tags' and 'only-tags' are mutually exclusive.")
 		}
@@ -158,6 +140,7 @@ func init() {
 	runCmd.Flags().StringVarP(&onlyTags, "only-tags", "t", "", "A comma delimited list of matching task tags. A task will only be executed if it has a matching tag")
 	runCmd.Flags().StringVarP(&skipTags, "skip-tags", "x", "", "A comma delimited list of task tags to skip. A task will only be executed if it does not have a matching tag")
 	runCmd.Flags().BoolVarP(&verboseMode, "verbose", "v", false, "Verbose Mode")
+	runCmd.Flags().StringVarP(&execHostname, "host", "H", `localhost`, "Hostname to apply")
 }
 
 func Run(yamlString []byte, cli config.Cli) {
