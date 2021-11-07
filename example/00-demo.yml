@@ -10,7 +10,7 @@ config:
   # with a command running)
   show-task-times: true
 
-  log-path: build.log
+  log-path: /tmp/demo-00.log
   env:
     __TEST1_GLOBAL: 12345
 
@@ -26,6 +26,65 @@ x-reference-data:
     - yup-another-app-7
 
 tasks:
+
+  - name: ansible %
+    tags: [t,t0,ansible]
+    cmd: echo -e     "item=% V1={{V1}} V2={{V2}} V3={{V3}}"
+    pre_cmd: echo -e "item=% V1={{V1}} V2={{V2}} V3={{V3}}"
+    ansible:
+      command:
+        options: 
+          enabled: no
+          after-command: no
+        args: 
+          val: env
+          warn: false
+      get_facts:
+        options: 
+          enabled: no
+          before-command: yes
+          after-command: yes
+        args: 
+      command:
+        options: 
+          enabled: no
+          after-command: yes
+        args: 
+          val: ls /
+          warn: false
+      ping:
+        options: 
+          enabled: no
+          before-command: yes
+          after-command: yes
+      shell:
+        options: 
+          enabled: no
+          before-command: yes
+          after-command: yes
+        args:
+          val: ls
+      file:
+        options: 
+          enabled: no
+          after-command: no
+        args:
+          path: /tmp/wow20211
+          state: directory
+
+    env:
+      KEY1: VAL1
+      KEY2: VAL2
+    apply-each-vars:
+      all: { test1: works1 }
+      ALL: { test2: works2 }
+      '*': { test3: works3 }
+      abc: { abc: def }
+      WOW123: { abc: 111111111111 }
+    for-each:
+      - abc
+      - def
+      - WOW123
 
   - name: test00 %
     tags: [t,t0]

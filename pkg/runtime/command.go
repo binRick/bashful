@@ -2,6 +2,7 @@ package runtime
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
@@ -71,7 +72,82 @@ set -x
 `), ` `)
 	}
 
-	//pp.Println(taskConfig)
+	//pp.Println(taskConfig.Ansible)
+	if len(taskConfig.Ansible) > 0 {
+		if false {
+			pp.Println(taskConfig.Ansible)
+		}
+		for module_name, module_args := range taskConfig.Ansible {
+			if false {
+				pp.Println(module_name, module_args)
+			}
+			adhoc := NewAdhoc(module_name, module_args[`args`])
+			_adhoc_cmd, _ := adhoc.Command()
+			pp.Println(_adhoc_cmd)
+			adhoc_cmd := adhoc.String()
+			adhoc_cmd = fmt.Sprintf(`%s`, adhoc_cmd)
+			if false {
+				pp.Println(adhoc_cmd)
+			}
+			do_ansible := false
+			_, has_options := module_args[`options`]
+			if has_options {
+				val, has_enabled := module_args[`options`][`enabled`]
+				if has_enabled && val == true {
+					do_ansible = true
+				}
+				_, has_after := module_args[`options`][`after-command`]
+				if has_after {
+					old_cmd := taskConfig.CmdString
+					new_cmd := fmt.Sprintf(`%s; %s`, taskConfig.CmdString, adhoc_cmd)
+					if false {
+						pp.Printf(`
+					AFTER CMD:         >>>            %s
+ansible cmd:  %s
+old cmd:      %s
+new cmd:      %s
+
+					`,
+							module_args[`options`][`after-command`],
+							adhoc_cmd,
+							old_cmd, new_cmd,
+						)
+					}
+					taskConfig.CmdString = new_cmd
+				}
+
+				_, has_before := module_args[`options`][`bofore-command`]
+				if has_before {
+					old_cmd := taskConfig.CmdString
+					new_cmd := fmt.Sprintf(`%s; %s`,
+						adhoc_cmd,
+						taskConfig.CmdString,
+					)
+					if false {
+						pp.Printf(`
+					BEFORE CMD:         >>>            %s
+ansible cmd:  %s
+old cmd:      %s
+new cmd:      %s
+
+					`,
+							module_args[`options`][`before-command`],
+							adhoc_cmd,
+							old_cmd, new_cmd,
+						)
+					}
+					taskConfig.CmdString = new_cmd
+
+				}
+				if do_ansible {
+					adhoc_err := adhoc.Run(context.TODO())
+					if adhoc_err != nil {
+						panic(adhoc_err)
+					}
+				}
+			}
+		}
+	}
 	var modified_commands = ModifiedCommands{
 		`CmdString`:       {Src: taskConfig.CmdString},
 		`PreCmdString`:    {Src: taskConfig.PreCmdString},
