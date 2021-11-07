@@ -21,7 +21,41 @@ var DEFAULT_ENV = map[string]string{
 	`ANSIBLE_DEPRECATION_WARNINGS`: `False`, `ANSIBLE_FORCE_COLOR`: `True`, `ANSIBLE_ANY_ERRORS_FATAL`: `True`, `ANSIBLE_DISPLAY_ARGS_TO_STDOUT`: `False`,
 }
 
+func GetDefaultAnsibleAdhocOptions() *ansible_adhoc.AnsibleAdhocOptions {
+	return &ansible_adhoc.AnsibleAdhocOptions{
+		ModuleName: `ping`,
+		Inventory:  `localhost,`,
+		Limit:      `localhost`,
+		//            Tree:       tree_path,
+		Verbose: VERBOSE_MODE,
+		OneLine: true,
+	}
+}
+
+func GetDefaultAnsibleConnectionOptions() *ansible_options.AnsibleConnectionOptions {
+	return &ansible_options.AnsibleConnectionOptions{
+		Connection: `local`,
+	}
+}
+
+func GetDefaultAdhocCmd() *ansible_adhoc.AnsibleAdhocCmd {
+	return &ansible_adhoc.AnsibleAdhocCmd{
+		Pattern:           `localhost`,
+		StdoutCallback:    `oneline`,
+		Options:           GetDefaultAnsibleAdhocOptions(),
+		ConnectionOptions: GetDefaultAnsibleConnectionOptions(),
+	}
+}
+
 func NewAdhoc(module_name string, module_args map[string]interface{}, module_hosts []string) *ansible_adhoc.AnsibleAdhocCmd {
+	ap, err := exec.LookPath("ansible")
+	if err != nil {
+		if strings.Contains(strings.ToLower(fmt.Sprintf(`%s`, err)), `executable file not found in path`) {
+			utils.CheckError(err, `Ansible not found in path!`)
+		}
+		panic(err)
+	}
+	os.Setenv(`ANSIBLE_PYTHON_INTERPRETER`, `auto_silent`)
 	U := guuid.Must(guuid.NewV4())
 	tree_path := fmt.Sprintf(`%s/%s/%d/%s.json`, ad_hoc_tree_dir_prefix, module_name, syscall.Getpid(), strings.Split(U.String(), `-`)[0])
 	EnsureFileDir(tree_path)
@@ -32,39 +66,19 @@ func NewAdhoc(module_name string, module_args map[string]interface{}, module_hos
 
 	module_args_encoded, _ := json.Marshal(module_args)
 	mhl := fmt.Sprintf(`%s,`, strings.Join(module_hosts, `,`))
-	adhoc := &ansible_adhoc.AnsibleAdhocCmd{
-		/// Binary:  ap,
-		Pattern: mhl,
-		ConnectionOptions: &ansible_options.AnsibleConnectionOptions{
-			Connection:    "local",
-			SSHCommonArgs: "",
-			SSHExtraArgs:  "",
-			PrivateKey:    "",
-			Timeout:       5,
-			//          User: "root",
-		},
-		Options: &ansible_adhoc.AnsibleAdhocOptions{
-			ModuleName: module_name,
-			Inventory:  mhl,
-			Limit:      mhl,
-			Tree:       tree_path,
-			Verbose:    VERBOSE_MODE,
-			OneLine:    true,
-		},
-		StdoutCallback: "oneline",
-	}
+
+	var adhoc = GetDefaultAdhocCmd()
+	adhoc.Options.Inventory = mhl
+	adhoc.Options.Limit = mhl
+	adhoc.Options.ModuleName = module_name
+	adhoc.Options.Tree = tree_path
+
 	kv := ``
-	ap, err := exec.LookPath("ansible")
-	if err != nil {
-		if strings.Contains(strings.ToLower(fmt.Sprintf(`%s`, err)), `executable file not found in path`) {
-			utils.CheckError(err, `Ansible not found in path!`)
-		}
-		panic(err)
-	}
+
 	if false {
 		adhoc.Binary = ap
 	}
-	os.Setenv(`ANSIBLE_PYTHON_INTERPRETER`, `auto_silent`)
+
 	if len(module_hosts) == 1 && module_hosts[0] == `localhost` {
 		os.Setenv(`ANSIBLE_PYTHON_INTERPRETER`, py3)
 	} else {
@@ -93,9 +107,9 @@ func NewAdhoc(module_name string, module_args map[string]interface{}, module_hos
 		adhoc.Options.Args = fmt.Sprintf(`%s`, module_args[`val`])
 	}
 	if VERBOSE_MODE {
-		fmt.Fprintf(os.Stderr, "\n\n%s\n\n", fmt.Sprintf(`%s`, adhoc.String()))
+		fmt.Fprintf(os.Stderr, "\nAdHoc Command:\n%s\n\n", fmt.Sprintf(`%s`, adhoc.String()))
 	}
-	//  fmt.Fprintf(os.Stderr, "\n\n%s\n\n", pp.Sprintf(`%s`, adhoc))
+
 	for k, v := range DEFAULT_ENV {
 		os.Setenv(k, v)
 	}

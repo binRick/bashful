@@ -83,25 +83,25 @@ set -x
 				module_hosts := []string{`localhost`}
 				remote_host := ``
 				remote_host = `f180.vpnservice.company`
-				remote_host = `localhost`
+				//			remote_host = `localhost`
 				if len(remote_host) > 0 {
 					module_hosts = []string{
 						remote_host,
 					}
 				}
 
-				adhoc := NewAdhoc(module_name, module_args[`args`], module_hosts)
-				orig_cmd := taskConfig.CmdString
-				modified_cmd := orig_cmd
-				_cmd, err := adhoc.Command()
-				if err != nil {
-					panic(err)
-				}
-				_adhoc_cmd := strings.Join(_cmd, ` `)
 				_, has_enabled := module_args[`options`][`enabled`]
-				_, has_before_cmd := module_args[`options`][`before-command`]
-				_, has_after_cmd := module_args[`options`][`after-command`]
 				if has_enabled {
+					adhoc := NewAdhoc(module_name, module_args[`args`], module_hosts)
+					orig_cmd := taskConfig.CmdString
+					modified_cmd := orig_cmd
+					_cmd, err := adhoc.Command()
+					if err != nil {
+						panic(err)
+					}
+					_adhoc_cmd := strings.Join(_cmd, ` `)
+					_, has_before_cmd := module_args[`options`][`before-command`]
+					_, has_after_cmd := module_args[`options`][`after-command`]
 					if module_args[`options`][`before-command`].(bool) {
 						modified_cmd = fmt.Sprintf(`%s && %s`, _adhoc_cmd, modified_cmd)
 					}
@@ -150,12 +150,11 @@ After cmd:      %v
 							module_args[`options`][`after-command`],
 						)
 					}
-					//pp.Sprintf(`%s`, strings.Join(_adhoc_cmd, ` `)), has_args, has_options, pp.Sprintf(`%s`, module_args))
 				}
 			}
 		}
 	}
-	//pp.Println(taskConfig)
+
 	var modified_commands = ModifiedCommands{
 		`CmdString`:       {Src: taskConfig.CmdString},
 		`PreCmdString`:    {Src: taskConfig.PreCmdString},
