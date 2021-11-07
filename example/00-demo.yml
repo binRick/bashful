@@ -28,9 +28,10 @@ x-reference-data:
 tasks:
 
   - name: Process Ansible Module Command %
-    tags: [t,t0,ansible]
-    cmd: echo CMD item=%
-    pre-cmd: echo PRE item=%
+    tags: [ansible]
+    cmd: echo -e "CMD item=%"
+    pre-cmd: echo -e "PRE item=%"
+    post-cmd: echo -e "POST item=%"
     for-each-list:
       -
         - abc
@@ -40,24 +41,32 @@ tasks:
     ansible:
       file:
         options:
-          enabled: no
-          after-command: no
-          before-command: no
+          enabled: yes
+          after-command: yes
+          before-command: yes
+        args:
+          state: absent
+          path: /tmp/xyz
+      file:
+        options:
+          enabled: yes
+          after-command: yes
+          before-command: yes
         args:
           state: absent
           path: /tmp/xyz
       copy:
         options:
-          enabled: no
-          after-command: no
-          before-command: no
+          enabled: yes
+          after-command: yes
+          before-command: yes
         args:
           content: xyz
-          dest: /tmp/xyz
+          dest: /tmp/xyz1
         
       command:
         options:
-          enabled: no
+          enabled: yes
           after-command: no
           before-command: no
         args:
@@ -77,9 +86,9 @@ tasks:
     ansible:
       command:
         options:
-          enabled: no
-          after-command: no
-          before-command: no
+          enabled: yes
+          after-command: yes
+          before-command: yes
         args:
           val: id
           warn: false

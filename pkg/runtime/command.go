@@ -76,35 +76,81 @@ set -x
 			pp.Println(taskConfig.Ansible)
 		}
 		for module_name, module_args := range taskConfig.Ansible {
-			if VERBOSE_MODE {
-				pp.Println(module_name, module_args)
-			}
-			module_hosts := []string{`localhost`}
-			remote_host := ``
-			remote_host = `f180.vpnservice.company`
-			remote_host = `localhost`
-			if len(remote_host) > 0 {
-				module_hosts = []string{
-					remote_host,
-				}
-			}
-			adhoc := NewAdhoc(module_name, module_args[`args`], module_hosts)
 			_, has_options := module_args[`options`]
 			_, has_args := module_args[`args`]
-			_adhoc_cmd, _ := adhoc.Command()
-			fmt.Println(pp.Sprintf(`%s`, strings.Join(_adhoc_cmd, ` `)), has_args, has_options)
-			if has_options {
+			if has_options && has_args {
+
+				module_hosts := []string{`localhost`}
+				remote_host := ``
+				remote_host = `f180.vpnservice.company`
+				remote_host = `localhost`
+				if len(remote_host) > 0 {
+					module_hosts = []string{
+						remote_host,
+					}
+				}
+
+				adhoc := NewAdhoc(module_name, module_args[`args`], module_hosts)
+				orig_cmd := taskConfig.CmdString
+				modified_cmd := orig_cmd
+				_cmd, err := adhoc.Command()
+				if err != nil {
+					panic(err)
+				}
+				_adhoc_cmd := strings.Join(_cmd, ` `)
 				_, has_enabled := module_args[`options`][`enabled`]
-				_, has_before_cmd := module_args[`options`][`before-cmd`]
-				_, has_after_cmd := module_args[`options`][`after-cmd`]
+				_, has_before_cmd := module_args[`options`][`before-command`]
+				_, has_after_cmd := module_args[`options`][`after-command`]
 				if has_enabled {
-					if has_before_cmd {
+					if module_args[`options`][`before-command`].(bool) {
+						modified_cmd = fmt.Sprintf(`%s && %s`, _adhoc_cmd, modified_cmd)
 					}
 					if has_after_cmd {
+						modified_cmd = fmt.Sprintf(`%s && %s`,
+							modified_cmd,
+							_adhoc_cmd,
+						)
 					}
-					if false {
-						taskConfig.CmdString = fmt.Sprintf(`%s && %s`, strings.Join(_adhoc_cmd, ` `), taskConfig.CmdString)
+					taskConfig.CmdString = modified_cmd
+					if VERBOSE_MODE {
+						fmt.Fprintf(os.Stderr, `
+
+Cmd Before:     %s
+Cmd After:      %s
+
+Ansible Module:              %s
+Ansible Cmd:                 %s
+Ansible Module Args:         %s
+Ansible Module Options:      %s
+%d Ansible Module Hosts:     %s
+
+Has Enabled:    %v
+Enabled:        %v
+Has Before cmd: %v
+Before cmd:     %v
+Has After cmd:  %v
+After cmd:      %v
+
+`,
+							orig_cmd,
+							modified_cmd,
+							module_name,
+							_adhoc_cmd,
+							pp.Sprintf(`%s`, module_args[`args`]),
+							pp.Sprintf(`%s`, module_args[`options`]),
+							len(module_hosts),
+							pp.Sprintf(`%s`, module_hosts),
+
+							has_enabled, module_args[`options`][`enabled`],
+							has_before_cmd,
+
+							module_args[`options`][`before-command`],
+
+							has_after_cmd,
+							module_args[`options`][`after-command`],
+						)
 					}
+					//pp.Sprintf(`%s`, strings.Join(_adhoc_cmd, ` `)), has_args, has_options, pp.Sprintf(`%s`, module_args))
 				}
 			}
 		}
