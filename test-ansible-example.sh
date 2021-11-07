@@ -19,7 +19,6 @@ source "$(optparse.build)"
 
 of=$(mktemp).yaml
 yaml_decode_error_file=$(mktemp).log
-ls_example_files_cmd="ls $EXAMPLE_FILE_DIR/$EXAMPLE_FILE_PREFIX-*.yml|xargs -I % basename % .yml|sed \"s|^$EXAMPLE_FILE_PREFIX-||g\""
 
 cleanup() {
 	[[ -f "$of" ]] && unlink "$of"
@@ -39,11 +38,13 @@ EOF
 
 trap cleanup EXIT
 
+ls_example_files_cmd="ls $EXAMPLE_FILE_DIR/$EXAMPLE_FILE_PREFIX-*.yml|xargs -I % basename % .yml|sed \"s|^$EXAMPLE_FILE_PREFIX-||g\""
+NODEMON_WATCH_FILES="-w $BASHFUL_BINARY -w . -w example"
+NODEMON_WATCH_EXTENSIONS="sh,yaml,j2"
+
 EXAMPLE_FILE="$EXAMPLE_FILE_DIR/$EXAMPLE_FILE_PREFIX-$EXAMPLE_FILE_NAME_SUFFIX.yml"
 validate_cmd="command cat $EXAMPLE_FILE|yaml2json 2>$yaml_decode_error_file|json2yaml >/dev/null"
 preview_cmd="command cat $EXAMPLE_FILE|yaml2json 2>/dev/null|json2yaml>$of && command bat --pager=never --style=plain --theme=DarkNeon $of"
-NODEMON_WATCH_FILES="-w $BASHFUL_BINARY -w . -w example"
-NODEMON_WATCH_EXTENSIONS="sh,yaml,j2"
 
 ls_example_file_name_suffixes() {
 	[[ "$DEBUG_MODE" == 1 ]] && cmd="$ls_example_files_cmd" debug_cmd
@@ -63,15 +64,19 @@ ls_example_files() {
 	true
 }
 
+
 cmd="$BASHFUL_BINARY run $EXAMPLE_FILE"
-if [[ ! -f "$EXAMPLE_FILE" ]]; then
-	ansi --red --bold "Example file '$EXAMPLE_FILE' does not exist!"
-	ls_example_files
-	exit 1
-fi
 [[ "$VERBOSE_MODE" == 1 ]] && cmd="$cmd --verbose"
 nodemon_cmd="$(command -v nodemon) -V --signal SIGKILL  -I $NODEMON_WATCH_FILES -e $NODEMON_WATCH_EXTENSIONS -x $(command -v bash) -- -c '$cmd||true;'"
 [[ "$NODEMON_MODE" == 1 ]] && cmd="$nodemon_cmd"
+
+validate_example_file() {
+	if [[ ! -f "$EXAMPLE_FILE" ]]; then
+		ansi --red --bold "Example file '$EXAMPLE_FILE' does not exist!"
+		ls_example_files
+		exit 1
+	fi
+}
 
 validate_yaml() {
 	if ! eval "$validate_cmd" 2>/dev/null; then
@@ -92,14 +97,19 @@ EOF
 	fi
 }
 
+      validate(){
+			validate_example_file
+			validate_yaml
+
+      }
+
 main() {
 	case "$EXEC_MODE" in
 	run)
 		[[ "$PREVIEW_MODE" == 1 ]] && eval "$preview_cmd"
 		[[ "$DEBUG_MODE" == 1 ]] && debug_cmd
 		if [[ "$DRY_RUN_MODE" != 1 && "$RUN_MODE" == enabled ]]; then
-			validate_yaml
-
+			validate
 			eval "$cmd"
 		fi
 		;;
