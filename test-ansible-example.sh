@@ -7,14 +7,39 @@ EXAMPLE_FILE_PREFIX=ansible-test
 EXAMPLE_FILE_DIR="$(pwd)/example"
 BASHFUL_BINARY=$(pwd)/bashful
 DEFAULT_MODE=run
-optparse.define short=f long=file variable=EXAMPLE_FILE_NAME_SUFFIX= desc="Example File Suffix" default=file-lifecycle
+optparse.define short=f long=file variable=EXAMPLE_FILE_NAME_SUFFIX desc="Example File Suffix" default=file-lifecycle
 optparse.define short=V long=verbose variable=VERBOSE_MODE desc="Verbose Mode" default= value=1
 optparse.define short=D long=debug variable=DEBUG_MODE desc="Debug Mode" default= value=1
 optparse.define short=m long=mode variable=EXEC_MODE desc="Mode- run, list, list-files" default=$DEFAULT_MODE
 optparse.define short=P long=preview variable=PREVIEW_MODE desc="Preview Mode" default= value=1
 optparse.define short=N long=nodemon variable=NODEMON_MODE desc="Nodemon Mode" default= value=1
-optparse.define short=n long=nodemon variable=DRY_RUN_MODE desc="Dry Run Mode" default= value=1
+optparse.define short=n long=dry-run variable=DRY_RUN_MODE desc="Dry Run Mode" default= value=1
 source "$(optparse.build)"
+
+check_multiple() {
+	if echo -e "$EXAMPLE_FILE_NAME_SUFFIX" | grep -q ","; then
+		local re_exec_cmd="$(command -v multiview)  -p -c $EXAMPLE_FILE_PREFIX"
+		while read -r fs; do
+			ansi --yellow "$fs"
+			local me="${BASH_SOURCE[0]}"
+			local args=
+			[[ "$DRY_RUN_MODE" == 1 ]] && args+=" --dry-run"
+			[[ "$PREVIEW_MODE" == 1 ]] && args+=" --preview"
+			[[ "$DEBUG_MODE" == 1 ]] && args+=" --debug"
+			[[ "$VERBOSE_MODE" == 1 ]] && args+=" --verbose"
+			lf=$(mktemp)
+			local c="passh $me --file $fs --mode $EXEC_MODE $args --dry-run"
+      c="$c"
+      c="env bash -c '$c'"
+			local re_exec_cmd+=" [ $c ]"
+		done < <(echo -e "$EXAMPLE_FILE_NAME_SUFFIX" | tr ',' '\n' | egrep -v '^$')
+		ansi --yellow "$re_exec_cmd"
+		eval "$re_exec_cmd"
+		exit
+	fi
+}
+
+check_multiple
 
 setup_options() {
 	ls_example_files_cmd="ls $EXAMPLE_FILE_DIR/$EXAMPLE_FILE_PREFIX-*.yml|xargs -I % basename % .yml|sed \"s|^$EXAMPLE_FILE_PREFIX-||g\""
