@@ -83,7 +83,9 @@ set -x
 			}
 			adhoc := NewAdhoc(module_name, module_args[`args`])
 			_adhoc_cmd, _ := adhoc.Command()
-			//pp.Println(_adhoc_cmd)
+			if false {
+				pp.Println(_adhoc_cmd)
+			}
 			adhoc_cmd := adhoc.String()
 			adhoc_cmd = fmt.Sprintf(`%s`, adhoc_cmd)
 			if false {
