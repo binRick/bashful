@@ -1,0 +1,84 @@
+---
+config:
+  replica-replace-pattern: '%'
+  show-failure-report: yes
+  ignore-failure: no
+  vars:
+    abc: aMAINNNNNNNNNNNNNNNNNNNNNN
+    def: zNNNNNNNNNNNNNNNNNNNNNN
+  show-task-times: true
+  log-path: /tmp/ansible-test-file-lifecycle.log
+  env:
+    __TEST1_GLOBAL: 12345
+
+x-reference-data:
+  default-cmd: &default-cmd echo -e "CMD item=%"
+  default-pre-cmd: &default-pre-cmd echo -e "PRE CMD item=%"
+  default-post-cmd: &default-post-cmd echo -e "POST CMD item=%"
+  test-file-1: &test-file-1 /tmp/test-file-1.dat
+  default-lists: &default-lists
+    -
+      - abc
+    -
+      - def
+      - WOW123
+
+
+tasks:
+
+  - name: Create File /tmp/test-file-1.dat with Shell Command
+    tags: [ansible]
+    vars:
+      xxxxxxxxx: 123
+    cmd: touch /tmp/test-file-1.dat
+
+  - name: "Ensure File /tmp/test-file-1.dat is removed with Ansible Module"
+    tags: [ansible]
+    cmd: *default-cmd
+    pre-cmd: *default-pre-cmd
+    env:
+      xxxxxxxxx: 123
+    vars:
+      xxxxxxxxx: 123
+    apply-each-vars:
+      xxxx: 
+        wow: 'def'
+    post-cmd: *default-post-cmd
+    for-each-list: *default-lists
+    stdout-log: /tmp/ansible-0-stdout.log
+    stderr-log: /tmp/ansible-0-stderr.log
+    ansible:
+      file:
+        options:
+          enabled: yes
+          before-command: yes
+          after-command: no
+        args:
+          state: absent
+          path: /tmp/test-file-1.dat
+
+  - name: Validate File /tmp/test-file-1.dat does not exist with shell command
+    ignore-failure: yes
+    tags: [ansible]
+    cmd: ls /tmp/test-file-1.dat
+
+  - name: Create File /tmp/test-file-1.dat with Ansible Module
+    tags: [ansible]
+    cmd: *default-cmd
+    pre-cmd: *default-pre-cmd
+    post-cmd: *default-post-cmd
+    for-each-list: *default-lists
+    ansible:
+      file:
+        options:
+          enabled: yes
+          before-command: yes
+          after-command: no
+        args:
+          state: touch
+          path: /tmp/test-file-1.dat
+
+  - name: Validate File /tmp/test-file-1.dat does exist with shell command
+    tags: [ansible]
+    cmd: stat /tmp/test-file-1.dat
+
