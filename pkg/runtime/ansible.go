@@ -8,8 +8,8 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/apenella/go-ansible/pkg/adhoc"
-	"github.com/apenella/go-ansible/pkg/options"
+	ansible_adhoc "github.com/apenella/go-ansible/pkg/adhoc"
+	ansible_options "github.com/apenella/go-ansible/pkg/options"
 	guuid "github.com/gofrs/uuid"
 	"github.com/wagoodman/bashful/utils"
 )
@@ -21,7 +21,7 @@ var DEFAULT_ENV = map[string]string{
 	`ANSIBLE_DEPRECATION_WARNINGS`: `False`, `ANSIBLE_FORCE_COLOR`: `True`, `ANSIBLE_ANY_ERRORS_FATAL`: `True`, `ANSIBLE_DISPLAY_ARGS_TO_STDOUT`: `False`,
 }
 
-func NewAdhoc(module_name string, module_args map[string]interface{}, module_hosts []string) *adhoc.AnsibleAdhocCmd {
+func NewAdhoc(module_name string, module_args map[string]interface{}, module_hosts []string) *ansible_adhoc.AnsibleAdhocCmd {
 	U := guuid.Must(guuid.NewV4())
 	tree_path := fmt.Sprintf(`%s/%s/%d/%s.json`, ad_hoc_tree_dir_prefix, module_name, syscall.Getpid(), strings.Split(U.String(), `-`)[0])
 	EnsureFileDir(tree_path)
@@ -32,10 +32,10 @@ func NewAdhoc(module_name string, module_args map[string]interface{}, module_hos
 
 	module_args_encoded, _ := json.Marshal(module_args)
 	mhl := fmt.Sprintf(`%s,`, strings.Join(module_hosts, `,`))
-	adhoc := &adhoc.AnsibleAdhocCmd{
+	adhoc := &ansible_adhoc.AnsibleAdhocCmd{
 		///	Binary:  ap,
 		Pattern: mhl,
-		ConnectionOptions: &options.AnsibleConnectionOptions{
+		ConnectionOptions: &ansible_options.AnsibleConnectionOptions{
 			Connection:    "local",
 			SSHCommonArgs: "",
 			SSHExtraArgs:  "",
@@ -43,7 +43,7 @@ func NewAdhoc(module_name string, module_args map[string]interface{}, module_hos
 			Timeout:       5,
 			//			User: "root",
 		},
-		Options: &adhoc.AnsibleAdhocOptions{
+		Options: &ansible_adhoc.AnsibleAdhocOptions{
 			ModuleName: module_name,
 			Inventory:  mhl,
 			Limit:      mhl,
@@ -68,7 +68,7 @@ func NewAdhoc(module_name string, module_args map[string]interface{}, module_hos
 	if len(module_hosts) == 1 && module_hosts[0] == `localhost` {
 		os.Setenv(`ANSIBLE_PYTHON_INTERPRETER`, py3)
 	} else {
-		adhoc.ConnectionOptions = &options.AnsibleConnectionOptions{
+		adhoc.ConnectionOptions = &ansible_options.AnsibleConnectionOptions{
 			Connection:    "ssh",
 			SSHCommonArgs: "",
 			SSHExtraArgs:  "",
@@ -85,7 +85,7 @@ func NewAdhoc(module_name string, module_args map[string]interface{}, module_hos
 	}
 	kv = strings.Trim(kv, ` `)
 	if len(kv) > 0 {
-		adhoc.Options.Args = fmt.Sprintf(`'%s'`, kv)
+		adhoc.Options.Args = fmt.Sprintf(`%s`, kv)
 	}
 
 	_, hasval := module_args[`val`]

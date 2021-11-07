@@ -44,7 +44,7 @@ tasks:
           after-command: no
           before-command: no
         args: 
-          val: ls
+          val: id
           warn: false
 
   - name: Process Ansible Module Command ls with args %
@@ -64,7 +64,7 @@ tasks:
           after-command: no
           before-command: no
         args: 
-          val: ls
+          val: id
           warn: false
 
   - name: Process Ansible Module Command ls with args %
@@ -79,13 +79,21 @@ tasks:
         - def
         - WOW123
     ansible:
+      copy:
+        options: 
+          enabled: yes
+          after-command: no
+          before-command: no
+        args: 
+          content: WOW
+          dest: /.PP
       command:
         options: 
           enabled: no
           after-command: no
           before-command: no
         args: 
-          val: ls
+          val: id
           warn: false
 
 

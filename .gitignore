@@ -18,3 +18,4 @@ archive
 .envrc*
 bf
 .ee
+.VENDOR

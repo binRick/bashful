@@ -19,7 +19,9 @@
 
 package config
 
-import "github.com/apenella/go-ansible"
+import (
+	ansible_options "github.com/apenella/go-ansible"
+)
 
 // NewOptions creates a new Options populated with sane default values
 func NewOptions() *Options {
@@ -58,7 +60,7 @@ func NewOptions() *Options {
 	return options
 }
 
-var default_ansible_connection = &ansible.AnsibleConnectionOptions{}
+var default_ansible_connection = &ansible_options.AnsibleConnectionOptions{}
 
 // UnmarshalYAML parses and creates a Options from a given user yaml string
 func (options *Options) UnmarshalYAML(unmarshal func(interface{}) error) error {
