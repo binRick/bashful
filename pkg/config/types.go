@@ -190,6 +190,8 @@ type TaskConfig struct {
 	WhenResultRenderedLogs []string
 	WhenResultRenderError  error
 	ApplyEachVars          map[string]map[string]string `yaml:"apply-each-vars"`
+	Ansible                map[string]interface{}       `yaml:"ansible"`
+	AnsiblePlaybook        map[string]interface{}       `yaml:"ansible-playbook"`
 	Env                    map[string]string            `yaml:"env"`
 	StdoutLogFile          string                       `yaml:"stdout-log"`
 	StderrLogFile          string                       `yaml:"stderr-log"`
