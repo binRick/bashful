@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -e
+set -e -o pipefail
 cd $(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 source .optparse.sh
 
@@ -14,8 +14,14 @@ optparse.define short=m long=mode variable=EXEC_MODE desc="Mode- run, list, list
 optparse.define short=P long=preview variable=PREVIEW_MODE desc="Preview Mode" default= value=1
 optparse.define short=N long=nodemon variable=NODEMON_MODE desc="Nodemon Mode" default= value=1
 optparse.define short=n long=nodemon variable=DRY_RUN_MODE desc="Dry Run Mode" default= value=1
-optparse.define short=R long=run-mode variable=RUN_MODE desc="Set Run Mode (default enabled)" default=enabled
 source "$(optparse.build)"
+
+setup_options() {
+	ls_example_files_cmd="ls $EXAMPLE_FILE_DIR/$EXAMPLE_FILE_PREFIX-*.yml|xargs -I % basename % .yml|sed \"s|^$EXAMPLE_FILE_PREFIX-||g\""
+	_ls_example_files_cmd="ls $EXAMPLE_FILE_DIR/$EXAMPLE_FILE_PREFIX-*.yml|xargs -I % echo %"
+	NODEMON_WATCH_FILES="-w $BASHFUL_BINARY -w . -w example"
+	NODEMON_WATCH_EXTENSIONS="sh,yaml,j2"
+}
 
 of=$(mktemp).yaml
 yaml_decode_error_file=$(mktemp).log
@@ -26,32 +32,112 @@ cleanup() {
 	true
 }
 
-debug_cmd() {
+run_cmd() (
+	local _cmd="$1"
+	local of=$(mktemp)
+	local ef=$(mktemp)
+	local ecf=$(mktemp)
+	local pidf=$(mktemp)
+	local df=$(mktemp)
+	(
+		set +e
+		echo $$ >$pidf
+		eval "$_cmd" >$of 2>$ef
+		ec=$?
+		echo -e "$ec" >$ecf
+		date +%s >$df
+		sleep .01
+	) &
+	sleep .01
+
+	local _pid=$(cat $pidf)
+	event="$(ansi --magenta --bold "started")"
+	msg="[PID $_pid] [$event] :: $(ansi --cyan --underline "$_cmd")"
+	if [[ "$DEBUG_MODE" == "1" ]]; then
+		echo >&2 -e "$msg"
+	fi
+	wait
+	local _o=$(cat $of)
+	local _e=$(cat $ef)
+	local _ec=$(cat $ecf)
+	local _ended=$(cat $df)
+	ec_color=yellow
+	ec_style=
+	details=
+	[[ "$_ec" == 0 ]] && ec_color=green && ec_style='--italic'
+	if [[ "$_ec" -gt 0 ]]; then
+		ec_color=red && ec_style='--blink --underline --bold --bg-black'
+		details="$(
+			cat <<EOF
+
+==================================================================================================================
+          $(ansi --cyan --bold --underline "Command")        $(ansi --magenta --italic "$_cmd")
+          $(ansi --cyan --bold --underline "Exit Code")      $(ansi --magenta --italic "$_ec")
+==================================================================================================================
+          $(ansi --cyan --bold --underline "Std Output")        $(ansi --magenta --italic "$of")
+==================================================================================================================
+$(ansi --yellow --bg-black "$(cat "$of")")
+==================================================================================================================
+          $(ansi --cyan --bold --underline "Std Error")        $(ansi --magenta --italic "$ef")
+==================================================================================================================
+$(ansi --yellow --blink --bg-black "$(cat "$ef")")
+==================================================================================================================
+
+EOF
+		)"
+
+	fi
+	event="$(ansi --magenta --bold "ended")"
+	msg="[PID $_pid] [$event] :: Exited $(eval ansi --$ec_color $ec_style "$_ec") @ $_ended |$details"
+	if [[ "$DEBUG_MODE" == "1" ]]; then
+		echo >&2 -e "$msg"
+	fi
+
+)
+
+dev_mode() {
+	set +e
+	(
+		run_cmd "ls /1"
+		run_cmd "ls /"
+	) >/dev/null
+	exit
+}
+
+#__dev
+
+debug_item() {
+	local _type="$1"
+	local _title="$2"
+	local _cmd="$3"
+	local _json="type='$_type' title='$_title' cmd='$_cmd'"
+	_json="$(eval jo $_json)"
+	echo -e "$_json" | jq -C >&2
 	msg="$(
 		cat <<EOF
-$(ansi --cyan "Command:") $(ansi --yellow --italic --bg-black "$cmd")
+$(ansi --magenta "[$_type]") $(ansi --cyan "$_title"): $(ansi --yellow --italic --bg-black "$_cmd")
 EOF
 	)"
 	echo >&2 -e "$msg"
-
 }
 
 trap cleanup EXIT
 
-ls_example_files_cmd="ls $EXAMPLE_FILE_DIR/$EXAMPLE_FILE_PREFIX-*.yml|xargs -I % basename % .yml|sed \"s|^$EXAMPLE_FILE_PREFIX-||g\""
-NODEMON_WATCH_FILES="-w $BASHFUL_BINARY -w . -w example"
-NODEMON_WATCH_EXTENSIONS="sh,yaml,j2"
-
-EXAMPLE_FILE="$EXAMPLE_FILE_DIR/$EXAMPLE_FILE_PREFIX-$EXAMPLE_FILE_NAME_SUFFIX.yml"
-validate_cmd="command cat $EXAMPLE_FILE|yaml2json 2>$yaml_decode_error_file|json2yaml >/dev/null"
-preview_cmd="command cat $EXAMPLE_FILE|yaml2json 2>/dev/null|json2yaml>$of && command bat --pager=never --style=plain --theme=DarkNeon $of"
-
 ls_example_file_name_suffixes() {
-	[[ "$DEBUG_MODE" == 1 ]] && cmd="$ls_example_files_cmd" debug_cmd
+	[[ "$DEBUG_MODE" == 1 ]] && debug_item Command "List Example File Name Suffixes" "$ls_example_files_cmd"
 	eval "$ls_example_files_cmd"
 }
 
 ls_example_files() {
+	[[ "$DEBUG_MODE" == 1 ]] && cmd="$_ls_example_files_cmd" debug_item Command "List Example Files" "$_ls_example_files_cmd"
+	eval "$_ls_example_files_cmd"
+}
+
+ls_example_file_names() {
+	ls_example_files | xargs -I % basename %
+}
+
+__ls_example_files() {
 	while read -r l; do
 		fp="$EXAMPLE_FILE_DIR/$EXAMPLE_FILE_PREFIX-$l.yml"
 		if [[ -f "$fp" ]]; then
@@ -64,11 +150,17 @@ ls_example_files() {
 	true
 }
 
-
-cmd="$BASHFUL_BINARY run $EXAMPLE_FILE"
-[[ "$VERBOSE_MODE" == 1 ]] && cmd="$cmd --verbose"
-nodemon_cmd="$(command -v nodemon) -V --signal SIGKILL  -I $NODEMON_WATCH_FILES -e $NODEMON_WATCH_EXTENSIONS -x $(command -v bash) -- -c '$cmd||true;'"
-[[ "$NODEMON_MODE" == 1 ]] && cmd="$nodemon_cmd"
+setup_cmds() {
+	setup_options
+	EXAMPLE_FILE="$EXAMPLE_FILE_DIR/$EXAMPLE_FILE_PREFIX-$EXAMPLE_FILE_NAME_SUFFIX.yml"
+	validate_cmd="command cat $EXAMPLE_FILE|yaml2json 2>$yaml_decode_error_file|json2yaml >/dev/null"
+	preview_cmd="command cat $EXAMPLE_FILE|yaml2json 2>/dev/null|json2yaml>$of && command bat --pager=never --style=plain --theme=DarkNeon $of"
+	cmd="$BASHFUL_BINARY run $EXAMPLE_FILE"
+	[[ "$VERBOSE_MODE" == 1 ]] && cmd="$cmd --verbose"
+	nodemon_cmd="$(command -v nodemon) -V --signal SIGKILL  -I $NODEMON_WATCH_FILES -e $NODEMON_WATCH_EXTENSIONS -x $(command -v bash) -- -c '$cmd||true;'"
+	[[ "$NODEMON_MODE" == 1 ]] && cmd="$nodemon_cmd"
+	true
+}
 
 validate_example_file() {
 	if [[ ! -f "$EXAMPLE_FILE" ]]; then
@@ -76,6 +168,19 @@ validate_example_file() {
 		ls_example_files
 		exit 1
 	fi
+}
+
+preview_yaml_contents() {
+	local _f="$1"
+	local _t="$2"
+	cat <<EOF
+
+$(ansi --red --bg-white --blink --underline "$_t")
+    
+$(ansi --red --bold "$(command cat "$_f" | egrep -v 'YAMLLoadWarning')")
+
+EOF
+
 }
 
 validate_yaml() {
@@ -97,26 +202,37 @@ EOF
 	fi
 }
 
-      validate(){
-			validate_example_file
-			validate_yaml
+validate() {
+	validate_example_file
+	validate_yaml
+}
 
-      }
+dev_mode1() {
+	preview_yaml_contents "/tmp/passwd" "title"
+	exit 2
+}
 
 main() {
+	setup_cmds
 	case "$EXEC_MODE" in
+	d | dev) dev_mode ;;
+	D) dev_mode1 ;;
+	validate) validate ;;
 	run)
 		[[ "$PREVIEW_MODE" == 1 ]] && eval "$preview_cmd"
-		[[ "$DEBUG_MODE" == 1 ]] && debug_cmd
-		if [[ "$DRY_RUN_MODE" != 1 && "$RUN_MODE" == enabled ]]; then
+		[[ "$DEBUG_MODE" == 1 ]] && debug_item Command "Bashful Run" "$cmd"
+		if [[ "$DRY_RUN_MODE" != 1 ]]; then
 			validate
 			eval "$cmd"
 		fi
 		;;
-	list)
+	names | file-names | list-file-names)
+		ls_example_file_names
+		;;
+	ls | list)
 		ls_example_file_name_suffixes
 		;;
-	list-files)
+	files | list-files)
 		ls_example_files
 		;;
 	*)
