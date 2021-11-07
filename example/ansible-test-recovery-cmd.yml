@@ -1,3 +1,4 @@
+---
 config:
   replica-replace-pattern: '%'
   show-failure-report: yes
@@ -12,17 +13,6 @@ config:
   env:
     __TEST1_GLOBAL: 12345
     TEST_FILE: xxxxxxxxxx
-
-x-reference-data:
-  all-apps: &app-names
-    - some-lib-4
-    - utilities-lib
-    - important-lib
-    - some-app1
-    - some-app3
-    - some-awesome-app-5
-    - watcher-app
-    - yup-another-app-7
 
 tasks:
   - name: "Ensure {{TEST_FILE}} Does not exist"
@@ -44,7 +34,7 @@ tasks:
         - def
         - WOW123
 
-  - name: "%: Execute Command with Rescue"
+  - name: "Execute Command with Rescue"
     cmd: "cat /tmp/{{TEST_FILE}}"
     rescue-cmd: date > /tmp/{{TEST_FILE}}
     stdout-log: /tmp/ansible-test-recovery-cmd-stdout.log

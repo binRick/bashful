@@ -23,14 +23,16 @@ package runtime
 import (
 	"bytes"
 	"fmt"
-	"github.com/wagoodman/bashful/pkg/config"
-	"github.com/wagoodman/bashful/pkg/log"
-	"github.com/wagoodman/bashful/utils"
 	"io"
 	"os"
 	"path/filepath"
 	"strconv"
 	"text/template"
+
+	"github.com/k0kubun/pp"
+	"github.com/wagoodman/bashful/pkg/config"
+	"github.com/wagoodman/bashful/pkg/log"
+	"github.com/wagoodman/bashful/utils"
 )
 
 func NewClientFromYaml(yamlString []byte, cli *config.Cli) (*Client, error) {
@@ -76,9 +78,10 @@ func (client *Client) Run() error {
 
 			buffer.WriteString("\n")
 			buffer.WriteString(utils.Bold(utils.Red("• Failed task: ")) + utils.Bold(task.Config.Name) + "\n")
-			buffer.WriteString(utils.Red("  ├─ command: ") + task.Config.CmdString + "\n")
+			buffer.WriteString(utils.Red("  ├─ command:     ") + task.Config.CmdString + "\n")
 			buffer.WriteString(utils.Red("  ├─ return code: ") + strconv.Itoa(task.Command.ReturnCode) + "\n")
-			buffer.WriteString(utils.Red("  └─ stderr: ") + task.Command.errorBuffer.String() + "\n")
+			buffer.WriteString(utils.Red("  └─ stderr:      ") + task.Command.errorBuffer.String() + "\n")
+			buffer.WriteString(pp.Sprintf("%s\n", client.Executor.Statistics) + "\n")
 
 		}
 		log.LogToMain(buffer.String(), "")
