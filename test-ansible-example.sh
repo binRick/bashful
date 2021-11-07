@@ -58,7 +58,6 @@ ls_example_files() {
 		else
 			ansi --red --bold "Example file '$fp' does not exist!"
 			exit 1
-
 		fi
 	done < <(ls_example_file_name_suffixes)
 	true
@@ -71,11 +70,10 @@ if [[ ! -f "$EXAMPLE_FILE" ]]; then
 	exit 1
 fi
 [[ "$VERBOSE_MODE" == 1 ]] && cmd="$cmd --verbose"
-nodemon_cmd="$(command -v nodemon) -V --signal SIGKILL  -I $NODEMON_WATCH_FILES -e $NODEMON_WATCH_EXTENSIONS -x $(command -v bash) -- -c '$cmd||true; reset;'"
+nodemon_cmd="$(command -v nodemon) -V --signal SIGKILL  -I $NODEMON_WATCH_FILES -e $NODEMON_WATCH_EXTENSIONS -x $(command -v bash) -- -c '$cmd||true;'"
 [[ "$NODEMON_MODE" == 1 ]] && cmd="$nodemon_cmd"
 
 validate_yaml() {
-
 	if ! eval "$validate_cmd" 2>/dev/null; then
 		contents="$(cat $yaml_decode_error_file | egrep -v 'YAMLLoadWarning')"
 		(
