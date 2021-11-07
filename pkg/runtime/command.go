@@ -83,6 +83,7 @@ set -x
 				module_hosts := []string{`localhost`}
 				remote_host := ``
 				remote_host = `f180.vpnservice.company`
+				remote_host = `f181.vpnservice.company`
 				//			remote_host = `localhost`
 				if len(remote_host) > 0 {
 					module_hosts = []string{

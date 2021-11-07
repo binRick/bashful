@@ -107,8 +107,8 @@ func NewAdhoc(module_name string, module_args map[string]interface{}, module_hos
 		adhoc.Options.Args = fmt.Sprintf(`%s`, module_args[`val`])
 	}
 	if VERBOSE_MODE {
-		fmt.Fprintf(os.Stderr, "\nAdHoc Command:\n%s\n\n", fmt.Sprintf(`%s`, adhoc.String()))
 	}
+	fmt.Fprintf(os.Stderr, "\nAdHoc Command:\n%s\n\n", fmt.Sprintf(`%s`, adhoc.String()))
 
 	for k, v := range DEFAULT_ENV {
 		os.Setenv(k, v)
