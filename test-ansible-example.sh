@@ -107,21 +107,24 @@ dev_mode() {
 #__dev
 
 debug_item() {
+	(
+		set +e
 
-	local _type="$1"
-	local _title="$2"
-	local _cmd="$3"
-	local _json="type='$_type' title='$_title' cmd='$_cmd'"
-	if [[ "$DEBUG_MODE" == 1 ]]; then
-		_json="$(eval jo $_json)"
-		echo -e "$_json" | jq -C >&2
-		msg="$(
-			cat <<EOF
+		local _type="$1"
+		local _title="$2"
+		local _cmd="$3"
+		local _json="type='$_type' title='$_title' cmd='$_cmd'"
+		if [[ "$DEBUG_MODE" == 1 ]]; then
+			_json="$(eval jo $_json)"
+			echo -e "$_json" | jq -C >&2
+			msg="$(
+				cat <<EOF
 $(ansi --magenta "[$_type]") $(ansi --cyan "$_title"): $(ansi --yellow --italic --bg-black "$_cmd")
 EOF
-		)"
-		echo >&2 -e "$msg"
-	fi
+			)"
+			echo >&2 -e "$msg"
+		fi
+	)
 }
 
 trap cleanup EXIT
@@ -166,10 +169,12 @@ setup_cmds() {
 }
 
 validate_example_file() {
-	if [[ ! -f "$EXAMPLE_FILE" ]]; then
-		ansi --red --bold "Example file '$EXAMPLE_FILE' does not exist!"
-		ls_example_files
-		exit 1
+	if [[ "$EXAMPLE_FILE" != all ]]; then
+		if [[ ! -f "$EXAMPLE_FILE" ]]; then
+			ansi --red --bold "[validate] Example file '$EXAMPLE_FILE' does not exist!"
+			ls_example_files
+			exit 1
+		fi
 	fi
 }
 
@@ -215,39 +220,53 @@ dev_mode1() {
 	exit 2
 }
 
+re_exec() {
+	local me="${BASH_SOURCE[0]}"
+	local args=
+	[[ "$DRY_RUN_MODE" == 1 ]] && args+=" --dry-run"
+	[[ "$PREVIEW_MODE" == 1 ]] && args+=" --preview"
+	[[ "$DEBUG_MODE" == 1 ]] && args+=" --debug"
+	[[ "$VERBOSE_MODE" == 1 ]] && args+=" --verbose"
+	local c="$me --file $fs --mode $EXEC_MODE $args"
+
+	local _cmd="$me "
+}
+
 check_multiple() {
-	if echo -e "$EXAMPLE_FILE_NAME_SUFFIX" | grep -q ","; then
+	setup_options
+	#set -x
+	if echo -e "$EXAMPLE_FILE_NAME_SUFFIX" | egrep -q ',|all'; then
 		local re_exec_cmds=()
 		local re_exec_cmd="$(command -v multiview)  -p -c $EXAMPLE_FILE_PREFIX"
 		RE_EXEC_MODES="$(echo -e "$EXAMPLE_FILE_NAME_SUFFIX" | tr ',' '\n' | egrep -v '^$')"
+		#debug_item "ls_example_files_cmd" "ls_example_files_cmd" "$ls_example_files_cmd"
+		#debug_item "RE_EXEC_MODES" "RE_EXEC_MODES" "$RE_EXEC_MODES"
 		all_loaded=0
 		while read -r _m; do
-			if [[ "$all_loaded" == 0 && "$EXEC_MODE" == all ]]; then
-				while read -r _m; do
-					RE_EXEC_MODES+="\n$_m"
+			if [[ "$_m" != "" && "$all_loaded" == 0 && "$_m" == all ]]; then
+				while read -r _am; do
+					if [[ "$_am" != "" ]]; then
+						RE_EXEC_MODES="$RE_EXEC_MODES\n$_am"
+					fi
 				done < <(ls_example_file_name_suffixes)
 				all_loaded=1
 			fi
 		done < <(echo -e "$RE_EXEC_MODES")
-		#			local re_exec_cmd+=" [ $c ]"
-		#			re_exec_cmds+=("$c")
-		#      if [[ "$EXEC_MODE" == all ]]; then
-		#      else
-		#      fi
-		#
+		RE_EXEC_MODES="$(echo -e "$RE_EXEC_MODES" | egrep -v '^all$')"
+		#debug_item "RE_EXEC_MODES" "RE_EXEC_MODES" "$RE_EXEC_MODES"
 		while read -r fs; do
-			local me="${BASH_SOURCE[0]}"
-			local args=
-			[[ "$DRY_RUN_MODE" == 1 ]] && args+=" --dry-run"
-			[[ "$PREVIEW_MODE" == 1 ]] && args+=" --preview"
-			[[ "$DEBUG_MODE" == 1 ]] && args+=" --debug"
-			[[ "$VERBOSE_MODE" == 1 ]] && args+=" --verbose"
-			lf=$(mktemp)
-			local c="$me --file $fs --mode $EXEC_MODE $args"
-			#c="env bash -c '$c'"
-
-			local re_exec_cmd+=" [ $c ]"
-			re_exec_cmds+=("$c")
+			if [[ "$fs" != "" ]]; then
+				local me="${BASH_SOURCE[0]}"
+				local args=
+				[[ "$DRY_RUN_MODE" == 1 ]] && args+=" --dry-run"
+				[[ "$PREVIEW_MODE" == 1 ]] && args+=" --preview"
+				[[ "$DEBUG_MODE" == 1 ]] && args+=" --debug"
+				[[ "$VERBOSE_MODE" == 1 ]] && args+=" --verbose"
+				lf=$(mktemp)
+				local c="$me --file $fs --mode $EXEC_MODE $args"
+				local re_exec_cmd+=" [ $c ]"
+				re_exec_cmds+=("$c")
+			fi
 		done < <(echo -e "$RE_EXEC_MODES")
 		(
 			for _cmd in "${re_exec_cmds[@]}"; do
@@ -256,16 +275,16 @@ check_multiple() {
 				ansi >&2 --yellow --bg-black "$_cmd"
 				set +e
 				eval "$_cmd"
+        ec=$?
 			done
 		)
 		exit
 	fi
 }
 
-check_multiple
-
 main() {
 	setup_cmds
+	check_multiple
 	case "$EXEC_MODE" in
 	d | dev) dev_mode ;;
 	D) dev_mode1 ;;
