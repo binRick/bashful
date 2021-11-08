@@ -11,6 +11,7 @@ import (
 	ansible_adhoc "github.com/apenella/go-ansible/pkg/adhoc"
 	ansible_options "github.com/apenella/go-ansible/pkg/options"
 	guuid "github.com/gofrs/uuid"
+	"github.com/k0kubun/pp"
 	"github.com/wagoodman/bashful/utils"
 )
 
@@ -71,7 +72,12 @@ func NewAdhoc(module_name string, module_args map[string]interface{}, module_hos
 	adhoc.Options.Inventory = mhl
 	adhoc.Options.Limit = mhl
 	adhoc.Options.ModuleName = module_name
-	adhoc.Options.Tree = tree_path
+	_, has_tree := module_args[`tree`]
+	if has_tree {
+		adhoc.Options.Tree = tree_path
+		adhoc.Options.Tree = module_args[`tree`].(string)
+		pp.Println(adhoc.Options)
+	}
 
 	kv := ``
 
