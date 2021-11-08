@@ -14,6 +14,7 @@ optparse.define short=m long=mode variable=EXEC_MODE desc="Mode- run, list, list
 optparse.define short=P long=preview variable=PREVIEW_MODE desc="Preview Mode" default= value=1
 optparse.define short=N long=nodemon variable=NODEMON_MODE desc="Nodemon Mode" default= value=1
 optparse.define short=n long=dry-run variable=DRY_RUN_MODE desc="Dry Run Mode" default= value=1
+optparse.define short=s long=bat-style variable=BAT_STYLE desc="Bat Style" default=full
 source "$(optparse.build)"
 
 setup_options() {
@@ -164,7 +165,7 @@ setup_cmds() {
 	setup_options
 	EXAMPLE_FILE="$EXAMPLE_FILE_DIR/$EXAMPLE_FILE_PREFIX-$EXAMPLE_FILE_NAME_SUFFIX.yml"
 	validate_cmd="command cat $EXAMPLE_FILE|yaml2json 2>$yaml_decode_error_file|json2yaml >/dev/null"
-	preview_cmd="command cat $EXAMPLE_FILE|yaml2json 2>/dev/null|json2yaml>$of && command bat --pager=never --style=plain --theme=DarkNeon $of"
+	preview_cmd="command cat $EXAMPLE_FILE|yaml2json 2>/dev/null|json2yaml>$of && command bat --pager=never --style=$BAT_STYLE --file-name='$EXAMPLE_FILE_DIR/$(basename $EXAMPLE_FILE)' --theme=DarkNeon $of"
 	cmd="$BASHFUL_BINARY run $EXAMPLE_FILE"
 	[[ "$VERBOSE_MODE" == 1 ]] && cmd="$cmd --verbose"
 	nodemon_cmd="$(command -v nodemon) -V --signal SIGKILL  -I $NODEMON_WATCH_FILES -e $NODEMON_WATCH_EXTENSIONS -x $(command -v bash) -- -c '$cmd||true;'"
