@@ -26,6 +26,24 @@ x-reference-data:
     - yup-another-app-7
 
 tasks:
+  - name: generator-test-0
+    tags: generator-test-0
+    parallel-tasks:
+      - name: generator-test-0 %
+        stdout-log: /tmp/generator-test-0-%-stdout.log
+        stderr-log: /tmp/generator-test-0-%-stderr.log
+        cmd-log: /tmp/generator-test-0-%-cmd.log
+        debug-cmd: echo -e "DEBUG pre item=%"
+        debug-log: /tmp/generator-test-0-debug-%.log
+        cmd: grep % /etc/passwd
+        register: PASSWD_MATCHES
+        for-each-list:
+          -
+            - root
+            - nobody
+            - o
+          -
+            - a
   - name: generator-test-1
     tags: generator-test-1
     parallel-tasks:

@@ -309,9 +309,16 @@ func (task *Task) Execute(eventChan chan TaskEvent, waiter *sync.WaitGroup, envi
 	}
 
 	task.Command.Cmd.Start()
+	msgs := map[string][]string{
+		`stdout`: []string{},
+		`stderr`: []string{},
+	}
 	for {
 		select {
 		case stdoutMsg, ok := <-stdoutChan:
+			if len(stdoutMsg) > 0 {
+				msgs[`stdout`] = append(msgs[`stdout`], stdoutMsg)
+			}
 			if ok {
 				// it seems that we are getting a bit behind... burn off elements without showing them on the screen
 				if len(stdoutChan) > 100 {
@@ -389,6 +396,26 @@ func (task *Task) Execute(eventChan chan TaskEvent, waiter *sync.WaitGroup, envi
 			}
 		}
 	}
+
+	if len(task.Config.Register) > 0 {
+		if task.Config.Registered == nil {
+			task.Config.Registered = map[string][]string{}
+		}
+		//pp.Println(`registering results to `, task.Config.Register, msgs, task.Config.Registered)
+		for _, msg := range msgs[`stdout`] {
+			//pp.Println(`     - registering result %s to %s`, msg, task.Config.Register)
+			_, has := task.Config.Registered[task.Config.Register]
+			if !has {
+				task.Config.Registered[task.Config.Register] = []string{}
+			}
+			task.Config.Registered[task.Config.Register] = append(task.Config.Registered[task.Config.Register], msg)
+		}
+	}
+
+	pp.Fprintf(os.Stderr, "%s\n", task.Config.Registered)
+	pp.Fprintf(os.Stderr, "%s\n", task)
+	//pp.Println(task)
+	//os.Exit(1)
 
 	if returnCode == 0 || task.Config.IgnoreFailure {
 		eventChan <- TaskEvent{Task: task, Status: StatusSuccess, Complete: true, ReturnCode: returnCode}

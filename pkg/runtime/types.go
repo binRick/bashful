@@ -69,6 +69,8 @@ type Executor struct {
 
 	// Statistics contains runtime statistics of all planned tasks
 	Statistics *TaskStatistics
+
+	Registered map[string][]string
 }
 
 type TaskStatistics struct {

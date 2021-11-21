@@ -142,6 +142,8 @@ type TaskConfig struct {
 
 	// CmdString is the bash command to invoke when "running" this task
 	CmdString     string `yaml:"cmd"`
+	Register      string `yaml:"register"`
+	Registered    map[string][]string
 	OrigCmdString string
 
 	RescueCmdString      string `yaml:"rescue-cmd"`

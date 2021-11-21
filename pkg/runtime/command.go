@@ -95,12 +95,18 @@ set -x
 		_adhoc_cmd = strings.Replace(_adhoc_cmd, `--one-line`, ``, -1)
 		ANSIBLE_STDOUT_EXTRACTOR := fmt.Sprintf(`command jq '.plays[0].tasks[0].hosts.localhost.stdout' -Mrc`)
 		ANSIBLE_ENV := fmt.Sprintf(`ANSIBLE_STDOUT_CALLBACK=json ANSIBLE_LOAD_CALLBACK_PLUGINS=1`)
+		_adhoc_cmd = fmt.Sprintf(`ansible localhost, --inventory %s, --limit localhost, --module-name shell  --connection local -a "%s"`,
+			strings.Join(module_hosts, `,`),
+			taskConfig.CmdGenerator,
+		)
 		_adhoc_cmd = fmt.Sprintf(`env %s %s | %s`, ANSIBLE_ENV, _adhoc_cmd, ANSIBLE_STDOUT_EXTRACTOR)
-		modified_cmd = fmt.Sprintf(`while read -r CMD_GENERATED_ITEM; do eval %s; done < <(eval %s)`,
+		modified_cmd = fmt.Sprintf(`while read -r CMD_GENERATED_ITEM; do ORIGINAL_ITEM="%s" && %s; done < <(%s)`,
+			taskConfig.CurrentItem,
 			modified_OrigCmdString,
 			_adhoc_cmd,
 		)
 		if DEBUG_MODE {
+			pp.Println(taskConfig)
 			pp.Println(`generator:`, taskConfig.CmdGenerator)
 			pp.Println(`adhoc`, adhoc)
 			pp.Println(`orig cmd`, taskConfig.OrigCmdString)
@@ -220,6 +226,7 @@ After cmd:      %v
 		if has_cur {
 			applied_vars = append(applied_vars, taskConfig.ApplyEachVars[taskConfig.CurrentItem])
 		}
+
 		if VERBOSE_MODE {
 			fmt.Fprintf(os.Stderr, "\nApplied Vars:\n%s\n\n", pp.Sprintf(`%s`, applied_vars))
 		}

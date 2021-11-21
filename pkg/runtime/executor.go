@@ -25,6 +25,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/k0kubun/pp"
 	"github.com/wagoodman/bashful/pkg/config"
 	"github.com/wagoodman/bashful/pkg/log"
 	"github.com/wagoodman/bashful/utils"
@@ -47,6 +48,7 @@ func newExecutor(cfg *config.Config) *Executor {
 		Tasks:         make([]*Task, 0),
 		Statistics:    newExecutorStats(),
 		cmdEtaCache:   make(map[string]time.Duration, 0),
+		Registered:    map[string][]string{},
 	}
 
 	for _, taskConfig := range cfg.TaskConfigs {
@@ -142,6 +144,17 @@ func (executor *Executor) execute(task *Task) error {
 		if event.Complete {
 			event.Task.Completed = true
 
+			/*
+				if task.Registered != nil {
+					for _, k = range task.Registered {
+						pp.Println(k)
+						//        applied_vars = append(applied_vars, map[string]string{k, taskConfig.Registered})
+					}
+				}
+			*/
+			pp.Fprintf(os.Stderr, "%s\n", task.Config.Registered)
+			pp.Fprintf(os.Stderr, "%s\n", executor.Registered)
+			//			os.Exit(1)
 			executor.Statistics.Completed = append(executor.Statistics.Completed, event.Task)
 			executor.cmdEtaCache[task.Config.CmdString] = event.Task.Command.StopTime.Sub(event.Task.Command.StartTime)
 			executor.Statistics.Running--
