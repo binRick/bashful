@@ -1,28 +1,9 @@
-// Copyright © 2018 Alex Goodman
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-// THE SOFTWARE.
-
 package cmd
 
 import (
 	"fmt"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"time"
 
@@ -63,6 +44,7 @@ func init() {
 }
 
 func Bundle(yamlString []byte, outputPath string, cli config.Cli) {
+	started := time.Now()
 
 	yamlString, err := ioutil.ReadFile(cli.YamlPath)
 	utils.CheckError(err, "Unable to read yaml Config.")
@@ -73,14 +55,15 @@ func Bundle(yamlString []byte, outputPath string, cli config.Cli) {
 	}
 
 	doneCh := make(chan struct{})
-
-	fmt.Println(utils.Bold("Bundling " + cli.YamlPath + " to " + outputPath))
 	bar := progressbar.NewOptions(100,
-		progressbar.OptionSetWriter(ansi.NewAnsiStdout()),
+		progressbar.OptionSetWriter(ansi.NewAnsiStderr()),
 		progressbar.OptionEnableColorCodes(true),
 		progressbar.OptionShowBytes(true),
-		progressbar.OptionSetWidth(35),
-		progressbar.OptionSetDescription("[cyan][1/3][reset] Writing moshable file..."),
+		progressbar.OptionUseANSICodes(true),
+		progressbar.OptionFullWidth(),
+		progressbar.OptionClearOnFinish(),
+		progressbar.OptionSetRenderBlankState(false),
+		progressbar.OptionSetDescription(fmt.Sprintf("[cyan][1/3][reset] Bundling %s", outputPath)),
 		progressbar.OptionSetTheme(progressbar.Theme{
 			Saucer:        "[green]=[reset]",
 			SaucerHead:    "[green]>[reset]",
@@ -92,17 +75,23 @@ func Bundle(yamlString []byte, outputPath string, cli config.Cli) {
 			doneCh <- struct{}{}
 		}),
 	)
+	if true {
+		go func() {
+			for i := 0; i < 20; i++ {
+				bar.Add(1)
+				time.Sleep(1 * time.Millisecond)
+			}
+		}()
+	}
 
-	go func() {
-		for i := 0; i < 100; i++ {
-			bar.Add(1)
-			time.Sleep(1 * time.Millisecond)
-		}
-	}()
+	var do_bundle = func() {
+		client.Bundle(cli.YamlPath, outputPath)
+		bar.Finish()
+	}
 
+	go do_bundle()
 	<-doneCh
-	fmt.Println("\n ======= progress bar completed ==========\n")
-
-	client.Bundle(cli.YamlPath, outputPath)
+	bar.Clear()
+	fmt.Fprintf(os.Stderr, "====== Bundled %s in %s ==========\n\n", outputPath, time.Since(started))
 
 }
