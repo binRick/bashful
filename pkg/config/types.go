@@ -141,13 +141,18 @@ type TaskConfig struct {
 	Name string `yaml:"name"`
 
 	// CmdString is the bash command to invoke when "running" this task
-	CmdString string `yaml:"cmd"`
+	CmdString     string `yaml:"cmd"`
+	OrigCmdString string
 
-	RescueCmdString string `yaml:"rescue-cmd"`
-	PreCmdString    string `yaml:"pre-cmd"`
-	PostCmdString   string `yaml:"post-cmd"`
-	DebugCmdString  string `yaml:"debug-cmd"`
-	DebugCmdLog     string `yaml:"debug-log"`
+	RescueCmdString      string `yaml:"rescue-cmd"`
+	CmdGenerator         string `yaml:"cmd-generator"`
+	ReplicaReplaceString string
+	OrigCmdGenerator     string
+	CmdGeneratorLog      string `yaml:"cmd-generator-log"`
+	PreCmdString         string `yaml:"pre-cmd"`
+	PostCmdString        string `yaml:"post-cmd"`
+	DebugCmdString       string `yaml:"debug-cmd"`
+	DebugCmdLog          string `yaml:"debug-log"`
 
 	// CwdString is current working directory
 	CwdString string `yaml:"cwd"`

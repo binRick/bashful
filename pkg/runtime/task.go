@@ -47,6 +47,8 @@ var (
 	exitSignaled bool
 )
 
+var DEBUG_MODE = (os.Getenv(`DEBUG_MODE`) == `1`)
+
 const (
 	StatusRunning TaskStatus = iota
 	StatusPending
@@ -90,6 +92,17 @@ func NewTask(taskConfig config.TaskConfig, runtimeOptions *config.Options) *Task
 			}
 		}
 	}
+	/*
+		if DEBUG_MODE {
+			if task.Config.CmdGenerator != `` {
+				pp.Println(task.Config.CmdGenerator)
+				pp.Println(task.Config.CmdGeneratorLog)
+				pp.Println(task.Config.CmdString)
+				pp.Println(task.Config.ForEachList)
+				//			os.Exit(1)
+			}
+		}
+	*/
 
 	task.Command = newCommand(task.Config)
 	task.events = make(chan TaskEvent)
@@ -115,6 +128,7 @@ func (task *Task) UpdateExec(execpath string) {
 		task.Config.CmdString = task.Options.ExecReplaceString
 	}
 	task.Config.CmdString = strings.Replace(task.Config.CmdString, task.Options.ExecReplaceString, execpath, -1)
+	task.Config.CmdGenerator = strings.Replace(task.Config.CmdGenerator, task.Options.ExecReplaceString, execpath, -1)
 	task.Config.URL = strings.Replace(task.Config.URL, task.Options.ExecReplaceString, execpath, -1)
 
 	task.Command = newCommand(task.Config)

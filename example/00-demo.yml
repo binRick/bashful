@@ -26,6 +26,25 @@ x-reference-data:
     - yup-another-app-7
 
 tasks:
+  - name: generator-test-1
+    tags: generator-test-1
+    parallel-tasks:
+      - name: generator-test-1 %
+        stdout-log: /tmp/generator-test-1-%-stdout.log
+        stderr-log: /tmp/generator-test-1-%-stderr.log
+        cmd-log: /tmp/generator-test-1-%-cmd.log
+        debug-cmd: echo -e "DEBUG pre item=%"
+        debug-log: /tmp/generator-test-1-debug-%.log
+        cmd-generator: "command grep % /etc/passwd|cut -d: -f1"
+        cmd-generator-log: /tmp/generator-test-1-generator-%.log
+        cmd: id %
+        for-each-list:
+          -
+            - root
+            - nobody
+            - o
+          -
+            - a
 
   - name: Process Ansible Module Command %
     tags: [ansible]

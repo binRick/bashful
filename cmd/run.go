@@ -20,6 +20,8 @@ import (
 	"github.com/wagoodman/bashful/utils"
 )
 
+var DEBUG_MODE = (os.Getenv(`DEBUG_MODE`) == `1`)
+
 // todo: put these in a cli struct instance instead, then most logic can be in the cli struct
 var tags, onlyTags, skipTags string
 var verboseMode bool

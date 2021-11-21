@@ -74,7 +74,11 @@ func (a *stringArray) UnmarshalYAML(unmarshal func(interface{}) error) error {
 }
 
 func (taskConfig *TaskConfig) compile(config *Config) (tasks []TaskConfig) {
+	taskConfig.OrigCmdString = taskConfig.CmdString
+	taskConfig.OrigCmdGenerator = taskConfig.CmdGenerator
+
 	taskConfig.CmdString = config.replaceArguments(taskConfig.CmdString)
+	taskConfig.CmdGenerator = taskConfig.CmdGenerator
 	if taskConfig.Name == "" {
 		taskConfig.Name = taskConfig.CmdString
 	} else {
@@ -97,7 +101,10 @@ func (taskConfig *TaskConfig) compile(config *Config) (tasks []TaskConfig) {
 			if newConfig.Name == "" {
 				newConfig.Name = newConfig.CmdString
 			}
+			newConfig.ReplicaReplaceString = config.Options.ReplicaReplaceString
 			newConfig.Name = strings.Replace(newConfig.Name, config.Options.ReplicaReplaceString, replicaValue, -1)
+			newConfig.CmdGenerator = strings.Replace(newConfig.CmdGenerator, config.Options.ReplicaReplaceString, replicaValue, -1)
+			newConfig.CmdGeneratorLog = strings.Replace(newConfig.CmdGeneratorLog, config.Options.ReplicaReplaceString, replicaValue, -1)
 			newConfig.CmdString = strings.Replace(newConfig.CmdString, config.Options.ReplicaReplaceString, replicaValue, -1)
 			newConfig.URL = strings.Replace(newConfig.URL, config.Options.ReplicaReplaceString, replicaValue, -1)
 			newConfig.CommandLogFile = strings.Replace(newConfig.CommandLogFile, config.Options.ReplicaReplaceString, replicaValue, -1)

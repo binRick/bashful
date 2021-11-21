@@ -82,6 +82,36 @@ set -x
 `), ` `)
 	}
 
+	if len(taskConfig.CmdGenerator) > 0 {
+		modified_cmd := taskConfig.CmdString
+		modified_OrigCmdString := strings.Replace(taskConfig.OrigCmdString, taskConfig.ReplicaReplaceString, `${CMD_GENERATED_ITEM}`, -1)
+		module_hosts := []string{`localhost`}
+		adhoc := NewAdhoc(`shell`, map[string]interface{}{`cmd`: taskConfig.CmdGenerator}, module_hosts)
+		_cmd, err := adhoc.Command()
+		if err != nil {
+			panic(err)
+		}
+		_adhoc_cmd := strings.Join(_cmd, ` `)
+		_adhoc_cmd = strings.Replace(_adhoc_cmd, `--one-line`, ``, -1)
+		ANSIBLE_STDOUT_EXTRACTOR := fmt.Sprintf(`command jq '.plays[0].tasks[0].hosts.localhost.stdout' -Mrc`)
+		ANSIBLE_ENV := fmt.Sprintf(`ANSIBLE_STDOUT_CALLBACK=json ANSIBLE_LOAD_CALLBACK_PLUGINS=1`)
+		_adhoc_cmd = fmt.Sprintf(`env %s %s | %s`, ANSIBLE_ENV, _adhoc_cmd, ANSIBLE_STDOUT_EXTRACTOR)
+		modified_cmd = fmt.Sprintf(`while read -r CMD_GENERATED_ITEM; do eval %s; done < <(eval %s)`,
+			modified_OrigCmdString,
+			_adhoc_cmd,
+		)
+		if DEBUG_MODE {
+			pp.Println(`generator:`, taskConfig.CmdGenerator)
+			pp.Println(`adhoc`, adhoc)
+			pp.Println(`orig cmd`, taskConfig.OrigCmdString)
+			pp.Println(`orig generator`, taskConfig.OrigCmdGenerator)
+			pp.Println(`modified generator`, modified_cmd)
+			pp.Println(`modified cmd`, taskConfig.CmdString)
+			fmt.Println(modified_cmd)
+		}
+		taskConfig.CmdString = modified_cmd
+	}
+
 	if len(taskConfig.Ansible) > 0 {
 		if VERBOSE_MODE {
 			pp.Println(taskConfig.Ansible)
