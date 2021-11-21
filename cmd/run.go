@@ -53,9 +53,6 @@ var runCmd = &cobra.Command{
 		cli := config.Cli{
 			YamlPath: args[0],
 			BashfulCgroup: config.BashfulCgroup{
-				//ParentUUID:      parent_cg_uuid,
-				//ParentResources: cg_limit1,
-				//ParentCgroup:    parent_cg,
 				CgroupIDs: []string{},
 			},
 		}

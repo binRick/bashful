@@ -16,7 +16,8 @@ import (
 	"github.com/wagoodman/bashful/utils"
 )
 
-// bundleCmd represents the bundle command
+var DEFAULT_BUNDLED_FILE = ``
+
 var bundleCmd = &cobra.Command{
 	Use:   "bundle",
 	Short: "Bundle yaml and referenced resources into a single executable (experimental)",
@@ -40,6 +41,7 @@ var bundleCmd = &cobra.Command{
 }
 
 func init() {
+	bundleCmd.Flags().StringVarP(&eventLogFile, "bundled-file", "o", DEFAULT_BUNDLED_FILE, "Bundled File Path")
 	rootCmd.AddCommand(bundleCmd)
 }
 
@@ -75,23 +77,29 @@ func Bundle(yamlString []byte, outputPath string, cli config.Cli) {
 			doneCh <- struct{}{}
 		}),
 	)
+
 	if true {
 		go func() {
-			for i := 0; i < 20; i++ {
+			for i := 0; i < 90; i++ {
 				bar.Add(1)
-				time.Sleep(1 * time.Millisecond)
+				time.Sleep(10 * time.Millisecond)
 			}
 		}()
 	}
 
 	var do_bundle = func() {
 		client.Bundle(cli.YamlPath, outputPath)
+		for i := 90; i < 100; i++ {
+			bar.Add(1)
+			time.Sleep(10 * time.Millisecond)
+		}
+		bar.Set(100)
 		bar.Finish()
+		bar.Clear()
 	}
 
 	go do_bundle()
 	<-doneCh
-	bar.Clear()
 	fmt.Fprintf(os.Stderr, "====== Bundled %s in %s ==========\n\n", outputPath, time.Since(started))
 
 }
