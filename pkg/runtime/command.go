@@ -15,6 +15,7 @@ import (
 	"github.com/k0kubun/pp"
 	"github.com/noirbizarre/gonja"
 	"github.com/wagoodman/bashful/pkg/config"
+	log "github.com/wagoodman/bashful/pkg/log"
 	"github.com/wagoodman/bashful/utils"
 )
 
@@ -38,10 +39,23 @@ var cmd_counter uint64
 type ModifiedCommands map[string]ModifiedCommand
 
 var (
-	extrace_args = `-Qultd`
+	extrace_args           = `-Qultd`
+	SET_TIMEHISTORY_ENV    = fmt.Sprintf(`export TIMEHISTORY_LIMIT=%d`, 200)
+	TIMEHISTORY_ENABLED    = (os.Getenv(`TIMEHISTORY_ENABLED`) == `1`)
+	RESET_TIMEHISTORY_CMD  = `command timehistory -R >/dev/null`
+	brief_cmd_mode         = false
+	concurrent_lib         = ``
+	concurrent_lib_encoded = ``
 )
 
-var brief_cmd_mode = false
+func init() {
+	_concurrent_lib, err := ioutil.ReadFile(`./bash_utils/concurrent.lib.sh`)
+	if err != nil {
+		panic(err)
+	}
+	concurrent_lib = fmt.Sprintf(`%s`, _concurrent_lib)
+	concurrent_lib_encoded = base64.StdEncoding.EncodeToString([]byte(concurrent_lib))
+}
 
 func newCommand(taskConfig config.TaskConfig) command {
 	BASHFUL_EXEC_HOSTNAME = os.Getenv(`__BASHFUL_EXEC_HOSTNAME`)
@@ -142,26 +156,26 @@ run_concurrents() {
 
 		//bash-5.1#  export TIMEHISTORY_FORMAT='%(time:%s)\t%(pid)\t%(cpu)\t%(status)/%Tt/%Tx\t\t%(sys_time_us)/%(user_time_us)\t\t\t%(inblock)/%(oublock)\t%(maxrss)\t\t\t\t\t\t%(args)' && timehistory
 		// exclude:            /concurrent.lib.sh.          bashful/.logs/       ["date","+%F@%T"]}        ["base64","-d"]
-		concurrent_lib, err := ioutil.ReadFile(`./bash_utils/concurrent.lib.sh`)
-		if err != nil {
-			panic(err)
-		}
-
 		prefix_cmd := `echo`
 		suffix_cmd := `echo`
-		RESET_TIMEHISTORY_CMD := `command timehistory -R`
-		if len(taskConfig.TimehistoryJsonLogFile) > 0 {
-			prefix_cmd = fmt.Sprintf(`export TIMEHISTORY_LIMIT=%d && command -v timehistory >/dev/null || { enable -f ./bash_utils/libtimehistory_bash.so timehistory; } && %s`,
-				200,
-				RESET_TIMEHISTORY_CMD,
-			)
-			s1 := fmt.Sprintf(`enable -d timehistory||true`)
-			suffix_cmd = fmt.Sprintf(`command -v timehistory >/dev/null && { timehistory -j >> %s; %s; }`, taskConfig.TimehistoryJsonLogFile, s1)
+		if TIMEHISTORY_ENABLED {
+			log.LogToMain(fmt.Sprintf("\nEnabling Timehistory for command \"%s\"\n", taskConfig.CmdString), log.StyleError)
+			log.LogToMain(fmt.Sprintf("\nEnabling Timehistory for command \"%s\"\n", taskConfig.CmdString), log.StyleMajor)
+			if len(taskConfig.TimehistoryJsonLogFile) > 0 {
+				prefix_cmd = fmt.Sprintf(`%s && command -v timehistory >/dev/null || { enable -f ./bash_utils/libtimehistory_bash.so timehistory; } && %s`,
+					SET_TIMEHISTORY_ENV,
+					RESET_TIMEHISTORY_CMD,
+				)
+				s1 := fmt.Sprintf(`enable -d timehistory||true`)
+				suffix_cmd = fmt.Sprintf(`command -v timehistory >/dev/null && { timehistory -j >> %s; %s; }`, taskConfig.TimehistoryJsonLogFile, s1)
+			}
 		}
-		fmt.Println(concurrent_cmd)
+		if DEBUG_MODE {
+			fmt.Fprintf(os.Stderr, "%s\n", concurrent_cmd)
+		}
 		concurrent_cmd = fmt.Sprintf(`%s; ( eval "$(echo %s|base64 -d)" && eval "$(echo %s|base64 -d)" && run_concurrents; %s; ) >> /tmp/t1 2>&1`,
 			prefix_cmd,
-			base64.StdEncoding.EncodeToString([]byte(concurrent_lib)),
+			concurrent_lib_encoded,
 			base64.StdEncoding.EncodeToString([]byte(concurrent_cmd)),
 			suffix_cmd,
 		)

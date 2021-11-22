@@ -10,7 +10,7 @@ config:
   # with a command running)
   show-task-times: true
 
-  log-path: /tmp/demo-00.log
+  log-path: /tmp/c00-concurrent-bashful.log
   env:
     __TEST1_GLOBAL: 12345
 
@@ -31,7 +31,7 @@ tasks:
     parallel-tasks:
       - name: c00 item %
         for-each-list:
-          - [vm1.domain.com]
+          - [vm1.domain.com, vm2.domain.com]
         stdout-log: /tmp/c00-out.log
         stderr-log: /tmp/c00-err.log
         cmd-log: /tmp/c00-%-cmd.log
@@ -40,7 +40,7 @@ tasks:
         cmd: echo building VM %
         concurrent-stdout-log: /tmp/c00-concurrent-out.log
         concurrent-stderr-log: /tmp/c00-concurrent-err.log
-        timehistory-json-log: /tmp/c00-concurrent-stats.json
+        timehistory-json-log: /tmp/c00-%-timehistory-stats.json
         concurrent:
           - name: create
             title: Create VM %

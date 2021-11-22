@@ -104,6 +104,7 @@ func (taskConfig *TaskConfig) compile(config *Config) (tasks []TaskConfig) {
 			newConfig.ReplicaReplaceString = config.Options.ReplicaReplaceString
 			newConfig.Name = strings.Replace(newConfig.Name, config.Options.ReplicaReplaceString, replicaValue, -1)
 			newConfig.CmdGenerator = strings.Replace(newConfig.CmdGenerator, config.Options.ReplicaReplaceString, replicaValue, -1)
+			newConfig.TimehistoryJsonLogFile = strings.Replace(newConfig.TimehistoryJsonLogFile, config.Options.ReplicaReplaceString, replicaValue, -1)
 			newConfig.CmdGeneratorLog = strings.Replace(newConfig.CmdGeneratorLog, config.Options.ReplicaReplaceString, replicaValue, -1)
 			newConfig.CmdString = strings.Replace(newConfig.CmdString, config.Options.ReplicaReplaceString, replicaValue, -1)
 			newConfig.URL = strings.Replace(newConfig.URL, config.Options.ReplicaReplaceString, replicaValue, -1)
