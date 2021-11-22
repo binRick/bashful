@@ -411,11 +411,10 @@ func (task *Task) Execute(eventChan chan TaskEvent, waiter *sync.WaitGroup, envi
 			task.Config.Registered[task.Config.Register] = append(task.Config.Registered[task.Config.Register], msg)
 		}
 	}
-
-	pp.Fprintf(os.Stderr, "%s\n", task.Config.Registered)
-	pp.Fprintf(os.Stderr, "%s\n", task)
-	//pp.Println(task)
-	//os.Exit(1)
+	if false {
+		pp.Fprintf(os.Stderr, "%s\n", task.Config.Registered)
+		pp.Fprintf(os.Stderr, "%s\n", task)
+	}
 
 	if returnCode == 0 || task.Config.IgnoreFailure {
 		eventChan <- TaskEvent{Task: task, Status: StatusSuccess, Complete: true, ReturnCode: returnCode}
