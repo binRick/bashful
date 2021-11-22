@@ -131,6 +131,17 @@ type Options struct {
 	UpdateInterval float64 `yaml:"update-interval"`
 }
 
+type Concurrent struct {
+	Name          string
+	Command       string `yaml:"cmd"`
+	Title         string
+	Requires      []string
+	OKMessage     string `yaml:"ok-msg"`
+	OKCommand     string `yaml:"ok-command"`
+	StdoutLogFile string `yaml:"stdout-log"`
+	StderrLogFile string `yaml:"stderr-log"`
+}
+
 // TaskConfig represents a task definition and all metadata (Note: this is not the task runtime object)
 type TaskConfig struct {
 	BCG            BashfulCgroup
@@ -146,15 +157,18 @@ type TaskConfig struct {
 	Registered    map[string][]string
 	OrigCmdString string
 
-	RescueCmdString      string `yaml:"rescue-cmd"`
-	CmdGenerator         string `yaml:"cmd-generator"`
-	ReplicaReplaceString string
-	OrigCmdGenerator     string
-	CmdGeneratorLog      string `yaml:"cmd-generator-log"`
-	PreCmdString         string `yaml:"pre-cmd"`
-	PostCmdString        string `yaml:"post-cmd"`
-	DebugCmdString       string `yaml:"debug-cmd"`
-	DebugCmdLog          string `yaml:"debug-log"`
+	RescueCmdString         string `yaml:"rescue-cmd"`
+	CmdGenerator            string `yaml:"cmd-generator"`
+	ReplicaReplaceString    string
+	OrigCmdGenerator        string
+	CmdGeneratorLog         string       `yaml:"cmd-generator-log"`
+	PreCmdString            string       `yaml:"pre-cmd"`
+	PostCmdString           string       `yaml:"post-cmd"`
+	DebugCmdString          string       `yaml:"debug-cmd"`
+	DebugCmdLog             string       `yaml:"debug-log"`
+	ConcurrentStderrLogFile string       `yaml:"concurrent-stderr-log"`
+	ConcurrentStdoutLogFile string       `yaml:"concurrent-stdout-log"`
+	Concurrent              []Concurrent `yaml:"concurrent"`
 
 	// CwdString is current working directory
 	CwdString string `yaml:"cwd"`

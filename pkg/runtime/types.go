@@ -70,7 +70,14 @@ type Executor struct {
 	// Statistics contains runtime statistics of all planned tasks
 	Statistics *TaskStatistics
 
-	Registered map[string][]string
+	Registered map[string]string
+}
+
+type Concurrent struct {
+	Name     string
+	Command  string `yaml:"cmd"`
+	Title    string
+	Requires []string
 }
 
 type TaskStatistics struct {

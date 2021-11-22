@@ -2,7 +2,9 @@ package runtime
 
 import (
 	"bytes"
+	"encoding/base64"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"strings"
@@ -82,6 +84,76 @@ set -x
 `), ` `)
 	}
 
+	if taskConfig.Concurrent != nil {
+		cc := ``
+		ccs := []string{}
+		fxns := []string{}
+		reqs := []string{}
+		for k := range taskConfig.Concurrent {
+			C := taskConfig.Concurrent[k]
+			C.Name = strings.Replace(C.Name, ` `, `_`, -1)
+			if C.StdoutLogFile == `` {
+				C.StdoutLogFile = `/dev/null`
+			}
+			if C.StderrLogFile == `` {
+				C.StderrLogFile = `/dev/null`
+			}
+			sub_cmd := fmt.Sprintf(`ansi --yellow --italic \"%s\";  { %s; } > %s 2> %s`,
+				C.Title,
+				C.Command,
+				C.StdoutLogFile,
+				C.StderrLogFile,
+			)
+			fxns = append(fxns, fmt.Sprintf("eval_%s(){ %s; }",
+				C.Name,
+				sub_cmd,
+			))
+			ccs = append(ccs, fmt.Sprintf("    - \"%s\" eval_%s",
+				C.Name,
+				C.Name,
+			))
+			for _, req := range C.Requires {
+				reqs = append(reqs, fmt.Sprintf("    --require \"%s\"       --before \"%s\"",
+					req,
+					C.Name,
+				))
+			}
+		}
+		cc = fmt.Sprintf("%s\n#  Concurrent Functions", cc)
+		for _, l := range fxns {
+			cc = fmt.Sprintf("%s\n%s", cc, l)
+		}
+		cc = fmt.Sprintf(`%s
+
+run_concurrents() {
+  local concurrent_args=(`, cc)
+		for _, _cc := range ccs {
+			cc = fmt.Sprintf("%s\n%s", cc, _cc)
+		}
+		for _, l := range reqs {
+			cc = fmt.Sprintf("%s\n%s", cc, l)
+		}
+		cc = fmt.Sprintf(`%s
+  )
+  concurrent "${concurrent_args[@]}"
+}
+`,
+			cc,
+		)
+		pp.Println(taskConfig.Concurrent)
+		fmt.Println(cc)
+		concurrent_lib, err := ioutil.ReadFile(`./bash_utils/concurrent.lib.sh`)
+		if err != nil {
+			panic(err)
+		}
+		cc = fmt.Sprintf(`{ eval "$(echo %s|base64 -d)" && eval "$(echo %s|base64 -d)" && run_concurrents; ec=$?; date; } >> /tmp/t1 2>&1; echo exited=$ec >> /tmp/t1`,
+
+			base64.StdEncoding.EncodeToString([]byte(concurrent_lib)),
+			base64.StdEncoding.EncodeToString([]byte(cc)),
+		)
+		//	os.Exit(1)
+		taskConfig.CmdString = fmt.Sprintf(`%s && %s`, cc, taskConfig.CmdString)
+	}
 	if len(taskConfig.CmdGenerator) > 0 {
 		modified_cmd := taskConfig.CmdString
 		modified_OrigCmdString := strings.Replace(taskConfig.OrigCmdString, taskConfig.ReplicaReplaceString, `${CMD_GENERATED_ITEM}`, -1)

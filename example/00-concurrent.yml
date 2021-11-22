@@ -1,0 +1,71 @@
+config:
+  replica-replace-pattern: '%'
+  show-failure-report: yes
+  ignore-failure: no
+  vars:
+    abc: aMAINNNNNNNNNNNNNNNNNNNNNN
+    def: zNNNNNNNNNNNNNNNNNNNNNN
+
+  # Show an eta for each task on the screen (being shown on every line 
+  # with a command running)
+  show-task-times: true
+
+  log-path: /tmp/demo-00.log
+  env:
+    __TEST1_GLOBAL: 12345
+
+x-reference-data:
+  all-apps: &app-names
+    - some-lib-4
+    - utilities-lib
+    - important-lib
+    - some-app1
+    - some-app3
+    - some-awesome-app-5
+    - watcher-app
+    - yup-another-app-7
+
+tasks:
+  - name: c0
+    tags: c0
+    parallel-tasks:
+      - name: c0 item %
+        stdout-log: /tmp/c0-out.log
+        stderr-log: /tmp/c0-err.log
+        cmd-log: /tmp/c0-%-cmd.log
+        debug-cmd: echo -e "DEBUG pre item=%"
+        debug-log: /tmp/c0-debug-%.log
+        cmd: echo item=%
+        concurrent-stdout-log: /tmp/c0-concurrent-out.log
+        concurrent-stderr-log: /tmp/c0-concurrent-err.log
+        concurrent:
+          - name: create
+            title: Create VM %
+            cmd: echo creating vm for %
+            stdout-log: /tmp/c0-concurrent-create-vm-%-out.log
+            stderr-log: /tmp/c0-concurrent-create-vm-%-err.log
+            ok-msg: created vm %
+            ok-cmd: echo -e "created % @ $(date +%s)"
+            requires: []
+          - name: boot
+            title: Boot VM %
+            cmd: echo booting vm %
+            requires: [create]
+          - name: setup
+            title: Setup vm %
+            cmd: echo setting up vm %
+            requires: [boot]
+          - name: validate1
+            title: Validating vm % 1
+            cmd: echo validating1 vm %
+            requires: [setup]
+          - name: validate2
+            title: Validating vm % 2
+            cmd: echo validating2 vm %
+            requires: [setup]
+          - name: stop vm
+            title: Stopping vm % 2
+            cmd: echo stopping vm %
+            requires: [validate1, validate2]
+        for-each-list:
+          - [vm1.domain.com]
