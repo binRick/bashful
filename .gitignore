@@ -19,4 +19,5 @@ archive
 bf
 .ee
 .VENDOR
-.envrc\*
+.envrc*
+.*
