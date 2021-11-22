@@ -26,10 +26,41 @@ x-reference-data:
     - yup-another-app-7
 
 tasks:
+  - name: c00
+    tags: [c00]
+    parallel-tasks:
+      - name: c00 item %
+        for-each-list:
+          - [vm1.domain.com]
+        stdout-log: /tmp/c00-out.log
+        stderr-log: /tmp/c00-err.log
+        cmd-log: /tmp/c00-%-cmd.log
+        debug-cmd: echo -e "DEBUG pre item=%"
+        debug-log: /tmp/c00-debug-%.log
+        cmd: echo building VM %
+        concurrent-stdout-log: /tmp/c00-concurrent-out.log
+        concurrent-stderr-log: /tmp/c00-concurrent-err.log
+        timehistory-json-log: /tmp/c00-concurrent-stats.json
+        concurrent:
+          - name: create
+            title: Create VM %
+            cmd: echo grep % /etc/passwd
+            stdout-log: /tmp/c00-concurrent-create-vm-%-out.log
+            stderr-log: /tmp/c00-concurrent-create-vm-%-err.log
+            ok-msg: created vm %
+            ok-cmd: cat /etc/passwd
+            requires: []
+          - name: boot
+            title: Boot VM %
+            cmd: echo booting vm %; sleep .5; ls /; ls /etc
+            requires: [create]
+
   - name: c0
     tags: c0
     parallel-tasks:
       - name: c0 item %
+        for-each-list:
+          - [vm1.domain.com]
         stdout-log: /tmp/c0-out.log
         stderr-log: /tmp/c0-err.log
         cmd-log: /tmp/c0-%-cmd.log
@@ -38,6 +69,7 @@ tasks:
         cmd: echo item=%
         concurrent-stdout-log: /tmp/c0-concurrent-out.log
         concurrent-stderr-log: /tmp/c0-concurrent-err.log
+        timehistory-json-log: /tmp/c0-concurrent-stats.json
         concurrent:
           - name: create
             title: Create VM %
@@ -49,23 +81,21 @@ tasks:
             requires: []
           - name: boot
             title: Boot VM %
-            cmd: echo booting vm %
+            cmd: echo booting vm %; sleep .5; ls /; ls /etc
             requires: [create]
           - name: setup
             title: Setup vm %
-            cmd: echo setting up vm %
+            cmd: echo setting up vm %; sleep .2;pwd
             requires: [boot]
           - name: validate1
             title: Validating vm % 1
-            cmd: echo validating1 vm %
+            cmd: echo validating1 vm %; sleep .2;dmesg|tail -n2
             requires: [setup]
           - name: validate2
             title: Validating vm % 2
-            cmd: echo validating2 vm %
+            cmd: echo validating2 vm %; sleep .2;free -m|head -n1
             requires: [setup]
           - name: stop vm
             title: Stopping vm % 2
-            cmd: echo stopping vm %
+            cmd: echo stopping vm %; sleep .5;w|tail -n1
             requires: [validate1, validate2]
-        for-each-list:
-          - [vm1.domain.com]

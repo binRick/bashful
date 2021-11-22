@@ -78,6 +78,10 @@ type Concurrent struct {
 	Command  string `yaml:"cmd"`
 	Title    string
 	Requires []string
+
+	TimehistoryJsonLogFile  string `yaml:"timehistory-json-log"`
+	ConcurrentStderrLogFile string `yaml:"concurrent-stderr-log"`
+	ConcurrentStdoutLogFile string `yaml:"concurrent-stdout-log"`
 }
 
 type TaskStatistics struct {

@@ -1,3 +1,5 @@
+DEFAULT_CONCURRENT_LOGGING_ENABLED=0
+CONCURRENT_LOGGING_ENABLED=${CONCURRENT_LOGGING_ENABLED:-$DEFAULT_CONCURRENT_LOGGING_ENABLED}
 concurrent() (
 	__crt__error() {
 		echo "ERROR (concurrent): ${1}" 1>&2
@@ -261,7 +263,7 @@ concurrent() (
 		__crt__mark_task_as_stopped "${index}" "${code}"
 		__crt__codes["${index}"]=${code}
 		__crt__draw_status "${index}" "${code}"
-		cp -- "${__crt__status_dir}/${index}" "${CONCURRENT_LOG_DIR}/${index}. ${__crt__names[${index}]//\//-} (${code}).log"
+		[[ "$CONCURRENT_LOGGING_ENABLED" == 1 ]] && cp -- "${__crt__status_dir}/${index}" "${CONCURRENT_LOG_DIR}/${index}. ${__crt__names[${index}]//\//-} (${code}).log"
 		if [[ "${code}" != "0" ]]; then
 			__crt__final_status=1
 		fi

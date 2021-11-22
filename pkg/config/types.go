@@ -173,6 +173,7 @@ type TaskConfig struct {
 	// CwdString is current working directory
 	CwdString string `yaml:"cwd"`
 
+	TimehistoryJsonLogFile string `yaml:"timehistory-json-log"`
 	// CollapseOnCompletion indicates when a task with child tasks should be "rolled up" into a single line after all tasks have been executed
 	CollapseOnCompletion bool `yaml:"collapse-on-completion"`
 

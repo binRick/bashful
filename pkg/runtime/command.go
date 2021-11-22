@@ -85,7 +85,7 @@ set -x
 	}
 
 	if taskConfig.Concurrent != nil {
-		cc := ``
+		concurrent_cmd := ``
 		ccs := []string{}
 		fxns := []string{}
 		reqs := []string{}
@@ -98,8 +98,7 @@ set -x
 			if C.StderrLogFile == `` {
 				C.StderrLogFile = `/dev/null`
 			}
-			sub_cmd := fmt.Sprintf(`ansi --yellow --italic \"%s\";  { %s; } > %s 2> %s`,
-				C.Title,
+			sub_cmd := fmt.Sprintf(`{ %s; } > %s 2> %s`,
 				C.Command,
 				C.StdoutLogFile,
 				C.StderrLogFile,
@@ -119,40 +118,54 @@ set -x
 				))
 			}
 		}
-		cc = fmt.Sprintf("%s\n#  Concurrent Functions", cc)
+		concurrent_cmd = fmt.Sprintf("%s\n#  Concurrent Functions", concurrent_cmd)
 		for _, l := range fxns {
-			cc = fmt.Sprintf("%s\n%s", cc, l)
+			concurrent_cmd = fmt.Sprintf("%s\n%s", concurrent_cmd, l)
 		}
-		cc = fmt.Sprintf(`%s
+		concurrent_cmd = fmt.Sprintf(`%s
 
 run_concurrents() {
-  local concurrent_args=(`, cc)
+  local concurrent_args=(`, concurrent_cmd)
 		for _, _cc := range ccs {
-			cc = fmt.Sprintf("%s\n%s", cc, _cc)
+			concurrent_cmd = fmt.Sprintf("%s\n%s", concurrent_cmd, _cc)
 		}
 		for _, l := range reqs {
-			cc = fmt.Sprintf("%s\n%s", cc, l)
+			concurrent_cmd = fmt.Sprintf("%s\n%s", concurrent_cmd, l)
 		}
-		cc = fmt.Sprintf(`%s
+		concurrent_cmd = fmt.Sprintf(`%s
   )
   concurrent "${concurrent_args[@]}"
 }
 `,
-			cc,
+			concurrent_cmd,
 		)
-		pp.Println(taskConfig.Concurrent)
-		fmt.Println(cc)
+
+		//bash-5.1#  export TIMEHISTORY_FORMAT='%(time:%s)\t%(pid)\t%(cpu)\t%(status)/%Tt/%Tx\t\t%(sys_time_us)/%(user_time_us)\t\t\t%(inblock)/%(oublock)\t%(maxrss)\t\t\t\t\t\t%(args)' && timehistory
+		// exclude:            /concurrent.lib.sh.          bashful/.logs/       ["date","+%F@%T"]}        ["base64","-d"]
 		concurrent_lib, err := ioutil.ReadFile(`./bash_utils/concurrent.lib.sh`)
 		if err != nil {
 			panic(err)
 		}
-		cc = fmt.Sprintf(`{ eval "$(echo %s|base64 -d)" && eval "$(echo %s|base64 -d)" && run_concurrents; ec=$?; date; } >> /tmp/t1 2>&1; echo exited=$ec >> /tmp/t1`,
 
+		prefix_cmd := `echo`
+		suffix_cmd := `echo`
+		RESET_TIMEHISTORY_CMD := `command timehistory -R`
+		if len(taskConfig.TimehistoryJsonLogFile) > 0 {
+			prefix_cmd = fmt.Sprintf(`export TIMEHISTORY_LIMIT=%d && command -v timehistory >/dev/null || { enable -f ./bash_utils/libtimehistory_bash.so timehistory; } && %s`,
+				200,
+				RESET_TIMEHISTORY_CMD,
+			)
+			s1 := fmt.Sprintf(`enable -d timehistory||true`)
+			suffix_cmd = fmt.Sprintf(`command -v timehistory >/dev/null && { timehistory -j >> %s; %s; }`, taskConfig.TimehistoryJsonLogFile, s1)
+		}
+		fmt.Println(concurrent_cmd)
+		concurrent_cmd = fmt.Sprintf(`%s; ( eval "$(echo %s|base64 -d)" && eval "$(echo %s|base64 -d)" && run_concurrents; %s; ) >> /tmp/t1 2>&1`,
+			prefix_cmd,
 			base64.StdEncoding.EncodeToString([]byte(concurrent_lib)),
-			base64.StdEncoding.EncodeToString([]byte(cc)),
+			base64.StdEncoding.EncodeToString([]byte(concurrent_cmd)),
+			suffix_cmd,
 		)
-		//	os.Exit(1)
-		taskConfig.CmdString = fmt.Sprintf(`%s && %s`, cc, taskConfig.CmdString)
+		taskConfig.CmdString = fmt.Sprintf(`( %s ) && %s`, concurrent_cmd, taskConfig.CmdString)
 	}
 	if len(taskConfig.CmdGenerator) > 0 {
 		modified_cmd := taskConfig.CmdString
