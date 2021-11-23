@@ -1,20 +1,5 @@
-config:
-  replica-replace-pattern: '%'
-  show-failure-report: yes
-  ignore-failure: no
-  vars:
-    abc: aMAINNNNNNNNNNNNNNNNNNNNNN
-    def: zNNNNNNNNNNNNNNNNNNNNNN
-
-  # Show an eta for each task on the screen (being shown on every line 
-  # with a command running)
-  show-task-times: true
-
-  log-path: /tmp/c00-concurrent-bashful.log
-  env:
-    __TEST1_GLOBAL: 12345
-
 x-reference-data:
+  log-path: &log-path /tmp/c00-concurrent-bashful.log
   all-apps: &app-names
     - some-lib-4
     - utilities-lib
@@ -24,12 +9,55 @@ x-reference-data:
     - some-awesome-app-5
     - watcher-app
     - yup-another-app-7
+config:
+  log-path: *log-path
+  replica-replace-pattern: '%'
+  show-failure-report: yes
+  ignore-failure: no
+  vars:
+    V2: DEFAULT_V2
+    V3: DEFAULT_V3
+    V5: DEFAULT_V5
+    LOG_PATH: *log-path
+  env:
+    LOG_PATH: *log-path
+    V4: GLOBAL_ENV_V4
+  show-task-times: true
 
 tasks:
-  - name: c00
-    tags: [c00]
+  - name: Create Virtual Machines
+    tags: [vms]
+    env:
+      KEY1: VAL1
+      KEY2: VAL2
+      V4: TASK_ENV_V4
+    vars:
+      V1: aaaaaaaaaaaaa
+      V3: DEFAULT_TASK_V3
+      TEST_FILE: ansible-test-file-0-1.dat
+    apply-each-vars:
+      '*': { V2: bbbbbbbbb }
+      abc:
+        V3: APPLIED_V3
+      WOW123: { V3: 111111111111 }
     parallel-tasks:
-      - name: c00 item %
+      - name: Create Virtual Machine %
+        for-each-list:
+          - [vm1.domain.com, vm2.domain.com]
+        stdout-log: /tmp/c000-out.log
+        stderr-log: /tmp/c000-err.log
+        cmd-log: /tmp/c000-%-cmd.log
+        debug-cmd: echo -e "DEBUG pre item=%"
+        debug-log: /tmp/c000-debug-%.log
+        concurrent-stdout-log: /tmp/c000-concurrent-out.log
+        concurrent-stderr-log: /tmp/c000-concurrent-err.log
+        timehistory-json-log: /tmp/c000-%-timehistory-stats.json
+        cmd: echo building VM %
+
+  - name: Create Virtual Machines
+    tags: [_vms]
+    parallel-tasks:
+      - name: Create Virtual Machine %
         for-each-list:
           - [vm1.domain.com, vm2.domain.com]
         stdout-log: /tmp/c00-out.log
@@ -89,7 +117,7 @@ tasks:
             requires: [boot]
           - name: validate1
             title: Validating vm % 1
-            cmd: echo validating1 vm %; sleep .2;dmesg|tail -n2
+            cmd: echo validating1 vm %; sleep .2;dmesg|tail -n2;free;free;w;dmesg
             requires: [setup]
           - name: validate2
             title: Validating vm % 2

@@ -15,7 +15,6 @@ import (
 	"github.com/k0kubun/pp"
 	"github.com/noirbizarre/gonja"
 	"github.com/wagoodman/bashful/pkg/config"
-	log "github.com/wagoodman/bashful/pkg/log"
 	"github.com/wagoodman/bashful/utils"
 )
 
@@ -45,10 +44,18 @@ var (
 	RESET_TIMEHISTORY_CMD  = `command timehistory -R >/dev/null`
 	brief_cmd_mode         = false
 	concurrent_lib         = ``
+	events                 = ``
+	events_encoded         = ``
 	concurrent_lib_encoded = ``
 )
 
 func init() {
+	_events, err := ioutil.ReadFile(`./bash_utils/events.sh`)
+	if err != nil {
+		panic(err)
+	}
+	events = fmt.Sprintf(`%s`, _events)
+	events_encoded = base64.StdEncoding.EncodeToString([]byte(events))
 	_concurrent_lib, err := ioutil.ReadFile(`./bash_utils/concurrent.lib.sh`)
 	if err != nil {
 		panic(err)
@@ -108,16 +115,18 @@ set -x
 			C.Name = strings.Replace(C.Name, ` `, `_`, -1)
 			if C.StdoutLogFile == `` {
 				C.StdoutLogFile = `/dev/null`
+				C.StdoutLogFile = `/proc/self/fd/1`
 			}
 			if C.StderrLogFile == `` {
 				C.StderrLogFile = `/dev/null`
+				C.StderrLogFile = `/proc/self/fd/2`
 			}
 			sub_cmd := fmt.Sprintf(`{ %s; } > %s 2> %s`,
 				C.Command,
 				C.StdoutLogFile,
 				C.StderrLogFile,
 			)
-			fxns = append(fxns, fmt.Sprintf("eval_%s(){ %s; }",
+			fxns = append(fxns, fmt.Sprintf("eval_%s(){\n %s;\n}",
 				C.Name,
 				sub_cmd,
 			))
@@ -159,13 +168,17 @@ run_concurrents() {
 		prefix_cmd := `echo`
 		suffix_cmd := `echo`
 		if TIMEHISTORY_ENABLED {
-			log.LogToMain(fmt.Sprintf("\nEnabling Timehistory for command \"%s\"\n", taskConfig.CmdString), log.StyleError)
-			log.LogToMain(fmt.Sprintf("\nEnabling Timehistory for command \"%s\"\n", taskConfig.CmdString), log.StyleMajor)
 			if len(taskConfig.TimehistoryJsonLogFile) > 0 {
+
 				prefix_cmd = fmt.Sprintf(`%s && command -v timehistory >/dev/null || { enable -f ./bash_utils/libtimehistory_bash.so timehistory; } && %s`,
 					SET_TIMEHISTORY_ENV,
 					RESET_TIMEHISTORY_CMD,
 				)
+				if false {
+					prefix_cmd = fmt.Sprintf(`%s && mycallback() { event on event1 echo "nested!" >> /tmp/ed; } && event on "event1" mycallback && event fire "event1"`,
+						prefix_cmd,
+					)
+				}
 				s1 := fmt.Sprintf(`enable -d timehistory||true`)
 				suffix_cmd = fmt.Sprintf(`command -v timehistory >/dev/null && { timehistory -j >> %s; %s; }`, taskConfig.TimehistoryJsonLogFile, s1)
 			}
@@ -173,9 +186,10 @@ run_concurrents() {
 		if DEBUG_MODE {
 			fmt.Fprintf(os.Stderr, "%s\n", concurrent_cmd)
 		}
-		concurrent_cmd = fmt.Sprintf(`%s; ( eval "$(echo %s|base64 -d)" && eval "$(echo %s|base64 -d)" && run_concurrents; %s; ) >> /tmp/t1 2>&1`,
-			prefix_cmd,
+		concurrent_cmd = fmt.Sprintf(`( eval "$(echo %s|base64 -d)" && eval "$(echo %s|base64 -d)" && %s && eval "$(echo %s|base64 -d)" && run_concurrents; %s; ) >> /tmp/t1 2>&1`,
+			events_encoded,
 			concurrent_lib_encoded,
+			prefix_cmd,
 			base64.StdEncoding.EncodeToString([]byte(concurrent_cmd)),
 			suffix_cmd,
 		)

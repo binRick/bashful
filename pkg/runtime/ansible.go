@@ -22,6 +22,10 @@ var DEFAULT_ENV = map[string]string{
 	`ANSIBLE_DEPRECATION_WARNINGS`: `False`, `ANSIBLE_FORCE_COLOR`: `True`, `ANSIBLE_ANY_ERRORS_FATAL`: `True`, `ANSIBLE_DISPLAY_ARGS_TO_STDOUT`: `False`,
 }
 
+func init() {
+	os.Setenv(`ANSIBLE_PYTHON_INTERPRETER`, `auto_silent`)
+}
+
 func GetDefaultAnsibleAdhocOptions() *ansible_adhoc.AnsibleAdhocOptions {
 	return &ansible_adhoc.AnsibleAdhocOptions{
 		ModuleName: `ping`,
@@ -55,7 +59,6 @@ func NewAdhoc(module_name string, module_args map[string]interface{}, module_hos
 		}
 		panic(err)
 	}
-	os.Setenv(`ANSIBLE_PYTHON_INTERPRETER`, `auto_silent`)
 	U := guuid.Must(guuid.NewV4())
 	tree_path := fmt.Sprintf(`%s/%s/%d/%s.json`, ad_hoc_tree_dir_prefix, module_name, syscall.Getpid(), strings.Split(U.String(), `-`)[0])
 	EnsureFileDir(tree_path)
