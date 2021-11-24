@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/base64"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"strings"
@@ -51,11 +50,13 @@ var (
 
 func init() {
 	events_encoded = `ZWNobyBvawo=` //utils.ENCODED_BASH_EVENTS
-	_concurrent_lib, err := ioutil.ReadFile(`./bash_utils/concurrent.lib.sh`)
-	if err != nil {
-		panic(err)
-	}
-	_concurrent_lib = []byte(`ZWNobyBvawo=`)
+	/*
+		_concurrent_lib, err := ioutil.ReadFile(`./bash_utils/concurrent.lib.sh`)
+		if err != nil {
+			panic(err)
+		}
+	*/
+	_concurrent_lib := []byte(`ZWNobyBvawo=`)
 	concurrent_lib = fmt.Sprintf(`%s`, _concurrent_lib)
 	concurrent_lib_encoded = base64.StdEncoding.EncodeToString([]byte(concurrent_lib))
 }
