@@ -35,8 +35,10 @@ func init() {
 		log.Println(err)
 	}
 
-	_path = fmt.Sprintf(`%s/files/bf/binaries/fedora:%s`, cwd, _path)
-	os.Setenv(`PATH`, _path)
+	if false {
+		_path = fmt.Sprintf(`%s/files/bf/binaries/fedora:%s`, cwd, _path)
+		os.Setenv(`PATH`, _path)
+	}
 
 	_py3, err := exec.LookPath("python3")
 	if err != nil {
