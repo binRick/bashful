@@ -5,6 +5,10 @@ BV=5.1
 BL=$(pwd)/bash-loadables
 BASH_LOADABLES_DIR=$BL/bash-$BV/examples/loadables
 
+if [[ ! -f ./submodules/bash-loadable-ansi-color/build.sh ]]; then
+  git pull --recurse-submodules
+fi
+
 [[ -d "$BL" ]] || mkdir -p "$BL"
 command -v bison >/dev/null || dnf -y install bison
 
