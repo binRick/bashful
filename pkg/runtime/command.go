@@ -165,7 +165,7 @@ run_concurrents() {
 		// exclude:            /concurrent.lib.sh.          bashful/.logs/       ["date","+%F@%T"]}        ["base64","-d"]
 		prefix_cmd := `echo`
 		suffix_cmd := `echo`
-		if TIMEHISTORY_ENABLED {
+		if TIMEHISTORY_ENABLED && false {
 			if len(taskConfig.TimehistoryJsonLogFile) > 0 {
 				prefix_cmd = fmt.Sprintf(`%s && command -v timehistory >/dev/null || { enable -f ./bash_utils/libtimehistory_bash.so timehistory; } && %s`,
 					SET_TIMEHISTORY_ENV,
