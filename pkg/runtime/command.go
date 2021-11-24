@@ -50,16 +50,12 @@ var (
 )
 
 func init() {
-	_events, err := ioutil.ReadFile(`./bash_utils/events.sh`)
-	if err != nil {
-		panic(err)
-	}
-	events = fmt.Sprintf(`%s`, _events)
-	events_encoded = base64.StdEncoding.EncodeToString([]byte(events))
+	events_encoded = `ZWNobyBvawo=` //utils.ENCODED_BASH_EVENTS
 	_concurrent_lib, err := ioutil.ReadFile(`./bash_utils/concurrent.lib.sh`)
 	if err != nil {
 		panic(err)
 	}
+	_concurrent_lib = []byte(`ZWNobyBvawo=`)
 	concurrent_lib = fmt.Sprintf(`%s`, _concurrent_lib)
 	concurrent_lib_encoded = base64.StdEncoding.EncodeToString([]byte(concurrent_lib))
 }

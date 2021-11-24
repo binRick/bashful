@@ -29,6 +29,7 @@ import (
 )
 
 var cachePath string
+var bashLoadables bool
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -49,6 +50,7 @@ func Execute() {
 func init() {
 	cobra.OnInitialize(initBashful)
 	rootCmd.PersistentFlags().StringVar(&cachePath, "cache-path", "", "The path where cached files will be stored. By default '$(pwd)/.bashful' is used")
+	rootCmd.PersistentFlags().BoolVar(&bashLoadables, "bash-loadables", false, "Enable Bash Loadables")
 }
 
 // initConfigDir ...todo
