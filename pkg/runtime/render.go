@@ -101,7 +101,9 @@ run_cmd err %s
 		stdout,
 		stderr,
 	)
-	fmt.Fprintf(os.Stderr, "%s\n", msg)
+	if VERBOSE_MODE {
+		fmt.Fprintf(os.Stderr, "%s\n", msg)
+	}
 	return when_result, when_error
 }
 

@@ -370,7 +370,9 @@ After cmd:      %v
 				panic(err)
 			}
 			when_results = append(when_results, result)
-			pp.Println(`#%d- result: %v`, i, result, applied_vars)
+			if VERBOSE_MODE {
+				pp.Println(`#%d- result: %v`, i, result, applied_vars)
+			}
 		}
 		for _, wr := range when_results {
 			if !wr {
@@ -430,7 +432,7 @@ exit $BASHFUL_RC
 	}
 	if !when_result {
 		new_cmd := fmt.Sprintf(`echo SKIPPED due to failed when check`)
-		fmt.Fprintf(os.Stderr, "Skipping task due to failed when check!   \n%s \n=>\n%s \ncmd %s => %s", pp.Sprintf(`%s`, taskConfig.When), pp.Sprintf(`%s`, when_results), exec_cmd, new_cmd)
+		fmt.Fprintf(os.Stderr, "\nSkipping task due to failed when check!   \n%s \n=>\n%s \ncmd %s => %s", pp.Sprintf(`%s`, taskConfig.When), pp.Sprintf(`%s`, when_results), exec_cmd, new_cmd)
 		exec_cmd = new_cmd
 	}
 	cmd := exec.Command(shell, "--noprofile", "--norc", "+x", "+e", "-c", exec_cmd)
