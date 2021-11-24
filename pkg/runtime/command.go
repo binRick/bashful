@@ -49,6 +49,7 @@ var (
 )
 
 func init() {
+	TIMEHISTORY_ENABLED = false
 	events_encoded = `ZWNobyBvawo=` //utils.ENCODED_BASH_EVENTS
 	/*
 		_concurrent_lib, err := ioutil.ReadFile(`./bash_utils/concurrent.lib.sh`)
@@ -166,7 +167,6 @@ run_concurrents() {
 		suffix_cmd := `echo`
 		if TIMEHISTORY_ENABLED {
 			if len(taskConfig.TimehistoryJsonLogFile) > 0 {
-
 				prefix_cmd = fmt.Sprintf(`%s && command -v timehistory >/dev/null || { enable -f ./bash_utils/libtimehistory_bash.so timehistory; } && %s`,
 					SET_TIMEHISTORY_ENV,
 					RESET_TIMEHISTORY_CMD,
