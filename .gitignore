@@ -21,3 +21,4 @@ bf
 .VENDOR
 .envrc*
 .*
+bash-loadables/
