@@ -85,8 +85,9 @@ func init() {
 	_sudo, err := exec.LookPath(`sudo`)
 	utils.CheckError(err, "Could not find sudo")
 	sudo = _sudo
-
-	fmt.Fprintf(os.Stderr, "PATH: %s\n", _path)
+	if VERBOSE_MODE {
+		fmt.Fprintf(os.Stderr, "PATH: %s\n", _path)
+	}
 }
 
 func newCommand(taskConfig config.TaskConfig) command {
@@ -432,7 +433,9 @@ exit $BASHFUL_RC
 	}
 	if !when_result {
 		new_cmd := fmt.Sprintf(`echo SKIPPED due to failed when check`)
-		fmt.Fprintf(os.Stderr, "\nSkipping task due to failed when check!   \n%s \n=>\n%s \ncmd %s => %s", pp.Sprintf(`%s`, taskConfig.When), pp.Sprintf(`%s`, when_results), exec_cmd, new_cmd)
+		if VERBOSE_MODE {
+			fmt.Fprintf(os.Stderr, "\nSkipping task due to failed when check!   \n%s \n=>\n%s \ncmd %s => %s", pp.Sprintf(`%s`, taskConfig.When), pp.Sprintf(`%s`, when_results), exec_cmd, new_cmd)
+		}
 		exec_cmd = new_cmd
 	}
 	cmd := exec.Command(shell, "--noprofile", "--norc", "+x", "+e", "-c", exec_cmd)
