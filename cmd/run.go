@@ -22,6 +22,32 @@ import (
 
 var DEBUG_MODE = (os.Getenv(`DEBUG_MODE`) == `1`)
 
+/*
+type keyvalue struct {
+	Key string
+	Val string
+}
+type extravars []keyvalue
+
+func (i *extravars) Type() string {
+	return fmt.Sprintf(`%s`, i)
+}
+func (i *extravars) String() string {
+	return fmt.Sprintf(`%s`, i)
+}
+func (i *extravars) Set(value string) error {
+	for _, dt := range strings.Split(value, ",") {
+		dts := strings.Split(dt, "=")
+		k := dts[0]
+		v := dts[1]
+		*i = append(*i, keyvalue{Key: k, Val: v})
+	}
+	return nil
+}
+
+var extraVars extravars
+*/
+
 // todo: put these in a cli struct instance instead, then most logic can be in the cli struct
 var tags, onlyTags, skipTags string
 var verboseMode bool
@@ -99,6 +125,11 @@ var runCmd = &cobra.Command{
 			}
 		}
 
+		//	if extraVars != `` {
+		//		pp.Println(`ev=`, extraVars)
+		//	os.Exit(1)
+		//	}
+
 		//		pp.Println(`running tags: `, len(cli.RunTags), `=>`, len(nl))
 		cli.RunTags = nl
 
@@ -140,6 +171,7 @@ func init() {
 	runCmd.Flags().StringVarP(&skipTags, "skip-tags", "x", "", "A comma delimited list of task tags to skip. A task will only be executed if it does not have a matching tag")
 	runCmd.Flags().BoolVarP(&verboseMode, "verbose", "v", false, "Verbose Mode")
 	runCmd.Flags().StringVarP(&execHostname, "host", "H", `localhost`, "Hostname to apply")
+	//	runCmd.Flags().VarP(&extraVars, "extra-vars", "e", "Extra vars to apply. format:  -e var1=val1")
 }
 
 func Run(yamlString []byte, cli config.Cli) {

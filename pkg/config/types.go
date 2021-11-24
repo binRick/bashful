@@ -169,6 +169,7 @@ type TaskConfig struct {
 	ConcurrentStderrLogFile string       `yaml:"concurrent-stderr-log"`
 	ConcurrentStdoutLogFile string       `yaml:"concurrent-stdout-log"`
 	Concurrent              []Concurrent `yaml:"concurrent"`
+	When                    []string     `yaml:"when"`
 
 	// CwdString is current working directory
 	CwdString string `yaml:"cwd"`
@@ -185,7 +186,6 @@ type TaskConfig struct {
 	ForEachList            [][]string        `yaml:"for-each-list"`
 	ForEach                []string          `yaml:"for-each"`
 	Vars                   map[string]string `yaml:"vars"`
-	When                   bool              `yaml:"when"`
 	WhenResult             bool
 	WhenResultRendered     bool
 	WhenResultRenderedLogs []string

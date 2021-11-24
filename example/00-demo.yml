@@ -101,9 +101,9 @@ tasks:
           content: xyz
           dest: /tmp/xyz1
         
-      command:
+      shell:
         options:
-          enabled: yes
+          enabled: no
           after-command: no
           before-command: no
         args:
@@ -121,7 +121,7 @@ tasks:
         - def
         - WOW123
     ansible:
-      command:
+      shell:
         options:
           enabled: yes
           after-command: yes

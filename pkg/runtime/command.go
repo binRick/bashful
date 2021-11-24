@@ -90,6 +90,8 @@ func init() {
 }
 
 func newCommand(taskConfig config.TaskConfig) command {
+	when_results := []bool{}
+	when_result := true
 
 	readFd, writeFd, err := os.Pipe()
 	utils.CheckError(err, "Could not open env pipe for child shell")
@@ -332,33 +334,55 @@ After cmd:      %v
 		`RescueCmdString`: {Src: taskConfig.RescueCmdString},
 		`DebugCmdString`:  {Src: taskConfig.DebugCmdString},
 	}
-
+	pp.Println(taskConfig)
+	applied_vars := []map[string]string{
+		taskConfig.Vars, taskConfig.Env, map[string]string{
+			`ITEM`: taskConfig.CurrentItem,
+		},
+	}
+	_, has_all := taskConfig.ApplyEachVars[`*`]
+	if has_all {
+		applied_vars = append(applied_vars, taskConfig.ApplyEachVars[`*`])
+	}
+	_, has_cur := taskConfig.ApplyEachVars[taskConfig.CurrentItem]
+	if has_cur {
+		applied_vars = append(applied_vars, taskConfig.ApplyEachVars[taskConfig.CurrentItem])
+	}
+	if VERBOSE_MODE {
+		pp.Fprintf(os.Stderr, "\nTask Config:\n%s\n\n", taskConfig)
+		pp.Fprintf(os.Stderr, "\nglobal_task_vars:\n%s\n\n", global_task_vars)
+	}
+	if VERBOSE_MODE {
+		fmt.Fprintf(os.Stderr, "\nApplied Vars:\n%s\n\n", pp.Sprintf(`%s`, applied_vars))
+	}
 	__rendered_cmds := map[string]string{}
 	for mcn, _ := range modified_commands {
-		applied_vars := []map[string]string{
-			taskConfig.Vars, taskConfig.Env,
-		}
-		if VERBOSE_MODE {
-			pp.Fprintf(os.Stderr, "\nTask Config:\n%s\n\n", taskConfig)
-			pp.Fprintf(os.Stderr, "\nglobal_task_vars:\n%s\n\n", global_task_vars)
-		}
-		_, has_all := taskConfig.ApplyEachVars[`*`]
-		if has_all {
-			applied_vars = append(applied_vars, taskConfig.ApplyEachVars[`*`])
-		}
-		_, has_cur := taskConfig.ApplyEachVars[taskConfig.CurrentItem]
-		if has_cur {
-			applied_vars = append(applied_vars, taskConfig.ApplyEachVars[taskConfig.CurrentItem])
-		}
-
-		if VERBOSE_MODE {
-			fmt.Fprintf(os.Stderr, "\nApplied Vars:\n%s\n\n", pp.Sprintf(`%s`, applied_vars))
-		}
 		rendered_cmd, err := render_cmd(modified_commands[mcn].Src, applied_vars)
 		if err != nil {
 			panic(err)
 		}
 		__rendered_cmds[mcn] = rendered_cmd
+	}
+
+	if taskConfig.When != nil {
+		for i, when := range taskConfig.When {
+			result, err := render_when(when, applied_vars)
+			if err != nil {
+				panic(err)
+			}
+			when_results = append(when_results, result)
+			pp.Println(`#%d- result: %v`, i, result, applied_vars)
+		}
+		for _, wr := range when_results {
+			if !wr {
+				when_result = false
+			}
+		}
+		pp.Println(`%s`, when_results, when_result)
+		if !when_result {
+			fmt.Fprintf(os.Stderr, "Skipping task due to failed when check!   \n%s \n=>\n%s \n", pp.Sprintf(`%s`, taskConfig.When), pp.Sprintf(`%s`, when_results))
+		}
+
 	}
 
 	if VERBOSE_MODE {
@@ -401,12 +425,16 @@ exit $BASHFUL_RC
 		sudoCmd,
 		taskConfig.CmdString,
 	), ` `)
+
 	brief_cmd_mode = true
 	if brief_cmd_mode {
 		exec_cmd = strings.Trim(fmt.Sprintf(`%s %s; ec=$?; env >&3; exit $ec;`, sudoCmd, taskConfig.CmdString), ` `)
 	}
 	if EXTRACE_MODE == `1` {
 		exec_cmd = extrace_exec_cmd
+	}
+	if !when_result {
+		exec_cmd = fmt.Sprintf(`echo SKIPPED due to failed when check`)
 	}
 	cmd := exec.Command(shell, "--noprofile", "--norc", "+x", "+e", "-c", exec_cmd)
 	cmd.Stdin = strings.NewReader(string(sudoPassword) + "\n")
