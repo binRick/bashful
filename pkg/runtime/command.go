@@ -334,7 +334,6 @@ After cmd:      %v
 		`RescueCmdString`: {Src: taskConfig.RescueCmdString},
 		`DebugCmdString`:  {Src: taskConfig.DebugCmdString},
 	}
-	pp.Println(taskConfig)
 	applied_vars := []map[string]string{
 		taskConfig.Vars, taskConfig.Env, map[string]string{
 			`ITEM`: taskConfig.CurrentItem,
@@ -377,10 +376,6 @@ After cmd:      %v
 			if !wr {
 				when_result = false
 			}
-		}
-		pp.Println(`%s`, when_results, when_result)
-		if !when_result {
-			fmt.Fprintf(os.Stderr, "Skipping task due to failed when check!   \n%s \n=>\n%s \n", pp.Sprintf(`%s`, taskConfig.When), pp.Sprintf(`%s`, when_results))
 		}
 
 	}
@@ -434,7 +429,9 @@ exit $BASHFUL_RC
 		exec_cmd = extrace_exec_cmd
 	}
 	if !when_result {
-		exec_cmd = fmt.Sprintf(`echo SKIPPED due to failed when check`)
+		new_cmd := fmt.Sprintf(`echo SKIPPED due to failed when check`)
+		fmt.Fprintf(os.Stderr, "Skipping task due to failed when check!   \n%s \n=>\n%s \ncmd %s => %s", pp.Sprintf(`%s`, taskConfig.When), pp.Sprintf(`%s`, when_results), exec_cmd, new_cmd)
+		exec_cmd = new_cmd
 	}
 	cmd := exec.Command(shell, "--noprofile", "--norc", "+x", "+e", "-c", exec_cmd)
 	cmd.Stdin = strings.NewReader(string(sudoPassword) + "\n")
