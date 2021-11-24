@@ -46,9 +46,14 @@ var (
 	events                 = ``
 	events_encoded         = ``
 	concurrent_lib_encoded = ``
+	_path                  string
+	extrace                string
+	shell                  string
+	sudo                   string
 )
 
 func init() {
+	_path = os.Getenv(`PATH`)
 	TIMEHISTORY_ENABLED = false
 	events_encoded = `ZWNobyBvawo=` //utils.ENCODED_BASH_EVENTS
 	/*
@@ -60,34 +65,43 @@ func init() {
 	_concurrent_lib := []byte(`ZWNobyBvawo=`)
 	concurrent_lib = fmt.Sprintf(`%s`, _concurrent_lib)
 	concurrent_lib_encoded = base64.StdEncoding.EncodeToString([]byte(concurrent_lib))
-}
 
-func newCommand(taskConfig config.TaskConfig) command {
 	BASHFUL_EXEC_HOSTNAME = os.Getenv(`__BASHFUL_EXEC_HOSTNAME`)
 	if BASHFUL_EXEC_HOSTNAME == `` {
 		BASHFUL_EXEC_HOSTNAME = `localhost`
 	}
-	shell := `bash`
+	shell = `bash`
+	sudo = `sudo`
+	extrace = `extrace`
 
-	_extrace_path, err := exec.LookPath("extrace")
+	_extrace, err := exec.LookPath("extrace")
 	utils.CheckError(err, "Could not find extrace")
+	extrace = _extrace
+
 	_shell, err := exec.LookPath(shell)
 	utils.CheckError(err, "Could not find shell")
+	shell = _shell
+
 	_sudo, err := exec.LookPath(`sudo`)
 	utils.CheckError(err, "Could not find sudo")
-	shell = _shell
+	sudo = _sudo
+
+	fmt.Fprintf(os.Stderr, "PATH: %s\n", _path)
+}
+
+func newCommand(taskConfig config.TaskConfig) command {
 
 	readFd, writeFd, err := os.Pipe()
 	utils.CheckError(err, "Could not open env pipe for child shell")
 
 	sudoCmd := ""
 	if taskConfig.Sudo {
-		sudoCmd = fmt.Sprintf("%s -nS ", _sudo)
+		sudoCmd = fmt.Sprintf("%s -nS ", sudo)
 	}
 
 	extrace_args := ``
 	extrace_path := ``
-	extrace_path = _extrace_path
+	extrace_path = extrace
 	extrace_log_dir := fmt.Sprintf(`/tmp`)
 	atomic.AddUint64(&cmd_counter, 1)
 	extrace_log := fmt.Sprintf(`%s/bashful-extrace-%d-%d.log`, extrace_log_dir, syscall.Getpid(), cmd_counter)

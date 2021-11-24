@@ -3,6 +3,7 @@ package runtime
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 	"os/exec"
 	"strings"
@@ -15,15 +16,53 @@ import (
 	"github.com/wagoodman/bashful/utils"
 )
 
-var ad_hoc_tree_dir_prefix = `/tmp/bashful-go-ansible`
-var VERBOSE_MODE = (os.Getenv(`__BASHFUL_VERBOSE_MODE`) == `true`)
+var (
+	ap                     string
+	py3                    string
+	ad_hoc_tree_dir_prefix = `/tmp/bashful-go-ansible`
+	VERBOSE_MODE           = (os.Getenv(`__BASHFUL_VERBOSE_MODE`) == `true`)
 
-var DEFAULT_ENV = map[string]string{
-	`ANSIBLE_DEPRECATION_WARNINGS`: `False`, `ANSIBLE_FORCE_COLOR`: `True`, `ANSIBLE_ANY_ERRORS_FATAL`: `True`, `ANSIBLE_DISPLAY_ARGS_TO_STDOUT`: `False`,
-}
+	DEFAULT_ENV = map[string]string{
+		`ANSIBLE_DEPRECATION_WARNINGS`: `False`, `ANSIBLE_FORCE_COLOR`: `True`, `ANSIBLE_ANY_ERRORS_FATAL`: `True`, `ANSIBLE_DISPLAY_ARGS_TO_STDOUT`: `False`,
+	}
+)
 
 func init() {
-	os.Setenv(`ANSIBLE_PYTHON_INTERPRETER`, `auto_silent`)
+	_path := os.Getenv(`PATH`)
+
+	cwd, err := os.Getwd()
+	if err != nil {
+		log.Println(err)
+	}
+
+	_path = fmt.Sprintf(`%s/files/bf/binaries/fedora:%s`, cwd, _path)
+	os.Setenv(`PATH`, _path)
+
+	_py3, err := exec.LookPath("python3")
+	if err != nil {
+		utils.CheckError(err, fmt.Sprintf(`Could not find python3.
+PATH:   %s
+`,
+			_path,
+		))
+	}
+	py3 = _py3
+
+	hn, err := os.Hostname()
+	utils.CheckError(err, fmt.Sprintf(`Cannot find hostname`))
+
+	_ap, err := exec.LookPath(`ansible`)
+	utils.CheckError(err, fmt.Sprintf(`Could not find ansible binary.
+PATH:         %s
+CWD:          %s
+Hostname:     %s
+`,
+		_path,
+		cwd,
+		hn,
+	))
+
+	ap = _ap
 }
 
 func GetDefaultAnsibleAdhocOptions() *ansible_adhoc.AnsibleAdhocOptions {
@@ -52,20 +91,9 @@ func GetDefaultAdhocCmd() *ansible_adhoc.AnsibleAdhocCmd {
 }
 
 func NewAdhoc(module_name string, module_args map[string]interface{}, module_hosts []string) *ansible_adhoc.AnsibleAdhocCmd {
-	ap, err := exec.LookPath("ansible")
-	if err != nil {
-		if strings.Contains(strings.ToLower(fmt.Sprintf(`%s`, err)), `executable file not found in path`) {
-			utils.CheckError(err, `Ansible not found in path!`)
-		}
-		panic(err)
-	}
 	U := guuid.Must(guuid.NewV4())
 	tree_path := fmt.Sprintf(`%s/%s/%d/%s.json`, ad_hoc_tree_dir_prefix, module_name, syscall.Getpid(), strings.Split(U.String(), `-`)[0])
 	EnsureFileDir(tree_path)
-	py3, err := exec.LookPath("python3")
-	if err != nil {
-		panic(err)
-	}
 
 	module_args_encoded, _ := json.Marshal(module_args)
 	mhl := fmt.Sprintf(`%s,`, strings.Join(module_hosts, `,`))
