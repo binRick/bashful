@@ -1,4 +1,4 @@
-#!/usr/bin/env /opt/bash-5.1/bin/bash
+#!/usr/bin/env ./bash-loadables/bash-5.1/bash
 set -e
 cd $(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 MODE="${1:-main}"
