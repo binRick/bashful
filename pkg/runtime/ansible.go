@@ -54,7 +54,7 @@ PATH:   %s
 	utils.CheckError(err, fmt.Sprintf(`Cannot find hostname`))
 
 	_ap, err := exec.LookPath(`ansible`)
-	utils.CheckError(err, fmt.Sprintf(`Could not find ansible binary.
+	errmsg := fmt.Sprintf(`Could not find ansible binary.
 PATH:         %s
 CWD:          %s
 Hostname:     %s
@@ -62,7 +62,12 @@ Hostname:     %s
 		_path,
 		cwd,
 		hn,
-	))
+	)
+	if false {
+		utils.CheckError(err, errmsg)
+	} else {
+		fmt.Fprintf(os.Stderr, "%s\n", errmsg)
+	}
 
 	ap = _ap
 }
