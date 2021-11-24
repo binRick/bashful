@@ -6,6 +6,8 @@ BL=$(pwd)/bash-loadables
 BASH_LOADABLES_DIR=$BL/bash-$BV/examples/loadables
 
 if [[ ! -f ./submodules/bash-loadable-ansi-color/build.sh ]]; then
+  rm -rf ./submodules/bash-loadable-ansi-color
+  git clone git@github.com:binRick/bash-loadable-ansi-color.git ./submodules/bash-loadable-ansi-color
   git pull --recurse-submodules
 fi
 
