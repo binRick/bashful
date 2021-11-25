@@ -136,6 +136,7 @@ normalize_module_file_names() (
 ##                           Compile Bashful                                                  ##
 ################################################################################################
 compile_bashful() (
+  cd $BD/.
 	./compile.sh
 	if command -v rsync >/dev/null; then
 		if [[ -d ~/.local/bin ]]; then
@@ -165,6 +166,7 @@ compile_ansible() (
 	cd $BD/submodules/.
 	[[ -d $BD/submodules/$REPO ]] || git clone git@github.com:binRick/$REPO.git
   cd ./$REPO 
+  git reset --hard
   git pull --recurse-submodules
   ./bf.sh $ANSIBLE_BINARY_DISTRO
   rsync -arv $BD/submodules/$REPO/binaries/* $BB/.
