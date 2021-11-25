@@ -5,7 +5,7 @@ cd $(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 ################################################################################################
 ##                               Setup                                                        ##
 ################################################################################################
-setup() {
+do_setup() {
 set -e
   export BASHFUL_BUILD_SCRIPT=$$
 	BV=5.1
@@ -16,7 +16,7 @@ set -e
 	[[ -d "$BL" ]] || mkdir -p $BL
 	[[ -d "$SM" ]] || mkdir -p $SM
 	command -v bison >/dev/null || dnf -y install bison
-  rpm -qa|grep -q bash-devel || dnf -y install bash-devel
+  rpm -qa bash-devel || dnf -y install bash-devel
 }
 ################################################################################################
 
@@ -171,7 +171,7 @@ compile_ansible() (
 ################################################################################################
 
 common_main() {
-	setup
+	do_setup
 }
 
 do_main() {
