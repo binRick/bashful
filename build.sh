@@ -1,118 +1,173 @@
 #!/bin/bash
 set -e
 cd $(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-BV=5.1
-BD=$(pwd)
-BL=$BD/bash-loadables
-BASH_LOADABLES_DIR=$BL/bash-$BV/examples/loadables
-[[ -d "$BL" ]] || mkdir -p $BL
-command -v bison >/dev/null || dnf -y install bison
-BINRICK_GITHUB_REPOS="bash-loadable-ansi-color bash-loadable-time-utils bash-loadable-wireguard"
 
-
+################################################################################################
+##                               Setup                                                        ##
+################################################################################################
+setup() {
+	BV=5.1
+	BD=$(pwd)
+	BL=$BD/bash-loadables
+	BASH_LOADABLES_DIR=$BL/bash-$BV/examples/loadables
+	[[ -d "$BL" ]] || mkdir -p $BL
+	command -v bison >/dev/null || dnf -y install bison
+}
 
 ################################################################################################
 ##                               Time History                                                 ##
 ################################################################################################
-if [[ ! -d ./submodules/timehistory-bash ]]; then
-  git clone git@github.com:binRick/timehistory-bash ./submodules/timehistory-bash
-fi
-if [[ ! -f ./submodules/timehistory-bash/target/release/libtimehistory_bash.so ]]; then
-  (
-    cd ./submodules/timehistory-bash
-    command -v cargo || dnf -y install cargo
-    cargo build --release
-  )
-fi
-rsync ./submodules/timehistory-bash/target/release/libtimehistory_bash.so $BL/timehistory.so
+build_timehistory() (
+	if [[ ! -d $BD/submodules/timehistory-bash ]]; then
+		cd $BD/submodules/. git clone git@github.com:binRick/timehistory-bash.git
+	fi
+	if [[ ! -f ./submodules/timehistory-bash/target/release/libtimehistory_bash.so ]]; then
+		(
+			cd ./submodules/timehistory-bash
+			command -v cargo || dnf -y install cargo
+			cargo build --release
+		)
+	fi
+	rsync $BD/submodules/timehistory-bash/target/release/libtimehistory_bash.so $BL/timehistory.so
+)
 ################################################################################################
-
 
 ################################################################################################
 ##                               Wireguard                                                    ##
 ################################################################################################
-REPO=bash-loadable-wireguard
-MODULE=wg
-[[ -d $BD/submodules/$REPO ]] || (cd $BD/submodules/. && git clone git@github.com:binRick/$REPO.git)
-(cd $BD/submodules/$REPO && git pull --recurse-submodules)
-(cd $BD/submodules/$REPO/. && ./build.sh)
-rsync $BD/submodules/$REPO/src/.libs/$MODULE.so $BL/.
+build_wg() (
+	REPO=bash-loadable-wireguard
+	MODULE=wg
+	[[ -d $BD/submodules/$REPO ]] || (cd $BD/submodules/. && git clone git@github.com:binRick/$REPO.git)
+	(cd $BD/submodules/$REPO && git pull --recurse-submodules)
+	(cd $BD/submodules/$REPO/. && ./build.sh)
+	rsync $BD/submodules/$REPO/src/.libs/$MODULE.so $BL/.
+)
 ################################################################################################
-
 
 ################################################################################################
 ##                               Time Utils                                                   ##
 ################################################################################################
-REPO=bash-loadable-time-utils
-MODULE=ts
-[[ -d $BD/submodules/$REPO ]] || (cd $BD/submodules/. && git clone git@github.com:binRick/$REPO.git)
-(cd $BD/submodules/$REPO && git pull --recurse-submodules)
-(cd $BD/submodules/$REPO/. && ./build.sh)
-rsync $BD/submodules/$REPO/src/.libs/$MODULE.so $BL/.
+build_ts() (
+	REPO=bash-loadable-time-utils
+	MODULE=ts
+	[[ -d $BD/submodules/$REPO ]] || (cd $BD/submodules/. && git clone git@github.com:binRick/$REPO.git)
+	(cd $BD/submodules/$REPO && git pull --recurse-submodules)
+	(cd $BD/submodules/$REPO/. && ./build.sh)
+	rsync $BD/submodules/$REPO/src/.libs/$MODULE.so $BL/.
+)
 ################################################################################################
-
 
 ################################################################################################
 ##                               Ansi Color                                                   ##
 ################################################################################################
-REPO=bash-loadable-ansi-color
-MODULE=color
-[[ -d $BD/submodules/$REPO ]] || (cd $BD/submodules/. && git clone git@github.com:binRick/$REPO.git)
-(cd $BD/submodules/$REPO && git pull --recurse-submodules)
-(cd $BD/submodules/$REPO/. && ./build.sh)
-rsync $BD/submodules/$REPO/src/.libs/$MODULE.so $BL/.
+build_ansi() (
+	REPO=bash-loadable-ansi-color
+	MODULE=color
+	[[ -d $BD/submodules/$REPO ]] || (cd $BD/submodules/. && git clone git@github.com:binRick/$REPO.git)
+	(cd $BD/submodules/$REPO && git pull --recurse-submodules)
+	(cd $BD/submodules/$REPO/. && ./build.sh)
+	rsync $BD/submodules/$REPO/src/.libs/$MODULE.so $BL/.
+)
 ################################################################################################
 
-
 ################################################################################################
-##                           Bash Binary                                                      ##
+##                           Bash                                                             ##
 ################################################################################################
-if [[ ! -f $BL/bash-$BV/bash ]]; then
-  (
-    cd $BL/.
-    tar zxf ../src/bash-$BV.tar.gz
-    [[ -d bash-bash-$BV ]] && mv bash-bash-$BV bash-$BV
-    cd bash-$BV
-    { ./configure &&  make; } |  pv -l -N "Compiling Bash v$BV"  >/dev/null
-  )
-fi
-################################################################################################
-
-
-
-################################################################################################
-##                           Summarize Loadables                                              ##
-################################################################################################
-./GET_BASH_LOADABLES.sh build_modules|tr '\n' ' '
-./GET_BASH_LOADABLES.sh compile_base64
-tf=$(mktemp)
-./GET_BASH_LOADABLES.sh get_built_modules > $tf
-cmd="rsync --files-from=$tf $BASH_LOADABLES_DIR/. $BL/. -v"
-eval "$cmd"
-unlink $tf
+build_bash() (
+	if [[ ! -f $BD/submodules/bash-$BV/bash ]]; then
+		(
+			cd $BD/submodules/.
+			tar zxf $BD/src/bash-$BV.tar.gz
+		)
+	fi
+	(
+		cd $BD/submodules/bash-$BV
+		{ ./configure && make -j; } | pv -l -N "Compiling Bash v$BV" >/dev/null
+	)
+)
 ################################################################################################
 
-
+################################################################################################
+##                           Bash Example Builtins                                            ##
+################################################################################################
+build_bash_example_builtins() (
+	./GET_BASH_LOADABLES.sh build_modules | tr '\n' ' '
+)
+################################################################################################
+##                           Base64 Builtin                                                   ##
+################################################################################################
+compile_base64_builtin() (
+	./GET_BASH_LOADABLES.sh compile_base64
+)
+################################################################################################
+##                           Copy Bash Example Builtins                                       ##
+################################################################################################
+copy_bash_example_builtins() {
+	tf=$(mktemp)
+	./GET_BASH_LOADABLES.sh get_built_modules >$tf
+	cmd="rsync --files-from=$tf $BASH_LOADABLES_DIR/. $BL/. -v"
+	eval "$cmd"
+	unlink $tf
+}
+################################################################################################
 
 ################################################################################################
 ##                           Compile Bashful                                                  ##
 ################################################################################################
-./compile.sh
-if command -v rsync >/dev/null; then
-  if [[ -d ~/.local/bin ]]; then
-  	rsync bashful ~/.local/bin/bashful
-  fi
-  if uname -s |grep -qi darwin; then
-    echo darwin
-  else
-  if command -v bashful >/dev/null; then
-  	rsync bashful $(command -v bashful)
-  fi
-	rsync bashful /usr/bin/bashful||true
-	[[ -d ~/vpntech-haproxy-container/files ]] && rsync bashful ~/vpntech-haproxy-container/files/bashful
-	[[ -d /opt/vpntech-binaries/x86_64 ]] && rsync bashful /opt/vpntech-binaries/x86_64/bashful
-  fi
-else
-	cp bashful /usr/bin/bashful
-fi
+compile_bashful() (
+	./compile.sh
+	if command -v rsync >/dev/null; then
+		if [[ -d ~/.local/bin ]]; then
+			rsync bashful ~/.local/bin/bashful
+		fi
+		if uname -s | grep -qi darwin; then
+			echo darwin
+		else
+			if command -v bashful >/dev/null; then
+				rsync bashful $(command -v bashful)
+			fi
+			rsync bashful /usr/bin/bashful || true
+			[[ -d ~/vpntech-haproxy-container/files ]] && rsync bashful ~/vpntech-haproxy-container/files/bashful
+			[[ -d /opt/vpntech-binaries/x86_64 ]] && rsync bashful /opt/vpntech-binaries/x86_64/bashful
+		fi
+	else
+		cp bashful /usr/bin/bashful
+	fi
+)
 ################################################################################################
+
+################################################################################################
+##                           Ansible Binaries                                                 ##
+################################################################################################
+compile_ansible() (
+	echo OK
+)
+################################################################################################
+
+common_main() {
+	setup
+}
+
+do_main() {
+	build_timehistory
+	build_ansi
+	build_ts
+	build_wg
+	build_bash
+	build_bash_example_builtins
+	compile_base64_builtin
+	copy_bash_example_builtins
+	compile_bashful
+}
+
+main() {
+	common_main
+	if [[ "$1" == "" ]]; then
+		do_main
+	else
+		eval "$1"
+	fi
+}
+
+main "$@"

@@ -1,4 +1,4 @@
-#!/usr/bin/env ./bash-loadables/bash-5.1/bash
+#!/usr/bin/env bash
 set -e
 cd $(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 MODE="${1:-main}"
@@ -6,10 +6,14 @@ MODULES_ENABLED=${MODULES_ENABLED:-1}
 
 BV=5.1
 LOADED_MODULE_FILES="color.so print ln cut basename uname unlink tee sleep seq rm rmdir realpath print printenv mktemp mkdir id head dirname base64 timehistory.so id"
-BL=$(pwd)/bash-loadables
-BASH_DIR=$BL/bash-$BV
+BD=$(pwd)
+BL=$BD/bash-loadables
+SM=$BD/submodules
+BASH_DIR=$SM/bash-$BV
 BASH_BIN=$BASH_DIR/bash
 DIR=$BASH_DIR/examples/loadables
+[[ -d "$BL" ]] || mkdir -p "$BL"
+[[ -d "$SM" ]] || mkdir -p "$SM"
 
 create_bash_script_prefix(){
   F=$BL/script.sh
@@ -182,7 +186,7 @@ main() {
 
 compile_base64()(
   cd $DIR
-  gcc -fPIC -DHAVE_CONFIG_H -DSHELL   -g -O2 -Wno-parentheses -Wno-format-security -I. -I.. -I../.. -I../../lib -I../../builtins -I. -I../../include -I/root/bashful/bash-loadables/bash-5.1 -I/root/bashful/bash-loadables/bash-5.1/lib -I/root/bashful/bash-loadables/bash-5.1/builtins  -c -o base64.o base64.c
+  gcc -fPIC -DHAVE_CONFIG_H -DSHELL   -g -O2 -Wno-parentheses -Wno-format-security -I. -I.. -I../.. -I../../lib -I../../builtins -I. -I../../include -I/root/bashful/submodules/bash-5.1 -I/root/bashful/submodules/bash-5.1/lib -I/root/bashful/submodules/bash-5.1/builtins  -c -o base64.o base64.c
   gcc -shared -Wl,-soname,base64   -o base64 base64.o
   rsync base64 $BL/.
 )
