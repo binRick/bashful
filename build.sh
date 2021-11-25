@@ -21,6 +21,7 @@ setup() {
 ##                               Time History                                                 ##
 ################################################################################################
 build_timehistory() (
+  rpm -qa|egrep bash-devel || dnf -y install bash-devel
 	if [[ ! -d $SM/timehistory-bash ]]; then
 		cd $SM/. && git clone git@github.com:binRick/timehistory-bash.git
 	fi
@@ -159,7 +160,11 @@ compile_bashful() (
 ##                           Ansible Binaries                                                 ##
 ################################################################################################
 compile_ansible() (
-	echo OK
+	REPO=pyinstaller-ansible-playbook
+	[[ -d $BD/submodules/$REPO ]] || (cd $BD/submodules/. && git clone git@github.com:binRick/$REPO.git)
+	(cd $BD/submodules/$REPO && git pull --recurse-submodules)
+	(cd $BD/submodules/$REPO/. && ./build.sh)
+	rsync $BD/submodules/$REPO/src/.libs/$MODULE.so $BL/.
 )
 ################################################################################################
 
@@ -168,14 +173,13 @@ common_main() {
 }
 
 do_main() {
+	build_bash
+	build_bash_example_builtins &
 	build_timehistory &
 	build_ansi &
 	build_ts &
 	build_wg &
-	build_bash &
-  wait
-	build_bash_example_builtins
-	compile_base64_builtin
+	compile_base64_builtin &
 	copy_bash_example_builtins
 	compile_bashful
 }
