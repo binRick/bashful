@@ -15,7 +15,7 @@ set -e
 	BB=$BD/bash-bin
 	SM=$BD/submodules
 	BASH_LOADABLES_DIR=$SM/bash-$BV/examples/loadables
-  for d in $BB $BL $SM; do [[ -d "$d" ]] || mkdir -p "$d"; fi
+  for d in $BB $BL $SM; do [[ -d "$d" ]] || mkdir -p "$d"; done
 	command -v bison >/dev/null || dnf -y install bison
   rpm -qa bash-devel || dnf -y install bash-devel
 }
