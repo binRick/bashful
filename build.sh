@@ -84,14 +84,10 @@ build_ansi() (
 ################################################################################################
 build_bash() (
 	if [[ ! -f $BD/submodules/bash-$BV/bash ]]; then
-		(
 			cd $BD/submodules/.
 			tar zxf $BD/src/bash-$BV.tar.gz
-		)
-    (
       cd $BD/submodules/bash-$BV
-      { ./configure && make -j; } | pv -l -N "Compiling Bash v$BV" >/dev/null
-    )
+      { ./configure &&      make; } | pv -l -N "Compiling Bash v$BV" >/dev/null
 	fi
   rsync $SM/bash-$BV/bash $BB/bash
 )
@@ -166,9 +162,11 @@ compile_bashful() (
 ################################################################################################
 compile_ansible() (
 	REPO=pyinstaller-ansible-playbook
-	[[ -d $BD/submodules/$REPO ]] || (cd $BD/submodules/. && git clone git@github.com:binRick/$REPO.git)
-	(cd $BD/submodules/$REPO && git pull --recurse-submodules)
-	(cd $BD/submodules/$REPO/. && ./bf.sh $ANSIBLE_BINARY_DISTRO)
+	cd $BD/submodules/.
+	[[ -d $BD/submodules/$REPO ]] || git clone git@github.com:binRick/$REPO.git
+  cd ./$REPO 
+  git pull --recurse-submodules
+  ./bf.sh $ANSIBLE_BINARY_DISTRO
   rsync -arv $BD/submodules/$REPO/binaries/* $BB/.
 )
 ################################################################################################
@@ -182,14 +180,15 @@ do_main() {
   	build_bash
   	build_bash_example_builtins
 	  copy_bash_example_builtins
-  ) &
-	build_timehistory &
-	build_ansi &
-	build_ts &
-	build_wg &
-	compile_base64_builtin &
-  compile_ansible &
-  wait
+	  compile_base64_builtin 
+  ) 
+  (
+  	build_timehistory 
+  	build_ansi 
+  	build_ts 
+  	build_wg 
+    compile_ansible 
+  )
 	compile_bashful
 }
 
