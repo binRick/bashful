@@ -17,7 +17,7 @@ if [[ ! -f ./submodules/timehistory-bash/target/release/libtimehistory_bash.so ]
   )
 fi
 
-rsync ./submodules/timehistory-bash/target/release/libtimehistory_bash.so $BL/.
+rsync ./submodules/timehistory-bash/target/release/libtimehistory_bash.so $BL/timehistory.so
 
 if [[ ! -f ./submodules/bash-loadable-ansi-color/build.sh ]]; then
   rm -rf ./submodules/bash-loadable-ansi-color

@@ -63,9 +63,8 @@ Hostname:     %s
 		cwd,
 		hn,
 	)
-	if false {
-		utils.CheckError(err, errmsg)
-	} else {
+	if err != nil {
+		//utils.CheckError(err, errmsg)
 		fmt.Fprintf(os.Stderr, "%s\n", errmsg)
 	}
 

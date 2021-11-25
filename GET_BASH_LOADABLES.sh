@@ -5,7 +5,7 @@ MODE="${1:-main}"
 MODULES_ENABLED=${MODULES_ENABLED:-1}
 
 BV=5.1
-LOADED_MODULE_FILES="color.so print ln cut basename uname unlink tee sleep seq rm rmdir realpath print printenv mktemp mkdir id head dirname base64 libtimehistory_bash.so id"
+LOADED_MODULE_FILES="color.so print ln cut basename uname unlink tee sleep seq rm rmdir realpath print printenv mktemp mkdir id head dirname base64 timehistory.so id"
 BL=$(pwd)/bash-loadables
 BASH_DIR=$BL/bash-$BV
 BASH_BIN=$BASH_DIR/bash
