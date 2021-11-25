@@ -55,8 +55,6 @@ var listTagsMode bool
 var devMode bool
 var execHostname string
 var DEFAULT_EVENTS_LOG_FILE = `/var/log/bashful-events.log`
-var statsMode bool
-var statsModeDefault bool = false
 var cgroupsMode bool
 var listTasksMode bool
 var eventLogMode bool
@@ -156,7 +154,6 @@ func init() {
 	//  RUN OPTIONS
 	runCmd.Flags().BoolVarP(&cgroupsMode, "cgroups", "c", false, "Cgroups Mode")
 	runCmd.Flags().BoolVarP(&devMode, "dev-mode", "d", false, "Dev Mode")
-	runCmd.Flags().BoolVarP(&statsMode, "stats-mode", "s", statsModeDefault, "Stats Mode")
 	runCmd.Flags().BoolVarP(&dryRunMode, "dry-run", "n", false, "Dry Run")
 	runCmd.Flags().BoolVarP(&eventLogMode, "log-events", "E", false, "Log Events")
 	runCmd.Flags().StringVarP(&eventLogFile, "log-events-file", "F", DEFAULT_EVENTS_LOG_FILE, "Log Events File")

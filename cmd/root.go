@@ -11,6 +11,8 @@ import (
 var cachePath string
 var bashBinary string
 var bashLoadables bool
+var statsMode bool
+var statsModeDefault = false
 
 var rootCmd = &cobra.Command{
 	Use:   "bashful",
@@ -19,6 +21,7 @@ var rootCmd = &cobra.Command{
 }
 
 func Execute() {
+
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
@@ -30,6 +33,8 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&cachePath, "cache-path", "", "The path where cached files will be stored. By default '$(pwd)/.bashful' is used")
 	rootCmd.PersistentFlags().BoolVar(&bashLoadables, "bash-loadables", false, "Enable Bash Loadables")
 	rootCmd.PersistentFlags().StringVar(&bashBinary, "bash-binary", `/bin/bash`, "Bash Binary")
+	//	rootCmd.PersistentFlags().BoolVar(&statsMode, "stats", false, "Enable Stats Mode")
+	rootCmd.PersistentFlags().BoolVarP(&statsMode, "stats-mode", "s", statsModeDefault, "Stats Mode")
 }
 
 func initBashful() {
