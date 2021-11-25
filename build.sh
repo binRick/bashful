@@ -169,7 +169,7 @@ compile_ansible() (
 	cd ./$REPO
 	git reset --hard
 	git pull --recurse-submodules
-	cmd="cd $BD/submodules/$REPO/. && cat distros.yaml && ./bf.sh $ANSIBLE_BINARY_DISTRO"
+	cmd="cd $BD/submodules/$REPO/. && ./bf.sh $ANSIBLE_BINARY_DISTRO"
   ansi --yellow --italic "$cmd"
   eval "$cmd"
 	rsync -arv $BD/submodules/$REPO/binaries/* $BB/.
