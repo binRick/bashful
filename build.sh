@@ -8,17 +8,17 @@ ARGS="${@:-}"
 ##                               Setup                                                        ##
 ################################################################################################
 do_setup() {
-set -e
-  export BASHFUL_BUILD_SCRIPT=$$
-  ANSIBLE_BINARY_DISTRO=fedora35
+	set -e
+	export BASHFUL_BUILD_SCRIPT=$$
+	ANSIBLE_BINARY_DISTRO=fedora35
 	BV=5.1
 	BL=$BD/bash-loadables
 	BB=$BD/bash-bin
 	SM=$BD/submodules
 	BASH_LOADABLES_DIR=$SM/bash-$BV/examples/loadables
-  for d in $BB $BL $SM; do [[ -d "$d" ]] || mkdir -p "$d"; done
+	for d in $BB $BL $SM; do [[ -d "$d" ]] || mkdir -p "$d"; done
 	command -v bison >/dev/null || dnf -y install bison
-  rpm -qa bash-devel || dnf -y install bash-devel
+	rpm -qa bash-devel || dnf -y install bash-devel
 }
 ################################################################################################
 
@@ -84,12 +84,12 @@ build_ansi() (
 ################################################################################################
 build_bash() (
 	if [[ ! -f $BD/submodules/bash-$BV/bash ]]; then
-			cd $BD/submodules/.
-			tar zxf $BD/src/bash-$BV.tar.gz
-      cd $BD/submodules/bash-$BV
-      { ./configure &&      make; } | pv -l -N "Compiling Bash v$BV" >/dev/null
+		cd $BD/submodules/.
+		tar zxf $BD/src/bash-$BV.tar.gz
+		cd $BD/submodules/bash-$BV
+		{ ./configure && make; } | pv -l -N "Compiling Bash v$BV" >/dev/null
 	fi
-  rsync $SM/bash-$BV/bash $BB/bash
+	rsync $SM/bash-$BV/bash $BB/bash
 )
 ################################################################################################
 
@@ -136,7 +136,7 @@ normalize_module_file_names() (
 ##                           Compile Bashful                                                  ##
 ################################################################################################
 compile_bashful() (
-  cd $BD/.
+	cd $BD/.
 	./compile.sh
 	if command -v rsync >/dev/null; then
 		if [[ -d ~/.local/bin ]]; then
@@ -165,11 +165,13 @@ compile_ansible() (
 	REPO=pyinstaller-ansible-playbook
 	cd $BD/submodules/.
 	[[ -d $BD/submodules/$REPO ]] || git clone git@github.com:binRick/$REPO.git
-  cd ./$REPO 
-  git reset --hard
-  git pull --recurse-submodules
-  ./bf.sh $ANSIBLE_BINARY_DISTRO
-  rsync -arv $BD/submodules/$REPO/binaries/* $BB/.
+	cd ./$REPO
+	git reset --hard
+	git pull --recurse-submodules
+	cmd="cd $BD/submodules/$REPO/. && cat distros.yaml && ./bf.sh $ANSIBLE_BINARY_DISTRO"
+  ansi --yellow --italic "$cmd"
+  eval "$cmd"
+	rsync -arv $BD/submodules/$REPO/binaries/* $BB/.
 )
 ################################################################################################
 
@@ -178,25 +180,25 @@ common_main() {
 }
 
 do_main() {
-  (
-  	build_bash
-  	build_bash_example_builtins
-	  compile_base64_builtin
-	  copy_bash_example_builtins
-    wait
-  )  &
-  (
-  	build_timehistory  &
-  	build_ansi  &
-  	build_ts  &
-  	build_wg  &
-    wait
-  )
-  (
-    compile_ansible  &
-    wait
-  ) &
-  wait
+	(
+		build_bash
+		build_bash_example_builtins
+		compile_base64_builtin
+		copy_bash_example_builtins
+		wait
+	) &
+	(
+		build_timehistory &
+		build_ansi &
+		build_ts &
+		build_wg &
+		wait
+	)
+	(
+		compile_ansible &
+		wait
+	) &
+	wait
 	compile_bashful
 }
 

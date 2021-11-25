@@ -15,9 +15,9 @@ DIR=$BASH_DIR/examples/loadables
 [[ -d "$BL" ]] || mkdir -p "$BL"
 [[ -d "$SM" ]] || mkdir -p "$SM"
 
-create_bash_script_prefix(){
-  F=$BL/script.sh
-  cat << EOF > $F
+create_bash_script_prefix() {
+	F=$BL/script.sh
+	cat <<EOF >$F
 #!$BASH_BIN
 set -eou pipefail
 cd $(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
@@ -66,7 +66,7 @@ echo OK
 
 
 EOF
-  chmod +x $F
+	chmod +x $F
 }
 
 coproc_dev() {
@@ -132,21 +132,21 @@ get_built_modules() {
 	done < <(get_modules)
 }
 
-build_modules()(
-  cd $DIR
-  make
+build_modules() (
+	cd $DIR
+	make
 )
 
 get_built_modules_with_so() (
-  get_built_modules|with_so
+	get_built_modules | with_so
 )
 get_modules() (
 	cd $DIR
 	ls *.c | xargs -I % basename % .c | sort -u
 )
 
-with_so(){
-  while read -r f; do echo -e "$f.so"; done
+with_so() {
+	while read -r f; do echo -e "$f.so"; done
 }
 
 get_modules_with_path() {
@@ -184,11 +184,11 @@ main() {
 	echo -e "$msg"
 }
 
-compile_base64()(
-  cd $DIR
-  gcc -fPIC -DHAVE_CONFIG_H -DSHELL   -g -O2 -Wno-parentheses -Wno-format-security -I. -I.. -I../.. -I../../lib -I../../builtins -I. -I../../include -I/root/bashful/submodules/bash-5.1 -I/root/bashful/submodules/bash-5.1/lib -I/root/bashful/submodules/bash-5.1/builtins  -c -o base64.o base64.c
-  gcc -shared -Wl,-soname,base64   -o base64 base64.o
-  rsync base64 $BL/.
+compile_base64() (
+	cd $DIR
+	gcc -fPIC -DHAVE_CONFIG_H -DSHELL -g -O2 -Wno-parentheses -Wno-format-security -I. -I.. -I../.. -I../../lib -I../../builtins -I. -I../../include -I/root/bashful/submodules/bash-5.1 -I/root/bashful/submodules/bash-5.1/lib -I/root/bashful/submodules/bash-5.1/builtins -c -o base64.o base64.c
+	gcc -shared -Wl,-soname,base64 -o base64 base64.o
+	rsync base64 $BL/.
 )
 
 eval "$MODE"

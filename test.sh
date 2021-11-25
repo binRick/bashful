@@ -2,7 +2,7 @@
 set -e
 cd $(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 if ! command -v ansi; then
-  alias ansi=$(pwd)/ansi
+	alias ansi=$(pwd)/ansi
 fi
 
 f="${1:-example/00-demo.yml}"

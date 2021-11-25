@@ -33,10 +33,6 @@ cleanup() {
 	true
 }
 
-
-
-
-
 run_cmd() (
 	local _cmd="$1"
 	local of=$(mktemp)
@@ -280,7 +276,7 @@ check_multiple() {
 				ansi >&2 --yellow --bg-black "$_cmd"
 				set +e
 				eval "$_cmd"
-        ec=$?
+				ec=$?
 			done
 		)
 		exit
