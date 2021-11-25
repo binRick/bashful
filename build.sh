@@ -10,6 +10,7 @@ ARGS="${@:-}"
 do_setup() {
 set -e
   export BASHFUL_BUILD_SCRIPT=$$
+  ANSIBLE_BINARY_DISTRO=fedora35
 	BV=5.1
 	BL=$BD/bash-loadables
 	BB=$BD/bash-bin
@@ -167,9 +168,8 @@ compile_ansible() (
 	REPO=pyinstaller-ansible-playbook
 	[[ -d $BD/submodules/$REPO ]] || (cd $BD/submodules/. && git clone git@github.com:binRick/$REPO.git)
 	(cd $BD/submodules/$REPO && git pull --recurse-submodules)
-	(cd $BD/submodules/$REPO/. && ./bf.sh)
-  rsync binaries/*/ansible* $BB/.
-#	rsync $BD/submodules/$REPO/src/.libs/$MODULE.so $BL/.
+	(cd $BD/submodules/$REPO/. && ./bf.sh $ANSIBLE_BINARY_DISTRO)
+  rsync -arv $BD/submodules/$REPO/binaries/* $BB/.
 )
 ################################################################################################
 
