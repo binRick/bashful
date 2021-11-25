@@ -168,11 +168,12 @@ common_main() {
 }
 
 do_main() {
-	build_timehistory
-	build_ansi
-	build_ts
-	build_wg
-	build_bash
+	build_timehistory &
+	build_ansi &
+	build_ts &
+	build_wg &
+	build_bash &
+  wait
 	build_bash_example_builtins
 	compile_base64_builtin
 	copy_bash_example_builtins
