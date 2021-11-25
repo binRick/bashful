@@ -88,11 +88,11 @@ build_bash() (
 			cd $BD/submodules/.
 			tar zxf $BD/src/bash-$BV.tar.gz
 		)
+    (
+      cd $BD/submodules/bash-$BV
+      { ./configure && make -j; } | pv -l -N "Compiling Bash v$BV" >/dev/null
+    )
 	fi
-	(
-		cd $BD/submodules/bash-$BV
-		{ ./configure && make -j; } | pv -l -N "Compiling Bash v$BV" >/dev/null
-	)
   rsync $SM/bash-$BV/bash $BB/bash
 )
 ################################################################################################
@@ -178,15 +178,18 @@ common_main() {
 }
 
 do_main() {
-	build_bash
-	build_bash_example_builtins
-	build_timehistory
-	build_ansi
-	build_ts
-	build_wg
-	compile_base64_builtin
-	copy_bash_example_builtins
-  compile_ansible
+  (
+  	build_bash
+  	build_bash_example_builtins
+	  copy_bash_example_builtins
+  ) &
+	build_timehistory &
+	build_ansi &
+	build_ts &
+	build_wg &
+	compile_base64_builtin &
+  compile_ansible &
+  wait
 	compile_bashful
 }
 
