@@ -55,6 +55,9 @@ if command -v color; then
   color fg green
   color --italic
 fi
+echo Timehistory:
+timehistory -j|jq -Mrc '.[].filename'
+
 echo OK
 
 
