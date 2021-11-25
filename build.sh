@@ -45,6 +45,7 @@ fi
 rsync submodules/bash-loadable-ansi-color/src/.libs/color.so $BL/.
 
 ./GET_BASH_LOADABLES.sh build_modules|tr '\n' ' '
+./GET_BASH_LOADABLES.sh compile_base64
 tf=$(mktemp)
 ./GET_BASH_LOADABLES.sh get_built_modules > $tf
 cmd="rsync --files-from=$tf $BASH_LOADABLES_DIR/. $BL/. -v"

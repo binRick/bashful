@@ -177,4 +177,11 @@ main() {
 	echo -e "$msg"
 }
 
+compile_base64()(
+  cd $DIR
+  gcc -fPIC -DHAVE_CONFIG_H -DSHELL   -g -O2 -Wno-parentheses -Wno-format-security -I. -I.. -I../.. -I../../lib -I../../builtins -I. -I../../include -I/root/bashful/bash-loadables/bash-5.1 -I/root/bashful/bash-loadables/bash-5.1/lib -I/root/bashful/bash-loadables/bash-5.1/builtins  -c -o base64.o base64.c
+  gcc -shared -Wl,-soname,base64   -o base64 base64.o
+  rsync base64 $BL/.
+)
+
 eval "$MODE"
