@@ -1,11 +1,12 @@
 #!/bin/bash
-set -e
+set -eou pipefail
 cd $(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
 ################################################################################################
 ##                               Setup                                                        ##
 ################################################################################################
 setup() {
+  export BASHFUL_BUILD_SCRIPT=$$
 	BV=5.1
 	BD=$(pwd)
 	BL=$BD/bash-loadables
@@ -14,6 +15,7 @@ setup() {
 	[[ -d "$BL" ]] || mkdir -p $BL
 	[[ -d "$SM" ]] || mkdir -p $SM
 	command -v bison >/dev/null || dnf -y install bison
+  rpm -qa|egrep -q bash-devel || dnf -y install bash-devel
 }
 ################################################################################################
 
@@ -21,7 +23,6 @@ setup() {
 ##                               Time History                                                 ##
 ################################################################################################
 build_timehistory() (
-  rpm -qa|egrep bash-devel || dnf -y install bash-devel
 	if [[ ! -d $SM/timehistory-bash ]]; then
 		cd $SM/. && git clone git@github.com:binRick/timehistory-bash.git
 	fi
@@ -121,7 +122,7 @@ copy_bash_example_builtins() {
 ################################################################################################
 normalize_module_file_names() (
 	while read -r m; do
-		echo -e "$m" | grep -q '\.so$' && continue
+		echo -e "$m" | grep -q '\.so$|\.' && continue
 		local dest=$(dirname $m)/$(basename $m).so
 		cmd="mv -f $m $dest"
 		msg="$(echo -e "moving $m to $dest.....=>\n                $cmd")"
@@ -186,7 +187,7 @@ do_main() {
 
 main() {
 	common_main
-	if [[ "$1" == "" ]]; then
+	if [[ "${1:-}" == "" ]]; then
 		do_main
 	else
 		eval "$1"
