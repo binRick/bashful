@@ -4,6 +4,20 @@ cd $(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 BV=5.1
 BL=$(pwd)/bash-loadables
 BASH_LOADABLES_DIR=$BL/bash-$BV/examples/loadables
+[[ -d "$BL" ]] || mkdir -p $BL
+
+if [[ ! -d ./submodules/timehistory-bash ]]; then
+  git clone git@github.com:binRick/timehistory-bash ./submodules/timehistory-bash
+fi
+if [[ ! -f ./submodules/timehistory-bash/target/release/libtimehistory_bash.so ]]; then
+  (
+    cd ./submodules/timehistory-bash
+    command -v cargo || dnf -y install cargo
+    cargo build --release
+  )
+fi
+
+rsync ./submodules/timehistory-bash/target/release/libtimehistory_bash.so $BL/.
 
 if [[ ! -f ./submodules/bash-loadable-ansi-color/build.sh ]]; then
   rm -rf ./submodules/bash-loadable-ansi-color
@@ -18,7 +32,7 @@ if [[ ! -f $BL/bash-$BV/bash ]]; then
   (
     cd $BL/.
     tar zxf ../src/bash-$BV.tar.gz
-    mv bash-bash-$BV bash-$BV
+    [[ -d bash-bash-$BV ]] && mv bash-bash-$BV bash-$BV
     cd bash-$BV
     { ./configure &&  make; } |  pv -l -N "Compiling Bash v$BV"  >/dev/null
   )
@@ -26,8 +40,9 @@ fi
 
 if [[ ! -f $BL/color.so ]]; then
   ./submodules/bash-loadable-ansi-color/build.sh
-  rsync submodules/bash-loadable-ansi-color/src/.libs/color.so $BL/.
 fi
+
+rsync submodules/bash-loadable-ansi-color/src/.libs/color.so $BL/.
 
 ./GET_BASH_LOADABLES.sh build_modules|tr '\n' ' '
 tf=$(mktemp)
