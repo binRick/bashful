@@ -177,18 +177,24 @@ common_main() {
 
 do_main() {
   (
-  	build_bash
-  	build_bash_example_builtins
-	  copy_bash_example_builtins
-	  compile_base64_builtin 
-  ) 
+  	build_bash &
+  	build_bash_example_builtins &
+	  copy_bash_example_builtins &
+	  compile_base64_builtin &
+    wait
+  )  &
   (
-  	build_timehistory 
-  	build_ansi 
-  	build_ts 
-  	build_wg 
-    compile_ansible 
+  	build_timehistory  &
+  	build_ansi  &
+  	build_ts  &
+  	build_wg  &
+    wait
   )
+  (
+    compile_ansible  &
+    wait
+  ) &
+  wait
 	compile_bashful
 }
 
