@@ -2,10 +2,18 @@
 set -e
 cd $(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 BV=5.1
-BL=$(pwd)/bash-loadables
+BD=$(pwd)
+BL=$BD/bash-loadables
 BASH_LOADABLES_DIR=$BL/bash-$BV/examples/loadables
 [[ -d "$BL" ]] || mkdir -p $BL
+command -v bison >/dev/null || dnf -y install bison
+BINRICK_GITHUB_REPOS="bash-loadable-ansi-color bash-loadable-time-utils bash-loadable-wireguard"
 
+
+
+################################################################################################
+##                               Time History                                                 ##
+################################################################################################
 if [[ ! -d ./submodules/timehistory-bash ]]; then
   git clone git@github.com:binRick/timehistory-bash ./submodules/timehistory-bash
 fi
@@ -16,18 +24,49 @@ if [[ ! -f ./submodules/timehistory-bash/target/release/libtimehistory_bash.so ]
     cargo build --release
   )
 fi
-
 rsync ./submodules/timehistory-bash/target/release/libtimehistory_bash.so $BL/timehistory.so
+################################################################################################
 
-if [[ ! -f ./submodules/bash-loadable-ansi-color/build.sh ]]; then
-  rm -rf ./submodules/bash-loadable-ansi-color
-  git clone git@github.com:binRick/bash-loadable-ansi-color.git ./submodules/bash-loadable-ansi-color
-  git pull --recurse-submodules
-fi
 
-[[ -d "$BL" ]] || mkdir -p "$BL"
-command -v bison >/dev/null || dnf -y install bison
+################################################################################################
+##                               Wireguard                                                    ##
+################################################################################################
+REPO=bash-loadable-wireguard
+MODULE=wg
+[[ -d $BD/submodules/$REPO ]] || (cd $BD/submodules/. && git clone git@github.com:binRick/$REPO.git)
+(cd $BD/submodules/$REPO && git pull --recurse-submodules)
+(cd $BD/submodules/$REPO/. && ./build.sh)
+rsync $BD/submodules/$REPO/src/.libs/$MODULE.so $BL/.
+################################################################################################
 
+
+################################################################################################
+##                               Time Utils                                                   ##
+################################################################################################
+REPO=bash-loadable-time-utils
+MODULE=ts
+[[ -d $BD/submodules/$REPO ]] || (cd $BD/submodules/. && git clone git@github.com:binRick/$REPO.git)
+(cd $BD/submodules/$REPO && git pull --recurse-submodules)
+(cd $BD/submodules/$REPO/. && ./build.sh)
+rsync $BD/submodules/$REPO/src/.libs/$MODULE.so $BL/.
+################################################################################################
+
+
+################################################################################################
+##                               Ansi Color                                                   ##
+################################################################################################
+REPO=bash-loadable-ansi-color
+MODULE=color
+[[ -d $BD/submodules/$REPO ]] || (cd $BD/submodules/. && git clone git@github.com:binRick/$REPO.git)
+(cd $BD/submodules/$REPO && git pull --recurse-submodules)
+(cd $BD/submodules/$REPO/. && ./build.sh)
+rsync $BD/submodules/$REPO/src/.libs/$MODULE.so $BL/.
+################################################################################################
+
+
+################################################################################################
+##                           Bash Binary                                                      ##
+################################################################################################
 if [[ ! -f $BL/bash-$BV/bash ]]; then
   (
     cd $BL/.
@@ -37,13 +76,13 @@ if [[ ! -f $BL/bash-$BV/bash ]]; then
     { ./configure &&  make; } |  pv -l -N "Compiling Bash v$BV"  >/dev/null
   )
 fi
+################################################################################################
 
-if [[ ! -f $BL/color.so ]]; then
-  ./submodules/bash-loadable-ansi-color/build.sh
-fi
 
-rsync submodules/bash-loadable-ansi-color/src/.libs/color.so $BL/.
 
+################################################################################################
+##                           Summarize Loadables                                              ##
+################################################################################################
 ./GET_BASH_LOADABLES.sh build_modules|tr '\n' ' '
 ./GET_BASH_LOADABLES.sh compile_base64
 tf=$(mktemp)
@@ -51,17 +90,22 @@ tf=$(mktemp)
 cmd="rsync --files-from=$tf $BASH_LOADABLES_DIR/. $BL/. -v"
 eval "$cmd"
 unlink $tf
+################################################################################################
 
+
+
+################################################################################################
+##                           Compile Bashful                                                  ##
+################################################################################################
 ./compile.sh
-
-if command -v rsync; then
+if command -v rsync >/dev/null; then
   if [[ -d ~/.local/bin ]]; then
   	rsync bashful ~/.local/bin/bashful
   fi
-  if uname -s |grep -i darwin; then
+  if uname -s |grep -qi darwin; then
     echo darwin
   else
-  if command -v bashful; then
+  if command -v bashful >/dev/null; then
   	rsync bashful $(command -v bashful)
   fi
 	rsync bashful /usr/bin/bashful||true
@@ -71,5 +115,4 @@ if command -v rsync; then
 else
 	cp bashful /usr/bin/bashful
 fi
-
-true
+################################################################################################
