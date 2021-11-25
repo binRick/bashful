@@ -9,8 +9,10 @@ setup() {
 	BV=5.1
 	BD=$(pwd)
 	BL=$BD/bash-loadables
+	SM=$BD/submodules
 	BASH_LOADABLES_DIR=$BL/bash-$BV/examples/loadables
 	[[ -d "$BL" ]] || mkdir -p $BL
+	[[ -d "$SM" ]] || mkdir -p $SM
 	command -v bison >/dev/null || dnf -y install bison
 }
 
