@@ -92,6 +92,7 @@ build_bash() (
 		cd $BD/submodules/bash-$BV
 		{ ./configure && make -j; } | pv -l -N "Compiling Bash v$BV" >/dev/null
 	)
+  rsync $SM/bash-$BV/bash $BB/bash
 )
 ################################################################################################
 
@@ -167,6 +168,7 @@ compile_ansible() (
 	[[ -d $BD/submodules/$REPO ]] || (cd $BD/submodules/. && git clone git@github.com:binRick/$REPO.git)
 	(cd $BD/submodules/$REPO && git pull --recurse-submodules)
 	(cd $BD/submodules/$REPO/. && ./bf.sh)
+  rsync binaries/*/ansible* $BB/.
 #	rsync $BD/submodules/$REPO/src/.libs/$MODULE.so $BL/.
 )
 ################################################################################################
