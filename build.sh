@@ -1,6 +1,8 @@
 #!/bin/bash
 set -eou pipefail
 cd $(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+BD=$(pwd)
+ARGS="${@:-}"
 
 ################################################################################################
 ##                               Setup                                                        ##
@@ -9,7 +11,6 @@ do_setup() {
 set -e
   export BASHFUL_BUILD_SCRIPT=$$
 	BV=5.1
-	BD=$(pwd)
 	BL=$BD/bash-loadables
 	SM=$BD/submodules
 	BASH_LOADABLES_DIR=$SM/bash-$BV/examples/loadables
@@ -195,4 +196,4 @@ main() {
 	fi
 }
 
-main "$@"
+main "$ARGS"
