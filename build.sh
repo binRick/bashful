@@ -12,10 +12,10 @@ set -e
   export BASHFUL_BUILD_SCRIPT=$$
 	BV=5.1
 	BL=$BD/bash-loadables
+	BB=$BD/bash-bin
 	SM=$BD/submodules
 	BASH_LOADABLES_DIR=$SM/bash-$BV/examples/loadables
-	[[ -d "$BL" ]] || mkdir -p $BL
-	[[ -d "$SM" ]] || mkdir -p $SM
+  for d in $BB $BL $SM; do [[ -d "$d" ]] || mkdir -p "$d"; fi
 	command -v bison >/dev/null || dnf -y install bison
   rpm -qa bash-devel || dnf -y install bash-devel
 }
@@ -166,8 +166,8 @@ compile_ansible() (
 	REPO=pyinstaller-ansible-playbook
 	[[ -d $BD/submodules/$REPO ]] || (cd $BD/submodules/. && git clone git@github.com:binRick/$REPO.git)
 	(cd $BD/submodules/$REPO && git pull --recurse-submodules)
-	(cd $BD/submodules/$REPO/. && ./build.sh)
-	rsync $BD/submodules/$REPO/src/.libs/$MODULE.so $BL/.
+	(cd $BD/submodules/$REPO/. && ./bf.sh)
+#	rsync $BD/submodules/$REPO/src/.libs/$MODULE.so $BL/.
 )
 ################################################################################################
 
@@ -184,6 +184,7 @@ do_main() {
 	build_wg
 	compile_base64_builtin
 	copy_bash_example_builtins
+  compile_ansible
 	compile_bashful
 }
 
