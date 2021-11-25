@@ -20,17 +20,17 @@ setup() {
 ##                               Time History                                                 ##
 ################################################################################################
 build_timehistory() (
-	if [[ ! -d $BD/submodules/timehistory-bash ]]; then
-		cd $BD/submodules/. && git clone git@github.com:binRick/timehistory-bash.git
+	if [[ ! -d $SM/timehistory-bash ]]; then
+		cd $SM/. && git clone git@github.com:binRick/timehistory-bash.git
 	fi
-	if [[ ! -f ./submodules/timehistory-bash/target/release/libtimehistory_bash.so ]]; then
+	if [[ ! -f $SM/timehistory-bash/target/release/libtimehistory_bash.so ]]; then
 		(
-			cd ./submodules/timehistory-bash
+			cd $SM/timehistory-bash
 			command -v cargo || dnf -y install cargo
 			cargo build --release
 		)
 	fi
-	rsync $BD/submodules/timehistory-bash/target/release/libtimehistory_bash.so $BL/timehistory.so
+	rsync $SM/timehistory-bash/target/release/libtimehistory_bash.so $BL/timehistory.so
 )
 ################################################################################################
 
