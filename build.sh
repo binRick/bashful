@@ -19,7 +19,7 @@ setup() {
 ################################################################################################
 build_timehistory() (
 	if [[ ! -d $BD/submodules/timehistory-bash ]]; then
-		cd $BD/submodules/. git clone git@github.com:binRick/timehistory-bash.git
+		cd $BD/submodules/. && git clone git@github.com:binRick/timehistory-bash.git
 	fi
 	if [[ ! -f ./submodules/timehistory-bash/target/release/libtimehistory_bash.so ]]; then
 		(
