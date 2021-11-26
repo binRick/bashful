@@ -18,8 +18,10 @@ do_setup() {
 	SM=$BD/submodules
 	BASH_LOADABLES_DIR=$SM/bash-$BV/examples/loadables
 	for d in $BB $BL $SM; do [[ -d "$d" ]] || mkdir -p "$d"; done
-	command -v bison >/dev/null || dnf -y install bison
-	rpm -qa bash-devel || dnf -y install bash-devel
+  if command -v rpm >/dev/null 2>&1; then
+  	command -v bison >/dev/null || dnf -y install bison
+	  rpm -qa bash-devel || dnf -y install bash-devel
+  fi
 }
 ################################################################################################
 
