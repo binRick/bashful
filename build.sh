@@ -194,13 +194,11 @@ do_main() {
 		build_ts &
 		build_wg &
 		wait
-	)
-	(
-		compile_ansible &
-		wait
 	) &
-	wait
+  wait
+	compile_ansible 
 	compile_bashful
+	wait
 }
 
 main() {
