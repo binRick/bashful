@@ -81,7 +81,7 @@ func NewTask(taskConfig config.TaskConfig, runtimeOptions *config.Options) *Task
 			task.Config.Vars = map[string]string{}
 		}
 		for _, vars_list := range vars_lists {
-			pp.Println(vars_list)
+			//pp.Println(vars_list)
 			for vk, vv := range vars_list {
 				if len(vk) > 0 {
 					_, hasv := task.Config.Vars[vk]

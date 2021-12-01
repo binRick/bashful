@@ -25,7 +25,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/k0kubun/pp"
 	"github.com/wagoodman/bashful/pkg/config"
 	"github.com/wagoodman/bashful/pkg/log"
 	"github.com/wagoodman/bashful/utils"
@@ -152,8 +151,8 @@ func (executor *Executor) execute(task *Task) error {
 					}
 				}
 			*/
-			pp.Fprintf(os.Stderr, "%s\n", task.Config.Registered)
-			pp.Fprintf(os.Stderr, "%s\n", executor.Registered)
+			//pp.Fprintf(os.Stderr, "%s\n", task.Config.Registered)
+			//pp.Fprintf(os.Stderr, "%s\n", executor.Registered)
 			//			os.Exit(1)
 			executor.Statistics.Completed = append(executor.Statistics.Completed, event.Task)
 			executor.cmdEtaCache[task.Config.CmdString] = event.Task.Command.StopTime.Sub(event.Task.Command.StartTime)
