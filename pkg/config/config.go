@@ -52,6 +52,15 @@ func NewConfig(yamlString []byte, options *Cli) (*Config, error) {
 	config.EtaCachePath = path.Join(config.CachePath, "eta")
 
 	err := config.compile(yamlString)
+	/*
+		if err == nil {
+			result, err := govalidator.ValidateStruct(config)
+			if err != nil {
+				println("error: " + err.Error())
+			}
+			println("result=>", result)
+		}
+	*/
 	return &config, err
 }
 

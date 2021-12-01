@@ -23,7 +23,7 @@ type Config struct {
 	Vars      map[string]string `yaml:"vars"`
 
 	// LogCachePath is the dir path to place temporary logs
-	LogCachePath string
+	LogCachePath string `valid:"type(string)"`
 
 	// EtaCachePath is the file path for per-task ETA values (derived from a tasks CmdString)
 	EtaCachePath string

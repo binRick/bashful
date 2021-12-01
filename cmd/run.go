@@ -185,6 +185,15 @@ func Run(yamlString []byte, cli config.Cli) {
 	if listTagsMode {
 		tags := get_tags(client.Config)
 		fmt.Fprintf(os.Stdout, "%s\n", strings.Join(tags, "\n"))
+
+		/*
+			result, err := govalidator.ValidateStruct(config.Config{"", 20, "meta"})
+			if err != nil {
+				println("error: " + err.Error())
+			}
+			println(result)
+		*/
+
 		os.Exit(0)
 	}
 	if listTasksMode {
