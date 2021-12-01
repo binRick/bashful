@@ -603,7 +603,7 @@ func (handler *VerticalUI) footer(status runtime.TaskStatus, message string) str
 		)
 
 		terminalWidth, _ := terminaldimensions.Width()
-		maxMessageWidth := uint(terminalWidth) - uint(utils.VisualLength(durString))
+		maxMessageWidth := uint(terminalWidth) - uint(utils.VisualLength(durString)) + 15
 		if uint(utils.VisualLength(durString)) > maxMessageWidth-3 {
 			durString = utils.TrimToVisualLength(durString, int(maxMessageWidth-3)) + "..."
 		}
