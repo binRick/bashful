@@ -198,7 +198,7 @@ do_main() {
 		wait
 	) &
   wait
-	compile_ansible 
+	#compile_ansible 
 	compile_bashful
 	wait
 }
