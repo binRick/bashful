@@ -33,12 +33,13 @@ import (
 	"syscall"
 	"time"
 
+	rwidth "github.com/binRick/bashful/utils/width"
+
 	"github.com/google/uuid"
 	"github.com/k0kubun/pp"
 	"github.com/lunixbochs/vtclean"
 	"github.com/wagoodman/bashful/pkg/config"
 	"github.com/wagoodman/bashful/utils"
-	terminaldimensions "github.com/wayneashleyberry/terminal-dimensions"
 )
 
 // todo: remove these global vars
@@ -445,7 +446,7 @@ func variableSplitFunc(data []byte, atEOF bool) (advance int, token []byte, err 
 	}
 
 	// Case: it's just too long
-	terminalWidth, _ := terminaldimensions.Width()
+	terminalWidth, _ := rwidth.Width()
 	if len(data) > int(terminalWidth*2) {
 		return int(terminalWidth * 2), data[0:int(terminalWidth*2)], nil
 	}

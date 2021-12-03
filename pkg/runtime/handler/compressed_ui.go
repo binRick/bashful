@@ -2,16 +2,18 @@ package handler
 
 import (
 	"fmt"
+	"strconv"
+	"sync"
+	"time"
+
+	rwidth "github.com/binRick/bashful/utils/width"
+
 	"github.com/google/uuid"
 	color "github.com/mgutz/ansi"
 	"github.com/wagoodman/bashful/pkg/config"
 	"github.com/wagoodman/bashful/pkg/runtime"
 	"github.com/wagoodman/bashful/utils"
 	"github.com/wagoodman/jotframe"
-	"github.com/wayneashleyberry/terminal-dimensions"
-	"strconv"
-	"sync"
-	"time"
 )
 
 type cUiData struct {
@@ -95,7 +97,7 @@ func (handler *CompressedUI) displayTask(task *runtime.Task) {
 		return
 	}
 
-	terminalWidth, _ := terminaldimensions.Width()
+	terminalWidth, _ := rwidth.Width()
 
 	var durString, etaString, stepString, errorString string
 	displayString := ""

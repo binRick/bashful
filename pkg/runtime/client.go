@@ -120,7 +120,7 @@ func (client *Client) Bundle(userYamlPath, outputPath string) error {
 
 	archive.Close()
 
-	execute := `#!/bin/bash
+	execute := `#!/usr/bin/bash
 set -eu
 export TMPDIR=$(mktemp -d /tmp/bashful.XXXXXX)
 ARCHIVE=$(awk '/^__BASHFUL_ARCHIVE__/ {print NR + 1; exit 0; }' $0)

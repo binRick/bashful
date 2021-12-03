@@ -37,6 +37,7 @@ require (
 	github.com/apenella/go-common-utils v0.1.1 // indirect
 	github.com/apenella/go-common-utils/error v0.0.0-20200917063805-34b0ed3c4ce1 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d // indirect
+	github.com/binRick/bashful/utils/width v0.0.0-00010101000000-000000000000 // indirect
 	github.com/go-ole/go-ole v1.2.6-0.20210915003542-8b1f7f90f6b1 // indirect
 	github.com/goph/emperror v0.17.1 // indirect
 	github.com/gosuri/uilive v0.0.0-20170323041506-ac356e6e42cd // indirect
@@ -57,3 +58,5 @@ require (
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211 // indirect
 	golang.org/x/text v0.3.3 // indirect
 )
+
+replace github.com/binRick/bashful/utils/width => ./utils/width

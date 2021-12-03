@@ -18,6 +18,7 @@ import (
 	"github.com/k0kubun/pp"
 	gopsutil_net "github.com/shirou/gopsutil/v3/net"
 
+	rwidth "github.com/binRick/bashful/utils/width"
 	"github.com/dustin/go-humanize"
 	"github.com/google/uuid"
 	color "github.com/mgutz/ansi"
@@ -30,7 +31,6 @@ import (
 	"github.com/wagoodman/bashful/pkg/runtime"
 	"github.com/wagoodman/bashful/utils"
 	"github.com/wagoodman/jotframe"
-	terminaldimensions "github.com/wayneashleyberry/terminal-dimensions"
 )
 
 var DEBUG_BF = false
@@ -538,7 +538,7 @@ func (handler *VerticalUI) displayTask(task *runtime.Task) {
 	if err == nil {
 		then := now.Add(duration)
 		if last_dimensions_check_ts < then.UnixNano() {
-			_cached_terminalWidth, err := terminaldimensions.Width()
+			_cached_terminalWidth, err := rwidth.Width()
 			if err == nil {
 				cached_terminalWidth = _cached_terminalWidth
 				last_dimensions_check_ts = now.UnixNano()
@@ -602,7 +602,7 @@ func (handler *VerticalUI) footer(status runtime.TaskStatus, message string) str
 			utils.FormatDuration(duration),
 		)
 
-		terminalWidth, _ := terminaldimensions.Width()
+		terminalWidth, _ := rwidth.Width()
 		maxMessageWidth := uint(terminalWidth) - uint(utils.VisualLength(durString)) + 15
 		if uint(utils.VisualLength(durString)) > maxMessageWidth-3 {
 			durString = utils.TrimToVisualLength(durString, int(maxMessageWidth-3)) + "..."
@@ -639,7 +639,7 @@ func (handler *VerticalUI) footer(status runtime.TaskStatus, message string) str
 	summaryTemplate.Execute(&tpl, summary{Status: handler.TaskStatusColor(status, "i"), Percent: percentStr, Runtime: durString, Eta: etaString, Steps: stepString, Errors: errorString, Msg: message})
 
 	// calculate a space buffer to push the eta to the right
-	terminalWidth, _ := terminaldimensions.Width()
+	terminalWidth, _ := rwidth.Width()
 	splitWidth := int(terminalWidth) - utils.VisualLength(tpl.String())
 	if splitWidth < 0 {
 		splitWidth = 0
