@@ -10,7 +10,6 @@ import (
 	"time"
 )
 
-var TEST = 123
 var stty_exec_count uint64 = 0
 var last_stty_exec = time.Now()
 var min_stty_exec_dur = time.Duration(750 * time.Millisecond)
@@ -38,7 +37,9 @@ func size() (string, error) {
 	dur := time.Since(s)
 	msg = fmt.Sprintf("Completed stty #%d in %s. Last stty exec was %s ago.", stty_exec_count, dur, time.Since(last_stty_exec))
 	atomic.AddUint64(&stty_exec_count, 1)
-	fmt.Fprintf(os.Stderr, "%s\n", msg)
+	if false {
+		fmt.Fprintf(os.Stderr, "%s\n", msg)
+	}
 	if err == nil {
 		cached_out = out
 		last_stty_exec = time.Now()
