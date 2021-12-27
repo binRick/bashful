@@ -182,7 +182,7 @@ common_main() {
 	do_setup
 }
 
-do_main() {
+_do_main() {
 	(
 		build_bash
 		build_bash_example_builtins
@@ -201,6 +201,9 @@ do_main() {
 	#compile_ansible 
 	compile_bashful
 	wait
+}
+do_main(){
+	compile_bashful
 }
 
 main() {
