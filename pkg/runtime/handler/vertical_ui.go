@@ -110,12 +110,10 @@ var (
 )
 
 func NewVerticalUI(cfg *config.Config) *VerticalUI {
-
 	updateInterval := 150 * time.Millisecond
 	if cfg.Options.UpdateInterval > 150 {
 		updateInterval = time.Duration(cfg.Options.UpdateInterval) * time.Millisecond
 	}
-
 	handler := &VerticalUI{
 		data:      make(map[uuid.UUID]*display, 0),
 		spinner:   spin.New(),
@@ -123,9 +121,7 @@ func NewVerticalUI(cfg *config.Config) *VerticalUI {
 		startTime: time.Now(),
 		config:    cfg,
 	}
-
 	go handler.spinnerHandler()
-
 	return handler
 }
 
@@ -342,7 +338,7 @@ func (handler *VerticalUI) doRegister(task *runtime.Task) {
 
 func (handler *VerticalUI) Register(task *runtime.Task) {
 	handler.lock.Lock()
-	load_env(task)
+	//	load_env(task)
 	defer handler.lock.Unlock()
 	handler.doRegister(task)
 }

@@ -2,7 +2,7 @@
 set -e
 cd $(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 EXEC_ARGS="${@:-echo OK}"
-cmd="nodemon -w . -e sh,go,yml,mod,go,j2,txt -I --signal SIGKILL -x env -- bash -c 'reset && ./compile.sh||true; $EXEC_ARGS'"
+cmd="nodemon -w . -e sh,go,yml,mod,go,j2,txt --signal SIGKILL -x env -- bash -c 'reset && ./compile.sh||true; $EXEC_ARGS'"
 
 git_pull() {
 	(
